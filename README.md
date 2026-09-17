@@ -13,7 +13,10 @@ servidor.
 - **Controlo do utilizador:** categorias e subcategorias são totalmente personalizáveis.
 - **Portabilidade:** todos os dados podem ser exportados e importados através de JSON.
 - **Clareza:** os relatórios destacam a evolução mensal e as categorias com maior peso.
-- **Sem conta:** o MVP não exige registo, autenticação ou sincronização cloud.
+- **Sem conta ou backend:** a aplicação não usa registo, autenticação, base de
+  dados remota ou sincronização cloud.
+- **Utilização individual:** não existem perfis, espaços partilhados ou
+  colaboração entre utilizadores.
 
 ## MVP
 
@@ -59,7 +62,9 @@ Utilizador regista uma despesa
 
 O IndexedDB oferece persistência entre sessões no mesmo browser. O ficheiro
 JSON funciona como cópia de segurança e permite transferir os dados para outro
-browser ou dispositivo. Não existe sincronização automática.
+browser ou dispositivo. O IndexedDB é a única base de dados utilizada e existe
+apenas localmente no browser; não existe nem está prevista uma base de dados
+remota ou sincronização cloud.
 
 Os dados locais podem ser perdidos se o utilizador limpar os dados do site,
 eliminar o perfil do browser ou perder o dispositivo. Por esse motivo, a
@@ -90,7 +95,7 @@ histórico.
 Na primeira utilização, a aplicação deve explicar que:
 
 1. os dados financeiros ficam apenas no browser;
-2. não existe conta nem sincronização cloud;
+2. não existe conta, backend, base de dados remota ou sincronização cloud;
 3. limpar os dados do browser pode apagar a informação;
 4. o JSON serve como backup e meio de transferência;
 5. o ficheiro exportado não é encriptado e deve ser guardado em segurança.
@@ -98,14 +103,22 @@ Na primeira utilização, a aplicação deve explicar que:
 O utilizador pode começar com as categorias sugeridas ou criar a sua própria
 estrutura.
 
-## Fora do primeiro MVP
+## Fora do âmbito do produto
 
 - Integração com bancos.
+- Backend ou base de dados remota.
+- Contas e autenticação.
 - Sincronização cloud.
+- Vários perfis ou utilização partilhada.
+
+Estas funcionalidades contrariam o princípio local-first do OndeVai e não
+fazem parte da evolução prevista do produto.
+
+## Fora do primeiro MVP
+
 - Orçamentos e alertas de limites.
 - Registo de receitas e património.
 - Despesas recorrentes automáticas.
-- Vários perfis ou utilização partilhada.
 - Importação de CSV.
 - Encriptação do ficheiro de backup.
 
