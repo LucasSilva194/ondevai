@@ -1,0 +1,47 @@
+.category-section, .archived-section { margin-top: 30px; }
+.archived-section { margin-top: 54px; }
+.section-title { display: flex; align-items: center; gap: 11px; margin: 0 4px 18px; }
+.section-title span { min-width: 29px; height: 29px; display: grid; place-items: center; border: 1px solid var(--border); border-radius: 999px; background: var(--surface-subtle); color: var(--text-muted); font-size: 0.7rem; font-weight: 760; }
+.category-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.category-card { padding: 24px; transition: transform var(--motion), box-shadow var(--motion); }
+.category-card:hover { transform: translateY(-3px); box-shadow: inset 0 0 0 1px var(--inner-stroke), var(--shadow); }
+.category-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; }
+.category-name { display: flex; gap: 13px; }
+.category-name i { width: 11px; height: 42px; flex: none; border-radius: 999px; box-shadow: 0 0 0 4px var(--surface-subtle); }
+.category-name span { display: block; margin-top: 5px; color: var(--text-muted); font-size: 0.75rem; }
+.order-actions { display: flex; gap: 6px; }
+.mini-button { width: 32px; height: 32px; border: 1px solid var(--border); border-radius: 50%; background: var(--surface-raised); cursor: pointer; transition: transform var(--motion), background-color var(--motion), border-color var(--motion); }
+.mini-button:hover:not(:disabled) { transform: translateY(-2px); background: var(--accent-soft); border-color: var(--accent-border); }
+.mini-button:disabled { opacity: 0.32; cursor: not-allowed; }
+.subcategory-list { margin-top: 22px; }
+.subcategory-list > div { min-height: 42px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 0.83rem; }
+.subcategory-list > div:last-child { border-bottom: 0; }
+.subcategory-list small { margin-left: 6px; color: var(--warning); }
+.archived-item > span { color: var(--text-muted); text-decoration: line-through; }
+.subcategory-actions { display: flex; align-items: center; gap: 8px; }
+.rename-subcategory { width: 100%; display: flex; align-items: center; gap: 10px; }
+.rename-subcategory input { min-width: 0; flex: 1; padding: 8px 11px; border: 1px solid var(--border-strong); border-radius: 12px; background: var(--surface-raised); color: var(--text); }
+.visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+.no-subcategories { margin: 22px 0; color: var(--text-muted); font-size: 0.82rem; }
+.category-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
+.category-actions > div { display: flex; }
+.subcategory-form { display: grid; gap: 13px; margin-top: 18px; padding: 16px; border: 4px solid var(--bezel); border-radius: 18px; background: var(--surface-subtle); box-shadow: inset 0 0 0 1px var(--border); }
+.archived-list { overflow: hidden; }
+.archived-list > div { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 15px 18px; border-bottom: 1px solid var(--border); }
+.archived-list > div:last-child { border-bottom: 0; }
+.archived-list span { display: flex; align-items: center; gap: 11px; color: var(--text-soft); }
+.archived-list i { width: 10px; height: 10px; border-radius: 50%; }
+.empty-inline { padding: 30px; border: 5px solid var(--bezel); border-radius: var(--radius-card); background: var(--surface); box-shadow: inset 0 0 0 1px var(--border); color: var(--text-muted); text-align: center; }
+.danger-text { color: var(--danger); }
+.color-field input { padding: 6px; }
+.form-actions { margin-top: 26px; }
+.form-message { padding: 12px 14px; margin: 18px 0 0; border-radius: 14px; background: var(--danger-soft); color: var(--danger); }
+
+@media (max-width: 1000px) { .category-grid { grid-template-columns: 1fr; } }
+@media (max-width: 520px) {
+  .category-card { padding: 20px; }
+  .subcategory-list > div { align-items: flex-start; flex-direction: column; }
+  .subcategory-actions { width: 100%; flex-wrap: wrap; }
+  .category-actions { align-items: flex-start; flex-direction: column; }
+  .category-actions > div { width: 100%; justify-content: space-between; }
+}
