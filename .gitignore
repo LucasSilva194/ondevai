@@ -1,0 +1,6 @@
+/dist
+/node_modules
+/.angular
+/coverage
+.DS_Store
+npm-debug.log*

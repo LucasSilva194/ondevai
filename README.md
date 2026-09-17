@@ -2,133 +2,171 @@
 
 > O seu dinheiro, explicado. Os seus dados, no seu dispositivo.
 
-OndeVai é uma aplicação web local-first para registar, organizar e analisar
-despesas pessoais. A aplicação ajuda a perceber para onde vai o dinheiro ao
-longo do mês e do ano, sem enviar os dados financeiros do utilizador para um
-servidor.
+O OndeVai é uma aplicação web local-first para registar, organizar e analisar despesas pessoais. Funciona inteiramente no browser: não existe backend, conta, sincronização cloud, integração bancária, analytics ou telemetria.
 
-## Princípios
+## Funcionalidades do MVP
 
-- **Privado por definição:** despesas, categorias e preferências ficam no browser.
-- **Controlo do utilizador:** categorias e subcategorias são totalmente personalizáveis.
-- **Portabilidade:** todos os dados podem ser exportados e importados através de JSON.
-- **Clareza:** os relatórios destacam a evolução mensal e as categorias com maior peso.
-- **Sem conta ou backend:** a aplicação não usa registo, autenticação, base de
-  dados remota ou sincronização cloud.
-- **Utilização individual:** não existem perfis, espaços partilhados ou
-  colaboração entre utilizadores.
+- Onboarding inicial com explicação do armazenamento local e escolha entre categorias sugeridas ou uma estrutura vazia.
+- Criação, edição, eliminação, pesquisa, filtro e ordenação de despesas.
+- Valores guardados como cêntimos inteiros e apresentados em EUR com locale `pt-PT`.
+- Categorias e subcategorias personalizáveis, ordenáveis e arquiváveis.
+- Dashboard mensal e anual com totais, comparação mensal, evolução, distribuição e rankings.
+- Alternativas textuais acessíveis para todos os gráficos.
+- Exportação integral para JSON e importação por substituição com validação e pré-visualização.
+- Substituição atómica das coleções na importação: uma falha mantém os dados anteriores.
+- Lembretes de backup e indicação permanente de armazenamento local.
+- Interface responsiva, navegável por teclado e com suporte automático para modo claro e escuro.
 
-## MVP
+O projeto não inclui despesas de exemplo nem dados pessoais.
 
-### Visão geral
+## Requisitos
 
-- Total gasto no mês e no ano.
-- Comparação com o mês anterior.
-- Evolução mensal das despesas.
-- Distribuição por categoria e subcategoria.
-- Identificação das categorias com maior despesa.
+- Node.js 22.12 ou superior na linha 22, ou uma versão suportada mais recente.
+- npm 10 ou superior.
 
-### Despesas
+## Instalação e execução
 
-- Criar, editar e eliminar despesas.
-- Registar data, valor, categoria, subcategoria e descrição.
-- Pesquisar e filtrar por período, categoria e subcategoria.
-
-### Categorias
-
-- Conjunto inicial de categorias sugeridas.
-- Criação, edição, ordenação e arquivo de categorias e subcategorias.
-- Personalização de cor e ícone.
-
-### Dados e privacidade
-
-- Armazenamento local com IndexedDB.
-- Exportação de todos os dados para um ficheiro JSON.
-- Importação de um backup por substituição dos dados locais.
-- Informação clara sobre a última exportação.
-- Eliminação manual de todos os dados locais.
-
-## Como funcionam os dados
-
-```text
-Utilizador regista uma despesa
-              ↓
-       IndexedDB no browser
-              ↓
-     Dashboard e relatórios
-              ↓
-       Exportação para JSON
+```bash
+npm install
+npm start
 ```
 
-O IndexedDB oferece persistência entre sessões no mesmo browser. O ficheiro
-JSON funciona como cópia de segurança e permite transferir os dados para outro
-browser ou dispositivo. O IndexedDB é a única base de dados utilizada e existe
-apenas localmente no browser; não existe nem está prevista uma base de dados
-remota ou sincronização cloud.
+A aplicação de desenvolvimento fica disponível em `http://localhost:4200`.
 
-Os dados locais podem ser perdidos se o utilizador limpar os dados do site,
-eliminar o perfil do browser ou perder o dispositivo. Por esse motivo, a
-aplicação deve incentivar a criação regular de backups.
+Scripts disponíveis:
 
-## Estrutura prevista dos dados
+```bash
+npm start       # servidor de desenvolvimento
+npm run build   # build de produção em dist/ondevai
+npm test        # testes unitários em execução única
+npm run lint    # ESLint para TypeScript e templates Angular
+```
+
+## Tecnologia e escolhas
+
+- Angular 21 e TypeScript em modo strict.
+- Componentes standalone e rotas lazy por funcionalidade.
+- Signals e computed values para estado e valores derivados.
+- Reactive Forms nos formulários de despesas, categorias e confirmações.
+- Dexie 4 como implementação do IndexedDB.
+- Chart.js 4 carregado no bundle, sem recursos ou chamadas externas em runtime.
+- Vitest através do runner oficial do Angular e `fake-indexeddb` nos testes de persistência.
+- ESLint com as regras TypeScript e de acessibilidade de templates do Angular.
+
+O Angular 21 foi escolhido por ser uma linha estável compatível com o Node 22 disponível. O Chart.js é usado diretamente num componente Angular pequeno para evitar uma camada adicional de integração.
+
+## Arquitetura
+
+```text
+src/app/
+├── core/
+│   ├── backup/          validação, exportação e importação
+│   ├── database/        esquema Dexie e versionamento
+│   ├── repositories/    interfaces, tokens e implementações IndexedDB
+│   ├── services/        regras de aplicação
+│   ├── settings/        estado do armazenamento do browser
+│   └── stores/          facade global baseada em Signals
+├── features/
+│   ├── onboarding/
+│   ├── dashboard/
+│   ├── expenses/
+│   ├── categories/
+│   └── data-management/
+├── models/
+├── shared/
+│   ├── components/
+│   └── utils/           funções financeiras e de datas puras
+└── app.routes.ts
+```
+
+Fluxo de dados:
+
+```text
+Componentes
+    ↓
+AppStore com Signals
+    ↓
+Serviços de aplicação
+    ↓
+Interfaces de repositório
+    ↓
+Implementações Dexie / IndexedDB
+```
+
+Os componentes nunca acedem diretamente ao IndexedDB. Totais, comparações e agrupamentos são calculados em memória por funções puras e não são persistidos.
+
+## IndexedDB
+
+A base de dados chama-se `ondevai` e começa na versão 1. Inclui quatro coleções:
+
+- `expenses`
+- `categories`
+- `settings`
+- `metadata`
+
+O browser recebe um pedido de armazenamento persistente quando a API está disponível. A aplicação continua a funcionar se o browser não suportar ou não conceder esse modo.
+
+Os dados pertencem ao browser e perfil atuais. Fechar ou atualizar a página conserva os registos, mas limpar os dados do site, apagar o perfil ou perder o dispositivo pode removê-los.
+
+## Backups
+
+A exportação cria um ficheiro com o nome `ondevai-backup-AAAA-MM-DD.json`:
 
 ```json
 {
   "schemaVersion": 1,
-  "exportedAt": "2026-09-17T18:30:00Z",
-  "settings": {
-    "currency": "EUR",
-    "locale": "pt-PT"
-  },
+  "exportedAt": "2026-09-17T18:30:00.000Z",
+  "settings": {},
   "categories": [],
   "expenses": []
 }
 ```
 
-Os valores monetários serão guardados em cêntimos para evitar erros de
-arredondamento. As despesas referenciam categorias e subcategorias através de
-identificadores estáveis, permitindo alterar os seus nomes sem perder o
-histórico.
+O ficheiro inclui todos os anos e ignora os filtros visíveis. Não inclui totais, gráficos ou outros valores derivados.
 
-## Onboarding
+A importação do MVP funciona apenas por substituição. Antes da confirmação são verificados:
 
-Na primeira utilização, a aplicação deve explicar que:
+- versão e estrutura do schema;
+- tipos e campos obrigatórios;
+- IDs duplicados;
+- relações entre despesas, categorias e subcategorias;
+- datas e valores monetários;
+- contagens e intervalo de datas apresentados na pré-visualização.
 
-1. os dados financeiros ficam apenas no browser;
-2. não existe conta, backend, base de dados remota ou sincronização cloud;
-3. limpar os dados do browser pode apagar a informação;
-4. o JSON serve como backup e meio de transferência;
-5. o ficheiro exportado não é encriptado e deve ser guardado em segurança.
+A escrita das quatro coleções ocorre numa única transação Dexie. Um ficheiro inválido ou uma falha de escrita não altera os dados existentes.
 
-O utilizador pode começar com as categorias sugeridas ou criar a sua própria
-estrutura.
+O JSON não está encriptado. Deve ser guardado num local seguro.
 
-## Fora do âmbito do produto
+## Testes
 
-- Integração com bancos.
-- Backend ou base de dados remota.
-- Contas e autenticação.
-- Sincronização cloud.
-- Vários perfis ou utilização partilhada.
+A suite cobre:
 
-Estas funcionalidades contrariam o princípio local-first do OndeVai e não
-fazem parte da evolução prevista do produto.
+- conversão e formatação monetária;
+- totais mensais e anuais;
+- comparação com o mês anterior;
+- agrupamentos por categoria e subcategoria;
+- criação, edição e eliminação de despesas;
+- arquivo de categorias sem quebra do histórico;
+- validação e rejeição de backups inválidos;
+- exportação lógica e reimportação sem perda;
+- rollback de uma importação atómica que falha;
+- persistência após fechar e reabrir o IndexedDB.
 
-## Fora do primeiro MVP
+## Privacidade e rede
 
-- Orçamentos e alertas de limites.
-- Registo de receitas e património.
-- Despesas recorrentes automáticas.
-- Importação de CSV.
-- Encriptação do ficheiro de backup.
+O bundle não carrega fontes, imagens, scripts ou estilos externos. A aplicação não contém endpoints de dados e não faz pedidos de rede para processar informação financeira. O alojamento serve apenas os ficheiros estáticos do build.
 
-## Desenvolvimento
+## Limitações atuais
 
-- `main` — versão estável do projeto.
-- `dev` — integração do trabalho em desenvolvimento.
+- Sem orçamentos, receitas, património ou despesas recorrentes automáticas.
+- Sem importação CSV, anexos ou fotografias de recibos.
+- Sem encriptação do ficheiro de backup.
+- Sem merge de backups: a importação substitui o conteúdo local.
+- Sem contas, perfis múltiplos, partilha ou sincronização entre dispositivos.
 
-O projeto encontra-se na fase inicial de definição do produto e da arquitetura.
+## Branches e licença
 
-## Licença
+- `main`: versão estável.
+- `dev`: integração do trabalho em desenvolvimento.
 
-A licença do projeto ainda não foi definida.
+A licença do projeto ainda não foi definida. Nenhum ficheiro de licença é incluído.
