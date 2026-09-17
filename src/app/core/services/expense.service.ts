@@ -8,6 +8,7 @@ export interface ExpenseInput {
   categoryId: string;
   subcategoryId?: string;
   description?: string;
+  fixed: boolean;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -24,6 +25,7 @@ export class ExpenseService {
       date: input.date,
       amountCents: input.amountCents,
       categoryId: input.categoryId,
+      fixed: input.fixed,
       createdAt: now,
       updatedAt: now,
       ...(input.subcategoryId ? { subcategoryId: input.subcategoryId } : {}),
@@ -43,6 +45,7 @@ export class ExpenseService {
       date: input.date,
       amountCents: input.amountCents,
       categoryId: input.categoryId,
+      fixed: input.fixed,
       updatedAt: new Date().toISOString(),
       ...(input.subcategoryId ? { subcategoryId: input.subcategoryId } : {}),
       ...(input.description?.trim() ? { description: input.description.trim() } : {}),

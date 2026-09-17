@@ -8,7 +8,7 @@ describe('CategoryService', () => {
   let service: CategoryService;
   let categories: Category[];
   const historicalExpense: Expense = {
-    id: 'expense', date: '2026-09-17', amountCents: 1000, categoryId: 'food',
+    id: 'expense', date: '2026-09-17', amountCents: 1000, categoryId: 'food', fixed: false,
     createdAt: '2026-09-17T10:00:00.000Z', updatedAt: '2026-09-17T10:00:00.000Z',
   };
   let settings: Settings;

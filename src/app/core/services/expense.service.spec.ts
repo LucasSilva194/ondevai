@@ -33,12 +33,13 @@ describe('ExpenseService', () => {
   });
 
   it('cria, edita e elimina despesas, registando cada alteração', async () => {
-    const created = await service.create({ date: '2026-09-17', amountCents: 1234, categoryId: 'food', subcategoryId: 'market', description: ' Compras ' });
+    const created = await service.create({ date: '2026-09-17', amountCents: 1234, categoryId: 'food', subcategoryId: 'market', description: ' Compras ', fixed: true });
     expect(expenses).toHaveLength(1);
     expect(created.description).toBe('Compras');
+    expect(created.fixed).toBe(true);
     expect(settings.changesSinceExport).toBe(1);
 
-    const updated = await service.update(created.id, { date: '2026-09-18', amountCents: 2200, categoryId: 'food' });
+    const updated = await service.update(created.id, { date: '2026-09-18', amountCents: 2200, categoryId: 'food', fixed: false });
     expect(updated.amountCents).toBe(2200);
     expect(updated.subcategoryId).toBeUndefined();
     expect(settings.changesSinceExport).toBe(2);

@@ -103,6 +103,7 @@ import { MONTH_NAMES, sumExpenses } from '../../shared/utils/statistics.utils';
                 <div class="expense-meta">
                   <span><i [style.background]="categoryColor(expense.categoryId)"></i>{{ categoryName(expense.categoryId) }}</span>
                   @if (expense.subcategoryId) { <span>{{ subcategoryName(expense.categoryId, expense.subcategoryId) }}</span> }
+                  @if (expense.fixed) { <span class="status-badge recurring">Fixa mensal</span> }
                   @if (categoryArchived(expense.categoryId)) { <span class="status-badge archived">Categoria arquivada</span> }
                 </div>
               </div>
@@ -159,6 +160,10 @@ import { MONTH_NAMES, sumExpenses } from '../../shared/utils/statistics.utils';
                 <input id="expense-description" type="text" formControlName="description" maxlength="140" placeholder="Ex.: compras da semana">
                 <p class="helper">Opcional. Máximo de 140 caracteres.</p>
               </div>
+              <label class="check-field wide">
+                <input type="checkbox" formControlName="fixed">
+                <span><strong>Despesa fixa mensal</strong><small>Será incluída automaticamente neste mês e nos meses seguintes.</small></span>
+              </label>
             </div>
             @if (formError()) { <p class="form-message" role="alert">{{ formError() }}</p> }
             <div class="button-row form-actions">
@@ -197,6 +202,7 @@ export class ExpensesComponent {
     categoryId: ['', Validators.required],
     subcategoryId: [''],
     description: ['', Validators.maxLength(140)],
+    fixed: [false],
   });
   readonly filterValue = toSignal(this.filterForm.valueChanges.pipe(startWith(this.filterForm.getRawValue())), {
     initialValue: this.filterForm.getRawValue(),
@@ -239,7 +245,7 @@ export class ExpensesComponent {
   openCreate(updateUrl = true): void {
     this.editingExpense.set(null);
     this.selectedFormCategoryId.set('');
-    this.expenseForm.reset({ date: todayDateString(), amount: '', categoryId: '', subcategoryId: '', description: '' });
+    this.expenseForm.reset({ date: todayDateString(), amount: '', categoryId: '', subcategoryId: '', description: '', fixed: false });
     this.amountError.set(null);
     this.formError.set(null);
     this.formOpen.set(true);
@@ -255,6 +261,7 @@ export class ExpensesComponent {
       categoryId: expense.categoryId,
       subcategoryId: expense.subcategoryId ?? '',
       description: expense.description ?? '',
+      fixed: expense.fixed,
     });
     this.amountError.set(null);
     this.formError.set(null);
@@ -290,6 +297,7 @@ export class ExpensesComponent {
         date: raw.date,
         amountCents: cents,
         categoryId: raw.categoryId,
+        fixed: raw.fixed,
         ...(raw.subcategoryId ? { subcategoryId: raw.subcategoryId } : {}),
         ...(raw.description.trim() ? { description: raw.description.trim() } : {}),
       }, this.editingExpense()?.id);

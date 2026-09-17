@@ -9,6 +9,7 @@
 .metric-primary:hover, .metric:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
 .metric-core { position: relative; min-height: 172px; overflow: hidden; padding: 24px; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid var(--inner-stroke); border-radius: var(--radius-inner); background: var(--surface-raised); }
 .metric-primary .metric-core { min-height: 196px; background: var(--accent); color: var(--on-accent); }
+.metric-primary.negative .metric-core { background: var(--danger); }
 .metric-primary .metric-core::after { position: absolute; width: 190px; height: 190px; right: -62px; bottom: -88px; border: 38px solid color-mix(in srgb, var(--on-accent) 9%, transparent); border-radius: 50%; content: ""; }
 .metric-core > * { position: relative; z-index: 1; }
 .metric span { color: var(--text-muted); font-size: 0.78rem; font-weight: 720; text-transform: uppercase; letter-spacing: 0.055em; }
@@ -16,9 +17,8 @@
 .metric-primary small { width: max-content; padding: 6px 10px; border-radius: 999px; background: color-mix(in srgb, var(--on-accent) 12%, transparent); color: color-mix(in srgb, var(--on-accent) 84%, transparent); }
 .metric strong, .metric-primary strong { font-size: clamp(1.85rem, 3.4vw, 3.35rem); line-height: 1; letter-spacing: -0.058em; font-weight: 680; font-variant-numeric: tabular-nums; }
 .metric small { color: var(--text-muted); line-height: 1.4; }
-.metric .comparison { font-size: clamp(1.25rem, 2vw, 1.85rem); letter-spacing: -0.04em; }
-.metric .comparison.more { color: var(--danger); }
 .dashboard-empty { margin-top: 24px; }
+.empty-actions { justify-content: center; }
 
 .chart-layout { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(320px, 0.8fr); gap: 20px; }
 .chart-layout .card { transition: transform var(--motion), box-shadow var(--motion); }

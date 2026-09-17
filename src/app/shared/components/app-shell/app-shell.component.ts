@@ -76,6 +76,7 @@ export class AppShellComponent {
   readonly navigation = [
     { path: '/visao-geral', label: 'Visão geral', shortLabel: 'Resumo' },
     { path: '/despesas', label: 'Despesas', shortLabel: 'Despesas' },
+    { path: '/poupancas', label: 'Poupanças', shortLabel: 'Poupar' },
     { path: '/categorias', label: 'Categorias', shortLabel: 'Categorias' },
     { path: '/dados-e-privacidade', label: 'Dados e privacidade', shortLabel: 'Dados' },
   ];

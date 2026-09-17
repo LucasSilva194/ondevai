@@ -1,4 +1,4 @@
-import { Category, Expense } from '../../models/domain.models';
+import { Category, Expense, MonthlyIncome } from '../../models/domain.models';
 
 export interface TotalGroup {
   id: string;
@@ -31,13 +31,49 @@ export function sumExpenses(expenses: readonly Expense[]): number {
   return expenses.reduce((total, expense) => total + expense.amountCents, 0);
 }
 
+export function sumIncomes(incomes: readonly MonthlyIncome[]): number {
+  return incomes.reduce((total, income) => total + income.amountCents, 0);
+}
+
+function monthKey(year: number, month: number): string {
+  return `${year}-${String(month).padStart(2, '0')}`;
+}
+
+function expenseOccurrence(expense: Expense, year: number, month: number): Expense {
+  const day = Math.min(Number(expense.date.slice(8, 10)), new Date(year, month, 0).getDate());
+  return {
+    ...expense,
+    id: `${expense.id}:${monthKey(year, month)}`,
+    date: `${monthKey(year, month)}-${String(day).padStart(2, '0')}`,
+  };
+}
+
 export function expensesForMonth(expenses: readonly Expense[], year: number, month: number): Expense[] {
-  const prefix = `${year}-${String(month).padStart(2, '0')}-`;
-  return expenses.filter((expense) => expense.date.startsWith(prefix));
+  const targetMonth = monthKey(year, month);
+  return expenses.flatMap((expense) => {
+    const expenseMonth = expense.date.slice(0, 7);
+    if (expenseMonth === targetMonth) return [expense];
+    if (expense.fixed && expenseMonth < targetMonth) return [expenseOccurrence(expense, year, month)];
+    return [];
+  });
 }
 
 export function expensesForYear(expenses: readonly Expense[], year: number): Expense[] {
-  return expenses.filter((expense) => expense.date.startsWith(`${year}-`));
+  return MONTH_NAMES.flatMap((_, index) => expensesForMonth(expenses, year, index + 1));
+}
+
+export function incomesForMonth(incomes: readonly MonthlyIncome[], year: number, month: number): MonthlyIncome[] {
+  const targetMonth = monthKey(year, month);
+  return incomes.filter((income) => income.active
+    && (income.receivedMonth === targetMonth || (income.fixed && income.receivedMonth < targetMonth)));
+}
+
+export function incomeTotalForMonth(incomes: readonly MonthlyIncome[], year: number, month: number): number {
+  return sumIncomes(incomesForMonth(incomes, year, month));
+}
+
+export function annualIncomeTotal(incomes: readonly MonthlyIncome[], year: number): number {
+  return MONTH_NAMES.reduce((total, _, index) => total + incomeTotalForMonth(incomes, year, index + 1), 0);
 }
 
 export function monthlyTotal(expenses: readonly Expense[], year: number, month: number): number {
@@ -86,6 +122,20 @@ export function monthlySeries(expenses: readonly Expense[], year: number): Month
     month: index + 1,
     label: label.slice(0, 3),
     amountCents: monthlyTotal(expenses, year, index + 1),
+  }));
+}
+
+export function monthlyBalanceSeries(
+  expenses: readonly Expense[],
+  incomes: readonly MonthlyIncome[],
+  year: number,
+  throughMonth = 12,
+): MonthPoint[] {
+  const visibleMonths = Math.max(0, Math.min(12, throughMonth));
+  return MONTH_NAMES.slice(0, visibleMonths).map((label, index) => ({
+    month: index + 1,
+    label: label.slice(0, 3),
+    amountCents: incomeTotalForMonth(incomes, year, index + 1) - monthlyTotal(expenses, year, index + 1),
   }));
 }
 

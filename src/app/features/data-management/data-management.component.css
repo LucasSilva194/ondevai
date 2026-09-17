@@ -19,7 +19,7 @@ dd { margin: 0; text-align: right; font-weight: 720; }
 .validation-errors { background: var(--danger-soft); color: var(--danger); }
 .validation-errors ul { margin: 10px 0 0; padding-left: 20px; }
 .import-preview { border: 5px solid var(--bezel); background: var(--surface-raised); box-shadow: inset 0 0 0 1px var(--border); }
-.import-preview dl { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+.import-preview dl { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
 .import-preview dl > div { display: block; padding: 14px; border: 0; border-radius: 15px; background: var(--surface-subtle); }
 .import-preview dd { margin-top: 7px; text-align: left; }
 .replace-warning { margin: 20px 0; padding: 16px; border-left: 4px solid var(--danger); border-radius: 0 14px 14px 0; background: var(--danger-soft); color: var(--danger); }

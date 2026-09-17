@@ -5,6 +5,35 @@ export interface Expense {
   categoryId: string;
   subcategoryId?: string;
   description?: string;
+  fixed: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type IncomeKind = 'salary' | 'subsidy' | 'freelance' | 'other';
+
+export interface MonthlyIncome {
+  id: string;
+  name: string;
+  kind: IncomeKind;
+  amountCents: number;
+  receivedMonth: string;
+  fixed: boolean;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type SavingsGoalKind = 'general' | 'reserve' | 'home' | 'car' | 'travel' | 'education' | 'other';
+
+export interface SavingsGoal {
+  id: string;
+  name: string;
+  kind: SavingsGoalKind;
+  targetAmountCents: number;
+  currentAmountCents: number;
+  monthlyContributionCents: number;
+  targetDate?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -34,16 +63,20 @@ export interface Settings {
 }
 
 export interface AppBackup {
-  schemaVersion: 1;
+  schemaVersion: 3;
   exportedAt: string;
   settings: Settings;
   categories: Category[];
   expenses: Expense[];
+  monthlyIncomes: MonthlyIncome[];
+  savingsGoals: SavingsGoal[];
 }
 
 export interface ImportPreview {
   expenseCount: number;
   categoryCount: number;
+  incomeCount: number;
+  savingsGoalCount: number;
   firstDate?: string;
   lastDate?: string;
   exportedAt: string;

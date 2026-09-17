@@ -126,7 +126,7 @@
     inset: auto 12px 12px;
     height: 64px;
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     padding: 5px;
     border: 1px solid var(--border);
     border-radius: 22px;

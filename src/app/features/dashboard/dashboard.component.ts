@@ -5,14 +5,13 @@ import { ChartComponent } from '../../shared/components/chart/chart.component';
 import { formatCurrency } from '../../shared/utils/money.utils';
 import {
   MONTH_NAMES,
-  annualTotal,
-  compareWithPreviousMonth,
   expensesForMonth,
-  expensesForYear,
   groupByCategory,
   groupBySubcategory,
-  monthlySeries,
+  incomesForMonth,
+  monthlyBalanceSeries,
   sumExpenses,
+  sumIncomes,
 } from '../../shared/utils/statistics.utils';
 
 @Component({
@@ -24,7 +23,7 @@ import {
         <div>
           <p class="eyebrow">Visão geral</p>
           <h1>O seu dinheiro, explicado.</h1>
-          <p class="page-intro">Acompanhe o mês, compare períodos e veja as categorias com maior peso.</p>
+          <p class="page-intro">Veja quanto entrou, quanto saiu e o saldo real de cada mês.</p>
         </div>
         <div class="period-selectors" aria-label="Período do dashboard">
           <div class="field">
@@ -43,50 +42,51 @@ import {
       </header>
 
       <section class="metrics" aria-label="Resumo do período">
-        <article class="metric-primary">
+        <article class="metric-primary" [class.negative]="monthBalance() < 0">
           <div class="metric-core">
-            <span>Total em {{ monthName() }}</span>
-            <strong>{{ formatCurrency(monthTotal()) }}</strong>
-            <small>{{ monthExpenses().length }} {{ monthExpenses().length === 1 ? 'despesa' : 'despesas' }}</small>
+            <span>Saldo em {{ monthName() }}</span>
+            <strong>{{ formatCurrency(monthBalance()) }}</strong>
+            <small>Rendimentos menos despesas</small>
           </div>
         </article>
         <article class="metric">
           <div class="metric-core">
-            <span>Total em {{ selectedYear() }}</span>
-            <strong>{{ formatCurrency(yearTotal()) }}</strong>
+            <span>Rendimentos</span>
+            <strong>{{ formatCurrency(monthIncomeTotal()) }}</strong>
+            <small>{{ monthIncomes().length }} {{ monthIncomes().length === 1 ? 'rendimento' : 'rendimentos' }} no mês</small>
           </div>
         </article>
         <article class="metric">
           <div class="metric-core">
-            <span>Comparação mensal</span>
-            <strong class="comparison" [class.more]="comparison().direction === 'up'">{{ comparisonLabel() }}</strong>
-            <small>{{ formatCurrency(comparison().previousCents) }} no mês anterior</small>
+            <span>Despesas</span>
+            <strong>{{ formatCurrency(monthExpenseTotal()) }}</strong>
+            <small>{{ monthExpenses().length }} {{ monthExpenses().length === 1 ? 'despesa' : 'despesas' }} no mês</small>
           </div>
         </article>
       </section>
 
-      @if (store.expenses().length === 0) {
+      @if (store.expenses().length === 0 && store.monthlyIncomes().length === 0) {
         <section class="empty-state dashboard-empty">
-          <h2>A visão geral começa com a primeira despesa</h2>
-          <p>Registe um valor real para começar a acompanhar a evolução. O OndeVai não adiciona dados de exemplo.</p>
-          <a class="btn btn-primary" routerLink="/despesas" [queryParams]="{ nova: 1 }">Adicionar despesa</a>
+          <h2>A visão geral começa com o primeiro movimento</h2>
+          <p>Adicione um rendimento ou uma despesa para começar a acompanhar o saldo mensal.</p>
+          <div class="button-row empty-actions"><a class="btn btn-primary" routerLink="/poupancas">Adicionar rendimento</a><a class="btn btn-secondary" routerLink="/despesas" [queryParams]="{ nova: 1 }">Adicionar despesa</a></div>
         </section>
       } @else {
         <section class="chart-layout">
           <article class="card card-padding yearly-chart">
             <div class="section-heading">
-              <div><h2>Evolução mensal</h2><p>Despesas ao longo de {{ selectedYear() }}</p></div>
+              <div><h2>Saldo mensal</h2><p>{{ seriesPeriodLabel() }}</p></div>
             </div>
-            @if (yearExpenses().length > 0) {
-              <app-chart type="bar" [labels]="seriesLabels()" [values]="seriesValues()" [accessibleLabel]="'Despesas mensais em ' + selectedYear()" />
+            @if (visiblePeriodHasData()) {
+              <app-chart type="bar" [labels]="seriesLabels()" [values]="seriesValues()" [accessibleLabel]="'Saldo mensal em ' + selectedYear()" />
               <details class="data-alternative">
                 <summary>Ver dados em tabela</summary>
-                <table><thead><tr><th>Mês</th><th>Total</th></tr></thead><tbody>
+                <table><thead><tr><th>Mês</th><th>Saldo</th></tr></thead><tbody>
                   @for (point of series(); track point.month) { <tr><td>{{ months[point.month - 1] }}</td><td>{{ formatCurrency(point.amountCents) }}</td></tr> }
                 </tbody></table>
               </details>
             } @else {
-              <p class="chart-empty">Ainda não existem despesas neste ano.</p>
+              <p class="chart-empty">Ainda não existem movimentos neste ano.</p>
             }
           </article>
 
@@ -142,16 +142,41 @@ export class DashboardComponent {
   readonly selectedYear = signal(new Date().getFullYear());
   readonly availableYears = computed(() => {
     const years = new Set(this.store.expenses().map((expense) => Number(expense.date.slice(0, 4))));
+    this.store.monthlyIncomes().forEach((income) => years.add(Number(income.receivedMonth.slice(0, 4))));
     years.add(new Date().getFullYear());
     return [...years].sort((a, b) => b - a);
   });
   readonly monthName = computed(() => this.months[this.selectedMonth() - 1]);
   readonly monthExpenses = computed(() => expensesForMonth(this.store.expenses(), this.selectedYear(), this.selectedMonth()));
-  readonly yearExpenses = computed(() => expensesForYear(this.store.expenses(), this.selectedYear()));
-  readonly monthTotal = computed(() => sumExpenses(this.monthExpenses()));
-  readonly yearTotal = computed(() => annualTotal(this.store.expenses(), this.selectedYear()));
-  readonly comparison = computed(() => compareWithPreviousMonth(this.store.expenses(), this.selectedYear(), this.selectedMonth()));
-  readonly series = computed(() => monthlySeries(this.store.expenses(), this.selectedYear()));
+  readonly monthIncomes = computed(() => incomesForMonth(this.store.monthlyIncomes(), this.selectedYear(), this.selectedMonth()));
+  readonly monthExpenseTotal = computed(() => sumExpenses(this.monthExpenses()));
+  readonly monthIncomeTotal = computed(() => sumIncomes(this.monthIncomes()));
+  readonly monthBalance = computed(() => this.monthIncomeTotal() - this.monthExpenseTotal());
+  readonly visibleMonthLimit = computed(() => {
+    const now = new Date();
+    if (this.selectedYear() < now.getFullYear()) return 12;
+    if (this.selectedYear() > now.getFullYear()) return 0;
+    return now.getMonth() + 1;
+  });
+  readonly series = computed(() => monthlyBalanceSeries(
+    this.store.expenses(),
+    this.store.monthlyIncomes(),
+    this.selectedYear(),
+    this.visibleMonthLimit(),
+  ));
+  readonly visiblePeriodHasData = computed(() => {
+    const limit = this.visibleMonthLimit();
+    return Array.from({ length: limit }, (_, index) => index + 1).some((month) =>
+      expensesForMonth(this.store.expenses(), this.selectedYear(), month).length > 0
+      || incomesForMonth(this.store.monthlyIncomes(), this.selectedYear(), month).length > 0,
+    );
+  });
+  readonly seriesPeriodLabel = computed(() => {
+    const limit = this.visibleMonthLimit();
+    if (limit === 0) return `Ainda não existem meses decorridos em ${this.selectedYear()}`;
+    if (limit === 12) return `Rendimentos menos despesas ao longo de ${this.selectedYear()}`;
+    return `Rendimentos menos despesas até ${this.months[limit - 1]} de ${this.selectedYear()}`;
+  });
   readonly seriesLabels = computed(() => this.series().map((point) => point.label));
   readonly seriesValues = computed(() => this.series().map((point) => point.amountCents));
   readonly categoryGroups = computed(() => groupByCategory(this.monthExpenses(), this.store.categories()));
@@ -159,14 +184,6 @@ export class DashboardComponent {
   readonly categoryLabels = computed(() => this.categoryGroups().map((group) => group.name));
   readonly categoryValues = computed(() => this.categoryGroups().map((group) => group.amountCents));
   readonly categoryColors = computed(() => this.categoryGroups().map((group) => group.color ?? '#68727d'));
-  readonly comparisonLabel = computed(() => {
-    const comparison = this.comparison();
-    if (comparison.direction === 'no-baseline') return 'Sem base de comparação';
-    if (comparison.direction === 'same') return 'Sem alteração';
-    const prefix = comparison.direction === 'up' ? '+' : '';
-    return `${prefix}${comparison.percentage}%`;
-  });
-
   setMonth(event: Event): void {
     this.selectedMonth.set(Number((event.target as HTMLSelectElement).value));
   }

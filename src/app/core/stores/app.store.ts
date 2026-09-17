@@ -1,19 +1,36 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { AppBackup, Category, DEFAULT_SETTINGS, Expense, Settings } from '../../models/domain.models';
+import {
+  AppBackup,
+  Category,
+  DEFAULT_SETTINGS,
+  Expense,
+  MonthlyIncome,
+  SavingsGoal,
+  Settings,
+} from '../../models/domain.models';
 import { BackupService } from '../backup/backup.service';
 import { BackupValidationResult } from '../backup/backup-validation';
-import { CATEGORY_REPOSITORY, EXPENSE_REPOSITORY } from '../repositories/repository.tokens';
+import {
+  CATEGORY_REPOSITORY,
+  EXPENSE_REPOSITORY,
+  INCOME_REPOSITORY,
+  SAVINGS_GOAL_REPOSITORY,
+} from '../repositories/repository.tokens';
 import { CategoryService } from '../services/category.service';
 import { ExpenseInput, ExpenseService } from '../services/expense.service';
 import { SettingsService } from '../services/settings.service';
+import { IncomeInput, SavingsGoalInput, SavingsService } from '../services/savings.service';
 
 @Injectable({ providedIn: 'root' })
 export class AppStore {
   private readonly expenseRepository = inject(EXPENSE_REPOSITORY);
   private readonly categoryRepository = inject(CATEGORY_REPOSITORY);
+  private readonly incomeRepository = inject(INCOME_REPOSITORY);
+  private readonly savingsGoalRepository = inject(SAVINGS_GOAL_REPOSITORY);
   private readonly expenseService = inject(ExpenseService);
   private readonly categoryService = inject(CategoryService);
   private readonly settingsService = inject(SettingsService);
+  private readonly savingsService = inject(SavingsService);
   private readonly backupService = inject(BackupService);
 
   private readonly _loading = signal(true);
@@ -21,6 +38,8 @@ export class AppStore {
   private readonly _error = signal<string | null>(null);
   private readonly _expenses = signal<Expense[]>([]);
   private readonly _categories = signal<Category[]>([]);
+  private readonly _monthlyIncomes = signal<MonthlyIncome[]>([]);
+  private readonly _savingsGoals = signal<SavingsGoal[]>([]);
   private readonly _settings = signal<Settings>({ ...DEFAULT_SETTINGS });
 
   readonly loading = this._loading.asReadonly();
@@ -29,6 +48,8 @@ export class AppStore {
   readonly expenses = this._expenses.asReadonly();
   readonly categories = computed(() => [...this._categories()].sort((a, b) => a.order - b.order));
   readonly activeCategories = computed(() => this.categories().filter((category) => !category.archived));
+  readonly monthlyIncomes = this._monthlyIncomes.asReadonly();
+  readonly savingsGoals = this._savingsGoals.asReadonly();
   readonly settings = this._settings.asReadonly();
   readonly shouldRemindBackup = computed(() => {
     const settings = this._settings();
@@ -139,6 +160,43 @@ export class AppStore {
     });
   }
 
+  async saveIncome(input: IncomeInput, id?: string): Promise<void> {
+    await this.run(async () => {
+      if (id) await this.savingsService.updateIncome(id, input);
+      else await this.savingsService.createIncome(input);
+      await this.refreshSavingsAndSettings();
+    });
+  }
+
+  async deleteIncome(id: string): Promise<void> {
+    await this.run(async () => {
+      await this.savingsService.deleteIncome(id);
+      await this.refreshSavingsAndSettings();
+    });
+  }
+
+  async saveSavingsGoal(input: SavingsGoalInput, id?: string): Promise<void> {
+    await this.run(async () => {
+      if (id) await this.savingsService.updateGoal(id, input);
+      else await this.savingsService.createGoal(input);
+      await this.refreshSavingsAndSettings();
+    });
+  }
+
+  async adjustSavingsGoal(id: string, deltaCents: number): Promise<void> {
+    await this.run(async () => {
+      await this.savingsService.adjustGoal(id, deltaCents);
+      await this.refreshSavingsAndSettings();
+    });
+  }
+
+  async deleteSavingsGoal(id: string): Promise<void> {
+    await this.run(async () => {
+      await this.savingsService.deleteGoal(id);
+      await this.refreshSavingsAndSettings();
+    });
+  }
+
   async exportBackup(): Promise<void> {
     await this.run(async () => {
       const backup = await this.backupService.exportToFile();
@@ -169,13 +227,17 @@ export class AppStore {
   }
 
   private async reload(): Promise<void> {
-    const [expenses, categories, settings] = await Promise.all([
+    const [expenses, categories, monthlyIncomes, savingsGoals, settings] = await Promise.all([
       this.expenseRepository.getAll(),
       this.categoryRepository.getAll(),
+      this.incomeRepository.getAll(),
+      this.savingsGoalRepository.getAll(),
       this.settingsService.getOrCreate(),
     ]);
     this._expenses.set(expenses);
     this._categories.set(categories);
+    this._monthlyIncomes.set(monthlyIncomes);
+    this._savingsGoals.set(savingsGoals);
     this._settings.set(settings);
   }
 
@@ -194,6 +256,17 @@ export class AppStore {
       this.settingsService.getOrCreate(),
     ]);
     this._categories.set(categories);
+    this._settings.set(settings);
+  }
+
+  private async refreshSavingsAndSettings(): Promise<void> {
+    const [monthlyIncomes, savingsGoals, settings] = await Promise.all([
+      this.incomeRepository.getAll(),
+      this.savingsGoalRepository.getAll(),
+      this.settingsService.getOrCreate(),
+    ]);
+    this._monthlyIncomes.set(monthlyIncomes);
+    this._savingsGoals.set(savingsGoals);
     this._settings.set(settings);
   }
 

@@ -2,7 +2,7 @@
 
 > O seu dinheiro, explicado. Os seus dados, no seu dispositivo.
 
-O OndeVai é uma aplicação web local-first para registar, organizar e analisar despesas pessoais. Funciona inteiramente no browser: não existe backend, conta, sincronização cloud, integração bancária, analytics ou telemetria.
+O OndeVai é uma aplicação web local-first para registar, organizar e analisar despesas, rendimentos e poupanças pessoais. Funciona inteiramente no browser: não existe backend, conta, sincronização cloud, integração bancária, analytics ou telemetria.
 
 ## Funcionalidades do MVP
 
@@ -11,6 +11,11 @@ O OndeVai é uma aplicação web local-first para registar, organizar e analisar
 - Valores guardados como cêntimos inteiros e apresentados em EUR com locale `pt-PT`.
 - Categorias e subcategorias personalizáveis, ordenáveis e arquiváveis.
 - Dashboard mensal e anual com totais, comparação mensal, evolução, distribuição e rankings.
+- Configuração do mês de recebimento para salários, subsídios, trabalho independente e outros rendimentos.
+- Rendimentos e despesas pontuais ou fixos, com recorrência mensal nos totais da visão geral.
+- Saldo mensal calculado a partir dos rendimentos menos as despesas do período.
+- Objetivos de poupança para fundo de reserva, casa, carro, viagem, educação ou outros planos.
+- Reforços e levantamentos em objetivos, com metas, progresso, data e contribuição mensal planeada.
 - Alternativas textuais acessíveis para todos os gráficos.
 - Exportação integral para JSON e importação por substituição com validação e pré-visualização.
 - Substituição atómica das coleções na importação: uma falha mantém os dados anteriores.
@@ -47,7 +52,7 @@ npm run lint    # ESLint para TypeScript e templates Angular
 - Angular 21 e TypeScript em modo strict.
 - Componentes standalone e rotas lazy por funcionalidade.
 - Signals e computed values para estado e valores derivados.
-- Reactive Forms nos formulários de despesas, categorias e confirmações.
+- Reactive Forms nos formulários de despesas, rendimentos, poupanças, categorias e confirmações.
 - Dexie 4 como implementação do IndexedDB.
 - Chart.js 4 carregado no bundle, sem recursos ou chamadas externas em runtime.
 - Vitest através do runner oficial do Angular e `fake-indexeddb` nos testes de persistência.
@@ -70,6 +75,7 @@ src/app/
 │   ├── onboarding/
 │   ├── dashboard/
 │   ├── expenses/
+│   ├── savings/
 │   ├── categories/
 │   └── data-management/
 ├── models/
@@ -97,10 +103,12 @@ Os componentes nunca acedem diretamente ao IndexedDB. Totais, comparações e ag
 
 ## IndexedDB
 
-A base de dados chama-se `ondevai` e começa na versão 1. Inclui quatro coleções:
+A base de dados chama-se `ondevai` e está na versão 3. Inclui seis coleções:
 
 - `expenses`
 - `categories`
+- `monthlyIncomes`
+- `savingsGoals`
 - `settings`
 - `metadata`
 
@@ -114,17 +122,19 @@ A exportação cria um ficheiro com o nome `ondevai-backup-AAAA-MM-DD.json`:
 
 ```json
 {
-  "schemaVersion": 1,
+  "schemaVersion": 3,
   "exportedAt": "2026-09-17T18:30:00.000Z",
   "settings": {},
   "categories": [],
-  "expenses": []
+  "expenses": [],
+  "monthlyIncomes": [],
+  "savingsGoals": []
 }
 ```
 
 O ficheiro inclui todos os anos e ignora os filtros visíveis. Não inclui totais, gráficos ou outros valores derivados.
 
-A importação do MVP funciona apenas por substituição. Antes da confirmação são verificados:
+A importação funciona apenas por substituição. Backups das versões 1 e 2 continuam a ser aceites. Registos antigos são migrados com valores seguros para a nova configuração de recorrência. Antes da confirmação são verificados:
 
 - versão e estrutura do schema;
 - tipos e campos obrigatórios;
@@ -133,7 +143,7 @@ A importação do MVP funciona apenas por substituição. Antes da confirmação
 - datas e valores monetários;
 - contagens e intervalo de datas apresentados na pré-visualização.
 
-A escrita das quatro coleções ocorre numa única transação Dexie. Um ficheiro inválido ou uma falha de escrita não altera os dados existentes.
+A substituição das seis coleções ocorre numa única transação Dexie. Um ficheiro inválido ou uma falha de escrita não altera os dados existentes.
 
 O JSON não está encriptado. Deve ser guardado num local seguro.
 
@@ -146,6 +156,9 @@ A suite cobre:
 - comparação com o mês anterior;
 - agrupamentos por categoria e subcategoria;
 - criação, edição e eliminação de despesas;
+- criação e edição de rendimentos e objetivos de poupança;
+- reforços e levantamentos em objetivos, sem permitir saldos negativos;
+- cálculo de rendimentos, despesas fixas e saldo em cada mês;
 - arquivo de categorias sem quebra do histórico;
 - validação e rejeição de backups inválidos;
 - exportação lógica e reimportação sem perda;
@@ -158,7 +171,7 @@ O bundle não carrega fontes, imagens, scripts ou estilos externos. A aplicaçã
 
 ## Limitações atuais
 
-- Sem orçamentos, receitas, património ou despesas recorrentes automáticas.
+- Sem orçamentos, património ou recorrências semanais e anuais.
 - Sem importação CSV, anexos ou fotografias de recibos.
 - Sem encriptação do ficheiro de backup.
 - Sem merge de backups: a importação substitui o conteúdo local.
