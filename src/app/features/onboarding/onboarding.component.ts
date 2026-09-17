@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { Router } from '@angular/router';
 import { AppStore } from '../../core/stores/app.store';
 import { StorageService } from '../../core/settings/storage.service';
+import { SUGGESTED_CATEGORIES } from '../../models/suggested-categories';
 
 @Component({
   selector: 'app-onboarding',
@@ -23,7 +24,7 @@ import { StorageService } from '../../core/settings/storage.service';
         @switch (step()) {
           @case (1) {
             <p class="eyebrow">Bem-vindo</p>
-            <h1>Perceba para onde vai o seu dinheiro</h1>
+            <h1>Perceba para onde vai o seu dinheiro.</h1>
             <p class="lead">Registe as suas despesas, organize-as por categorias e acompanhe a sua evolução mensal e anual.</p>
             <ul class="feature-list">
               <li><strong>Sem conta ou registo</strong><span>Comece sem fornecer dados pessoais.</span></li>
@@ -33,8 +34,8 @@ import { StorageService } from '../../core/settings/storage.service';
           }
           @case (2) {
             <p class="eyebrow">Armazenamento local</p>
-            <h1>As suas despesas ficam neste dispositivo</h1>
-            <p class="lead">O OndeVai guarda a informação no IndexedDB deste browser. Não existe backend, conta ou sincronização cloud.</p>
+            <h1>As suas despesas ficam neste dispositivo.</h1>
+            <p class="lead">Não precisa de criar uma conta. As suas despesas ficam guardadas apenas neste dispositivo e não são enviadas nem sincronizadas pela internet.</p>
             <div class="notice">
               <strong>O que isto significa</strong>
               <p>Os dados pertencem a este browser e perfil. Nunca são enviados para os nossos servidores porque não existem servidores de dados.</p>
@@ -42,12 +43,8 @@ import { StorageService } from '../../core/settings/storage.service';
           }
           @case (3) {
             <p class="eyebrow">Cópia de segurança</p>
-            <h1>Exporte um ficheiro para proteger os seus dados</h1>
-            <p class="lead">Limpar os dados do browser pode apagar a informação. O JSON permite restaurar despesas, categorias e preferências noutro dispositivo.</p>
-            <div class="notice warning">
-              <strong>Guarde o ficheiro em segurança</strong>
-              <p>O backup não está encriptado e pode ser lido por quem tiver acesso ao ficheiro.</p>
-            </div>
+            <h1>Exporte um ficheiro para guardar os seus dados.</h1>
+            <p class="lead">Limpar os dados do browser pode apagar a informação. O ficheiro transferido (em formato JSON) permite recuperar as suas despesas, categorias e preferências noutro dispositivo.</p>
           }
           @case (4) {
             <p class="eyebrow">Ponto de partida</p>
@@ -59,6 +56,23 @@ import { StorageService } from '../../core/settings/storage.service';
                 <input type="radio" name="category-choice" [checked]="useSuggested()" (change)="useSuggested.set(true)">
                 <span><strong>Usar categorias sugeridas</strong><small>16 categorias com subcategorias comuns.</small></span>
               </label>
+              <details class="suggested-categories">
+                <summary>
+                  <span>Ver as categorias incluídas</span>
+                  <small>{{ suggestedCategories.length }} categorias</small>
+                </summary>
+                <ul class="suggested-category-list">
+                  @for (category of suggestedCategories; track category.id) {
+                    <li>
+                      <span class="category-dot" [style.background-color]="category.color" aria-hidden="true"></span>
+                      <span>
+                        <strong>{{ category.name }}</strong>
+                        <small>{{ category.subcategoryNames }}</small>
+                      </span>
+                    </li>
+                  }
+                </ul>
+              </details>
               <label [class.selected]="!useSuggested()">
                 <input type="radio" name="category-choice" [checked]="!useSuggested()" (change)="useSuggested.set(false)">
                 <span><strong>Criar as minhas categorias</strong><small>Começar sem categorias e construir a estrutura.</small></span>
@@ -94,6 +108,10 @@ export class OnboardingComponent {
   private readonly storage = inject(StorageService);
   readonly step = signal(1);
   readonly useSuggested = signal(true);
+  readonly suggestedCategories = SUGGESTED_CATEGORIES.map((category) => ({
+    ...category,
+    subcategoryNames: category.subcategories.map((subcategory) => subcategory.name).join(', '),
+  }));
 
   next(): void {
     this.step.update((value) => Math.min(4, value + 1));
