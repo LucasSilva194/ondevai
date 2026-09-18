@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { centsToInputValue, formatCurrency, parseMoneyToCents } from './money.utils';
+import { centsToInputValue, formatCurrency, parseMoneyToCents, parseNonNegativeMoneyToCents } from './money.utils';
 
 describe('money utilities', () => {
   it('converte valores portugueses para cêntimos inteiros', () => {
@@ -19,5 +19,12 @@ describe('money utilities', () => {
     expect(formatCurrency(123456).replace(/\s/g, '')).toContain('1234,56');
     expect(formatCurrency(123456)).toContain('€');
     expect(centsToInputValue(123456)).toBe('1234,56');
+  });
+
+  it('aceita zero em campos monetários opcionais', () => {
+    expect(parseNonNegativeMoneyToCents('')).toBe(0);
+    expect(parseNonNegativeMoneyToCents('0,00')).toBe(0);
+    expect(parseNonNegativeMoneyToCents('125,50')).toBe(12550);
+    expect(parseNonNegativeMoneyToCents('-1')).toBeNull();
   });
 });

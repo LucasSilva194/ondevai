@@ -83,8 +83,12 @@
   background: var(--accent-soft);
   box-shadow: inset 0 0 0 1px var(--accent-border), var(--shadow-soft);
 }
+.backup-symbol { width: 42px; height: 42px; display: grid; place-items: center; flex: none; border-radius: 14px; background: var(--accent); color: var(--on-accent); }
+.backup-copy { min-width: 0; margin-right: auto; }
+.mobile-backup-copy { display: none; }
 .backup-banner p { margin: 5px 0 0; color: var(--text-soft); font-size: 0.88rem; }
 .backup-banner .button-row { flex-wrap: nowrap; }
+.backup-banner .btn app-icon { display: none; }
 .global-error {
   margin: 18px clamp(24px, 5vw, 72px) 0;
   padding: 15px 18px;
@@ -97,6 +101,8 @@
   color: var(--danger);
   box-shadow: inset 0 0 0 1px var(--danger-border);
 }
+.offline-banner, .update-banner { margin: 12px clamp(24px, 5vw, 72px) 0; padding: 11px 15px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface-subtle); color: var(--text-soft); font-size: .8rem; }
+.update-banner { display: flex; align-items: center; justify-content: space-between; gap: 16px; background: var(--accent-soft); color: var(--accent-strong); border-color: var(--accent-border); }
 
 @media (max-width: 1050px) {
   .sidebar { display: none; }
@@ -106,38 +112,86 @@
     top: 12px;
     left: 0;
     width: calc(100% - 24px);
-    height: 62px;
+    height: 58px;
     margin: 12px 12px 0;
     padding: 0 10px 0 14px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     border: 1px solid var(--border);
-    border-radius: 22px;
+    border-radius: 19px;
     background: color-mix(in srgb, var(--surface) 90%, transparent);
     box-shadow: inset 0 0 0 4px var(--bezel), var(--shadow-soft);
     backdrop-filter: blur(16px);
-    z-index: 20;
+    z-index: 24;
   }
   .mobile-header .brand-mark { width: 32px; height: 32px; border-width: 3px; }
   .mobile-header .btn { padding: 6px 8px 6px 13px; }
+  .mobile-header-actions { display: flex; align-items: center; gap: 7px; }
+  .mobile-menu-toggle { width: 38px; height: 38px; display: grid; place-items: center; padding: 0; border: 1px solid var(--border); border-radius: 13px; background: var(--surface-subtle); color: var(--text-soft); cursor: pointer; transition: transform var(--motion), color var(--motion), background-color var(--motion); }
+  .mobile-menu-toggle:hover { color: var(--text); background: var(--surface-raised); }
+  .mobile-menu-toggle:active { transform: scale(.96); }
+  .mobile-menu-toggle app-icon { width: 19px; height: 19px; }
+  .mobile-menu-scrim { position: fixed; inset: 0; z-index: 21; padding: 0; border: 0; background: color-mix(in srgb, var(--page) 54%, transparent); backdrop-filter: blur(3px); cursor: default; }
+  .mobile-more-menu { position: fixed; top: 82px; right: 12px; z-index: 22; width: min(340px, calc(100% - 24px)); padding: 10px; border: 1px solid var(--border); border-radius: 21px; background: color-mix(in srgb, var(--surface) 96%, transparent); box-shadow: inset 0 0 0 4px var(--bezel), var(--shadow); backdrop-filter: blur(18px); animation: mobile-menu-in 180ms cubic-bezier(.16, 1, .3, 1) both; }
+  .mobile-menu-kicker { display: block; padding: 7px 9px 9px; color: var(--text-muted); font-size: .62rem; font-weight: 780; text-transform: uppercase; letter-spacing: .08em; }
+  .mobile-more-menu a { min-height: 66px; display: grid; grid-template-columns: 40px minmax(0, 1fr) 20px; align-items: center; gap: 11px; padding: 9px; border-radius: 15px; color: var(--text); text-decoration: none; transition: background-color var(--motion), transform var(--motion); }
+  .mobile-more-menu a:hover, .mobile-more-menu a.active { background: var(--accent-soft); }
+  .mobile-more-menu a:active { transform: scale(.985); }
+  .mobile-menu-icon { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 12px; background: var(--accent-soft); color: var(--accent-strong); }
+  .mobile-menu-icon app-icon { width: 20px; height: 20px; }
+  .mobile-more-menu a > span:nth-child(2) { min-width: 0; display: grid; gap: 4px; }
+  .mobile-more-menu strong { font-size: .84rem; }
+  .mobile-more-menu small { overflow: hidden; color: var(--text-muted); font-size: .67rem; text-overflow: ellipsis; white-space: nowrap; }
+  .mobile-menu-arrow { width: 17px; height: 17px; color: var(--text-muted); }
   .mobile-nav {
     position: fixed;
     inset: auto 12px 12px;
-    height: 64px;
+    height: 68px;
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     padding: 5px;
     border: 1px solid var(--border);
-    border-radius: 22px;
+    border-radius: 20px;
     background: color-mix(in srgb, var(--surface) 93%, transparent);
     box-shadow: inset 0 0 0 4px var(--bezel), var(--shadow);
     backdrop-filter: blur(18px);
     z-index: 20;
   }
-  .mobile-nav a { display: grid; place-items: center; padding: 8px 4px; border-radius: 16px; color: var(--text-muted); font-size: 0.67rem; font-weight: 720; text-decoration: none; }
+  .mobile-nav a { min-width: 0; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 3px; padding: 6px 2px; border-radius: 15px; color: var(--text-muted); font-size: 0.57rem; font-weight: 720; line-height: 1; text-decoration: none; transition: color var(--motion), background-color var(--motion), transform var(--motion); }
+  .mobile-nav a:active { transform: scale(.95); }
+  .mobile-nav app-icon { width: 20px; height: 20px; }
+  .mobile-nav a span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .mobile-nav a.active { color: var(--accent-strong); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent-border); }
-  .backup-banner { margin: 14px 14px 0; align-items: flex-start; flex-direction: column; gap: 14px; }
-  .backup-banner .button-row { flex-wrap: wrap; }
+  .backup-banner { min-height: 58px; margin: 8px 12px 0; padding: 8px 9px; align-items: center; gap: 10px; border-width: 1px; border-radius: 18px; box-shadow: inset 0 1px 0 var(--inner-stroke); }
+  .backup-symbol { width: 38px; height: 38px; border-radius: 12px; }
+  .backup-symbol app-icon { width: 19px; height: 19px; }
+  .backup-copy strong { display: block; overflow: hidden; color: var(--accent-strong); font-size: .76rem; line-height: 1.25; text-overflow: ellipsis; white-space: nowrap; }
+  .desktop-backup-copy { display: none; }
+  .mobile-backup-copy { display: inline; }
+  .backup-copy p { display: none; }
+  .backup-banner .button-row { margin-left: auto; gap: 3px; flex-wrap: nowrap; }
+  .backup-banner .btn { width: 38px; height: 38px; min-height: 38px; padding: 0; border: 0; border-radius: 12px; box-shadow: none; }
+  .backup-banner .btn app-icon { width: 18px; height: 18px; display: inline-grid; }
+  .backup-banner .btn span { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  .backup-dismiss { color: var(--text-muted); }
   .global-error { margin: 14px 14px 0; }
+  .offline-banner, .update-banner { margin: 10px 14px 0; }
 }
+
+@media (max-width: 460px) {
+  .app-content { padding-top: 78px; padding-bottom: 88px; }
+  .mobile-header { top: 8px; width: calc(100% - 16px); margin: 8px 8px 0; }
+  .mobile-header .brand { gap: 8px; }
+  .mobile-header .brand-mark { width: 30px; height: 30px; }
+  .mobile-add-expense { width: 38px; min-height: 38px; padding: 0 !important; border-radius: 13px; }
+  .mobile-action-label { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  .mobile-add-expense .action-symbol { width: auto; height: auto; background: transparent; }
+  .mobile-add-expense app-icon { width: 20px; height: 20px; }
+  .mobile-more-menu { top: 74px; right: 8px; width: min(340px, calc(100% - 16px)); }
+  .backup-banner { margin-inline: 10px; }
+  .backup-copy strong { max-width: 16rem; }
+  .mobile-nav { inset: auto 8px 8px; }
+}
+
+@keyframes mobile-menu-in { from { opacity: 0; transform: translateY(-8px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }

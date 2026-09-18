@@ -4,10 +4,11 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { startWith } from 'rxjs';
 import { AppStore } from '../../core/stores/app.store';
-import { Category, Expense } from '../../models/domain.models';
+import { Category, Expense, ExpenseOccurrence, RecurrenceFrequency, RecurrenceRule } from '../../models/domain.models';
 import { formatDate, todayDateString } from '../../shared/utils/date.utils';
 import { centsToInputValue, formatCurrency, parseMoneyToCents } from '../../shared/utils/money.utils';
-import { MONTH_NAMES, sumExpenses } from '../../shared/utils/statistics.utils';
+import { recurrenceLabel } from '../../shared/utils/recurrence.utils';
+import { expensesForMonth, MONTH_NAMES, sumExpenses } from '../../shared/utils/statistics.utils';
 
 @Component({
   selector: 'app-expenses',
@@ -103,12 +104,19 @@ import { MONTH_NAMES, sumExpenses } from '../../shared/utils/statistics.utils';
                 <div class="expense-meta">
                   <span><i [style.background]="categoryColor(expense.categoryId)"></i>{{ categoryName(expense.categoryId) }}</span>
                   @if (expense.subcategoryId) { <span>{{ subcategoryName(expense.categoryId, expense.subcategoryId) }}</span> }
+                  @if (expense.recurrence) { <span class="status-badge recurring">{{ recurrenceLabel(expense.recurrence) }}</span> }
+                  @if (expense.source === 'override') { <span class="status-badge recurring">Ocorrência editada</span> }
+                  @if (expense.source === 'one-off') { <span class="status-badge">Pontual</span> }
                   @if (categoryArchived(expense.categoryId)) { <span class="status-badge archived">Categoria arquivada</span> }
                 </div>
               </div>
               <div class="row-actions">
-                <button class="btn btn-ghost btn-compact" type="button" (click)="openEdit(expense)">Editar</button>
-                <button class="btn btn-ghost btn-compact danger-text" type="button" (click)="remove(expense)">Eliminar</button>
+                @if (expense.seriesId && exactPeriodSelected()) {
+                  <button class="btn btn-ghost btn-compact" type="button" (click)="openOccurrenceEdit(expense)">Editar ocorrência</button>
+                  <button class="btn btn-ghost btn-compact danger-text" type="button" (click)="omitOccurrence(expense)">Omitir</button>
+                }
+                <button class="btn btn-ghost btn-compact" type="button" (click)="openEdit(expense)">{{ expense.seriesId ? 'Editar série' : 'Editar' }}</button>
+                <button class="btn btn-ghost btn-compact danger-text" type="button" (click)="remove(expense)">{{ expense.seriesId ? 'Eliminar série' : 'Eliminar' }}</button>
               </div>
             </article>
           }
@@ -120,7 +128,7 @@ import { MONTH_NAMES, sumExpenses } from '../../shared/utils/statistics.utils';
       <div class="modal-backdrop">
         <section class="modal" role="dialog" aria-modal="true" aria-labelledby="expense-form-title">
           <header class="modal-header">
-            <div><h2 id="expense-form-title">{{ editingExpense() ? 'Editar despesa' : 'Nova despesa' }}</h2><p>Os campos assinalados são obrigatórios.</p></div>
+            <div><h2 id="expense-form-title">{{ editingOccurrence() ? 'Editar ocorrência' : editingExpense() ? 'Editar despesa' : 'Nova despesa' }}</h2><p>{{ editingOccurrence() ? 'Esta alteração aplica-se apenas à data selecionada.' : 'Os campos assinalados são obrigatórios.' }}</p></div>
             <button class="btn btn-ghost btn-compact" type="button" (click)="closeForm()" aria-label="Fechar formulário">Fechar</button>
           </header>
           <form [formGroup]="expenseForm" (ngSubmit)="submit()" novalidate>
@@ -159,6 +167,19 @@ import { MONTH_NAMES, sumExpenses } from '../../shared/utils/statistics.utils';
                 <input id="expense-description" type="text" formControlName="description" maxlength="140" placeholder="Ex.: compras da semana">
                 <p class="helper">Opcional. Máximo de 140 caracteres.</p>
               </div>
+              @if (!editingOccurrence()) {
+                <div class="field">
+                  <label for="expense-recurrence">Recorrência</label>
+                  <select id="expense-recurrence" formControlName="recurrenceType">
+                    <option value="none">Movimento pontual</option><option value="weekly">Semanal</option><option value="monthly">Mensal</option><option value="yearly">Anual</option>
+                  </select>
+                </div>
+                @if (expenseForm.controls.recurrenceType.value !== 'none') {
+                  <div class="field"><label for="expense-interval">Intervalo</label><input id="expense-interval" type="number" min="1" max="99" formControlName="interval"><p class="helper">Ex.: 2 significa a cada duas semanas, meses ou anos.</p></div>
+                  <div class="field"><label for="expense-end">Data de fim</label><input id="expense-end" type="date" formControlName="endDate" [min]="expenseForm.controls.date.value"></div>
+                  <div class="field"><label for="expense-status">Estado</label><select id="expense-status" formControlName="recurrenceStatus"><option value="active">Ativa</option><option value="paused">Pausada</option></select></div>
+                }
+              }
             </div>
             @if (formError()) { <p class="form-message" role="alert">{{ formError() }}</p> }
             <div class="button-row form-actions">
@@ -183,6 +204,7 @@ export class ExpensesComponent {
   readonly formatCurrency = formatCurrency;
   readonly formOpen = signal(false);
   readonly editingExpense = signal<Expense | null>(null);
+  readonly editingOccurrence = signal<ExpenseOccurrence | null>(null);
   readonly selectedFormCategoryId = signal('');
   readonly amountError = signal<string | null>(null);
   readonly formError = signal<string | null>(null);
@@ -197,20 +219,37 @@ export class ExpensesComponent {
     categoryId: ['', Validators.required],
     subcategoryId: [''],
     description: ['', Validators.maxLength(140)],
+    recurrenceType: ['none' as 'none' | RecurrenceFrequency],
+    interval: [1, [Validators.required, Validators.min(1), Validators.max(99)]],
+    endDate: [''],
+    recurrenceStatus: ['active' as 'active' | 'paused'],
   });
   readonly filterValue = toSignal(this.filterForm.valueChanges.pipe(startWith(this.filterForm.getRawValue())), {
     initialValue: this.filterForm.getRawValue(),
   });
-  readonly availableYears = computed(() => [...new Set(this.store.expenses().map((expense) => Number(expense.date.slice(0, 4))))].sort((a, b) => b - a));
+  readonly availableYears = computed(() => [...new Set([new Date().getFullYear(), ...this.store.expenses().map((expense) => Number(expense.date.slice(0, 4)))])].sort((a, b) => b - a));
   readonly filterSubcategories = computed(() => {
     const categoryId = this.filterValue().categoryId;
     if (categoryId) return this.store.categories().find((category) => category.id === categoryId)?.subcategories ?? [];
     return this.store.categories().flatMap((category) => category.subcategories);
   });
+  readonly exactPeriodSelected = computed(() => Boolean(this.filterValue().month && this.filterValue().year));
+  readonly displayedExpenses = computed((): ExpenseOccurrence[] => {
+    const filters = this.filterValue();
+    if (filters.month && filters.year) {
+      return expensesForMonth(this.store.expenses(), Number(filters.year), Number(filters.month), this.store.recurrenceExceptions());
+    }
+    return this.store.expenses().map((expense) => ({
+      ...expense,
+      occurrenceKey: expense.recurrence ? `expense:${expense.id}:${expense.date}` : `expense:${expense.id}`,
+      source: expense.recurrence ? 'series' : 'one-off',
+      ...(expense.recurrence ? { seriesId: expense.id } : {}),
+    }));
+  });
   readonly filteredExpenses = computed(() => {
     const filters = this.filterValue();
     const search = (filters.search ?? '').trim().toLocaleLowerCase('pt-PT');
-    return this.store.expenses()
+    return this.displayedExpenses()
       .filter((expense) => !search || (expense.description ?? '').toLocaleLowerCase('pt-PT').includes(search))
       .filter((expense) => !filters.month || Number(expense.date.slice(5, 7)) === Number(filters.month))
       .filter((expense) => !filters.year || Number(expense.date.slice(0, 4)) === Number(filters.year))
@@ -221,13 +260,13 @@ export class ExpensesComponent {
   readonly filteredTotal = computed(() => sumExpenses(this.filteredExpenses()));
   readonly formCategories = computed(() => {
     const active = this.store.activeCategories();
-    const current = this.editingExpense();
-    const selectedArchived = current ? this.store.categories().find((category) => category.id === current.categoryId && category.archived) : undefined;
+    const categoryId = this.editingExpense()?.categoryId ?? this.editingOccurrence()?.categoryId;
+    const selectedArchived = categoryId ? this.store.categories().find((category) => category.id === categoryId && category.archived) : undefined;
     return selectedArchived ? [...active, selectedArchived] : active;
   });
   readonly formSubcategories = computed(() =>
     this.store.categories().find((category) => category.id === this.selectedFormCategoryId())?.subcategories
-      .filter((subcategory) => !subcategory.archived || subcategory.id === this.editingExpense()?.subcategoryId) ?? [],
+      .filter((subcategory) => !subcategory.archived || subcategory.id === (this.editingExpense()?.subcategoryId ?? this.editingOccurrence()?.subcategoryId)) ?? [],
   );
 
   constructor() {
@@ -238,24 +277,44 @@ export class ExpensesComponent {
 
   openCreate(updateUrl = true): void {
     this.editingExpense.set(null);
+    this.editingOccurrence.set(null);
     this.selectedFormCategoryId.set('');
-    this.expenseForm.reset({ date: todayDateString(), amount: '', categoryId: '', subcategoryId: '', description: '' });
+    this.expenseForm.reset({ date: todayDateString(), amount: '', categoryId: '', subcategoryId: '', description: '', recurrenceType: 'none', interval: 1, endDate: '', recurrenceStatus: 'active' });
     this.amountError.set(null);
     this.formError.set(null);
     this.formOpen.set(true);
     if (updateUrl) void this.router.navigate([], { relativeTo: this.route, queryParams: { nova: 1 }, replaceUrl: true });
   }
 
-  openEdit(expense: Expense): void {
-    this.editingExpense.set(expense);
-    this.selectedFormCategoryId.set(expense.categoryId);
+  openEdit(expense: Expense | ExpenseOccurrence): void {
+    const base = 'seriesId' in expense && expense.seriesId
+      ? this.store.expenses().find((item) => item.id === expense.seriesId)
+      : this.store.expenses().find((item) => item.id === expense.id);
+    if (!base) return;
+    this.editingOccurrence.set(null);
+    this.editingExpense.set(base);
+    this.selectedFormCategoryId.set(base.categoryId);
     this.expenseForm.reset({
-      date: expense.date,
-      amount: centsToInputValue(expense.amountCents),
-      categoryId: expense.categoryId,
-      subcategoryId: expense.subcategoryId ?? '',
-      description: expense.description ?? '',
+      date: base.date,
+      amount: centsToInputValue(base.amountCents),
+      categoryId: base.categoryId,
+      subcategoryId: base.subcategoryId ?? '',
+      description: base.description ?? '',
+      recurrenceType: base.recurrence?.frequency ?? 'none',
+      interval: base.recurrence?.interval ?? 1,
+      endDate: base.recurrence?.endDate ?? '',
+      recurrenceStatus: base.recurrence?.status ?? 'active',
     });
+    this.amountError.set(null);
+    this.formError.set(null);
+    this.formOpen.set(true);
+  }
+
+  openOccurrenceEdit(expense: ExpenseOccurrence): void {
+    this.editingExpense.set(null);
+    this.editingOccurrence.set(expense);
+    this.selectedFormCategoryId.set(expense.categoryId);
+    this.expenseForm.reset({ date: expense.date, amount: centsToInputValue(expense.amountCents), categoryId: expense.categoryId, subcategoryId: expense.subcategoryId ?? '', description: expense.description ?? '', recurrenceType: 'none', interval: 1, endDate: '', recurrenceStatus: 'active' });
     this.amountError.set(null);
     this.formError.set(null);
     this.formOpen.set(true);
@@ -264,6 +323,7 @@ export class ExpensesComponent {
   closeForm(): void {
     this.formOpen.set(false);
     this.editingExpense.set(null);
+    this.editingOccurrence.set(null);
     if (this.route.snapshot.queryParamMap.has('nova')) {
       void this.router.navigate([], { relativeTo: this.route, queryParams: { nova: null }, queryParamsHandling: 'merge', replaceUrl: true });
     }
@@ -286,22 +346,41 @@ export class ExpensesComponent {
       return;
     }
     try {
-      await this.store.saveExpense({
+      const occurrence = this.editingOccurrence();
+      if (occurrence?.seriesId) {
+        await this.store.overrideExpenseOccurrence(occurrence.seriesId, occurrence.occurrenceKey.slice(-10), {
+          date: raw.date,
+          amountCents: cents,
+          categoryId: raw.categoryId,
+          ...(raw.subcategoryId ? { subcategoryId: raw.subcategoryId } : {}),
+          description: raw.description.trim(),
+        });
+      } else {
+        const recurrence = this.buildRecurrence(raw.date, raw.recurrenceType, raw.interval, raw.endDate, raw.recurrenceStatus);
+        await this.store.saveExpense({
         date: raw.date,
         amountCents: cents,
         categoryId: raw.categoryId,
         ...(raw.subcategoryId ? { subcategoryId: raw.subcategoryId } : {}),
         ...(raw.description.trim() ? { description: raw.description.trim() } : {}),
-      }, this.editingExpense()?.id);
+        ...(recurrence ? { recurrence } : {}),
+        }, this.editingExpense()?.id);
+      }
       this.closeForm();
     } catch (error) {
       this.formError.set(error instanceof Error ? error.message : 'Não foi possível guardar a despesa.');
     }
   }
 
-  async remove(expense: Expense): Promise<void> {
+  async remove(expense: Expense | ExpenseOccurrence): Promise<void> {
+    const id = 'seriesId' in expense && expense.seriesId ? expense.seriesId : expense.id;
     if (!confirm(`Eliminar a despesa de ${formatCurrency(expense.amountCents)} em ${formatDate(expense.date)}? Esta ação não pode ser anulada.`)) return;
-    try { await this.store.deleteExpense(expense.id); } catch { /* Global error is already visible. */ }
+    try { await this.store.deleteExpense(id); } catch { /* Global error is already visible. */ }
+  }
+
+  async omitOccurrence(expense: ExpenseOccurrence): Promise<void> {
+    if (!expense.seriesId || !confirm(`Omitir apenas a ocorrência de ${formatDate(expense.date)}?`)) return;
+    try { await this.store.skipExpenseOccurrence(expense.seriesId, expense.occurrenceKey.slice(-10)); } catch { /* O erro global já está visível. */ }
   }
 
   clearFilters(): void {
@@ -319,5 +398,11 @@ export class ExpensesComponent {
     return this.category(categoryId)?.subcategories.find((subcategory) => subcategory.id === subcategoryId)?.name ?? 'Subcategoria indisponível';
   }
   monthShort(date: string): string { return MONTH_NAMES[Number(date.slice(5, 7)) - 1].slice(0, 3); }
+  readonly recurrenceLabel = recurrenceLabel;
+  private buildRecurrence(date: string, type: 'none' | RecurrenceFrequency, interval: number, endDate: string, status: 'active' | 'paused'): RecurrenceRule | undefined {
+    if (type === 'none') return undefined;
+    const pausedFrom = status === 'paused' ? (date > todayDateString() ? date : todayDateString()) : undefined;
+    return { frequency: type, interval, startDate: date, status, ...(endDate ? { endDate } : {}), ...(pausedFrom ? { pausedFrom } : {}) };
+  }
   private category(id: string): Category | undefined { return this.store.categories().find((category) => category.id === id); }
 }

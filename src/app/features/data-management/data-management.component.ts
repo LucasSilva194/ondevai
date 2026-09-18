@@ -24,7 +24,7 @@ import { formatDate } from '../../shared/utils/date.utils';
       <section class="privacy-grid">
         <article class="local-card">
           <span class="local-symbol" aria-hidden="true">✓</span>
-          <div><h2>Guardado localmente</h2><p>As despesas, categorias e preferências nunca são enviadas para servidores.</p></div>
+          <div><h2>Guardado localmente</h2><p>As despesas, categorias, rendimentos, poupanças e preferências nunca são enviadas para servidores.</p></div>
         </article>
         <article class="storage-card card-flat">
           <h2>Estado do armazenamento</h2>
@@ -43,7 +43,7 @@ import { formatDate } from '../../shared/utils/date.utils';
       <section class="data-section card card-padding">
         <div class="section-copy">
           <h2>Cópia de segurança JSON</h2>
-          <p>O ficheiro inclui todos os anos, despesas, categorias e preferências. Não inclui totais ou gráficos.</p>
+          <p>O ficheiro inclui despesas, recorrências e exceções, orçamentos, rendimentos, objetivos, movimentos de poupança e preferências. Não inclui totais ou gráficos.</p>
           <p class="last-export"><strong>Última exportação:</strong> {{ lastExportLabel() }}</p>
         </div>
         <button class="btn btn-primary" type="button" (click)="exportData()" [disabled]="store.operationPending()">Exportar JSON</button>
@@ -67,8 +67,13 @@ import { formatDate } from '../../shared/utils/date.utils';
             <dl>
               <div><dt>Despesas</dt><dd>{{ data.expenseCount }}</dd></div>
               <div><dt>Categorias</dt><dd>{{ data.categoryCount }}</dd></div>
-              <div><dt>Primeira data</dt><dd>{{ data.firstDate ? formatDate(data.firstDate) : 'Sem despesas' }}</dd></div>
-              <div><dt>Última data</dt><dd>{{ data.lastDate ? formatDate(data.lastDate) : 'Sem despesas' }}</dd></div>
+              <div><dt>Rendimentos</dt><dd>{{ data.incomeCount }}</dd></div>
+              <div><dt>Objetivos</dt><dd>{{ data.savingsGoalCount }}</dd></div>
+              <div><dt>Movimentos de poupança</dt><dd>{{ data.savingsTransactionCount }}</dd></div>
+              <div><dt>Orçamentos</dt><dd>{{ data.budgetCount }}</dd></div>
+              <div><dt>Exceções de recorrência</dt><dd>{{ data.recurrenceExceptionCount }}</dd></div>
+              <div><dt>Primeira data</dt><dd>{{ data.firstDate ? formatDate(data.firstDate) : 'Sem movimentos' }}</dd></div>
+              <div><dt>Última data</dt><dd>{{ data.lastDate ? formatDate(data.lastDate) : 'Sem movimentos' }}</dd></div>
               <div><dt>Exportado em</dt><dd>{{ formatIsoDate(data.exportedAt) }}</dd></div>
             </dl>
             <div class="replace-warning"><strong>Os dados atuais serão substituídos.</strong><p>Esta ação não pode ser anulada sem outra cópia de segurança.</p></div>
@@ -92,7 +97,7 @@ import { formatDate } from '../../shared/utils/date.utils';
       </section>
 
       <section class="danger-zone">
-        <div><h2>Apagar todos os dados locais</h2><p>Remove despesas, categorias e preferências deste browser. Exporte primeiro se quiser conservar uma cópia.</p></div>
+        <div><h2>Apagar todos os dados locais</h2><p>Remove despesas, categorias, rendimentos, poupanças e preferências deste browser. Exporte primeiro se quiser conservar uma cópia.</p></div>
         <button class="btn btn-danger" type="button" (click)="deleteDialogOpen.set(true)">Apagar dados</button>
       </section>
     </div>

@@ -1,26 +1,55 @@
 import { Injectable, inject } from '@angular/core';
 import { AppBackup } from '../../models/domain.models';
-import { CATEGORY_REPOSITORY, DATA_REPOSITORY, EXPENSE_REPOSITORY, SETTINGS_REPOSITORY } from '../repositories/repository.tokens';
+import {
+  BUDGET_REPOSITORY,
+  CATEGORY_REPOSITORY,
+  DATA_REPOSITORY,
+  EXPENSE_REPOSITORY,
+  INCOME_REPOSITORY,
+  RECURRENCE_EXCEPTION_REPOSITORY,
+  SAVINGS_GOAL_REPOSITORY,
+  SETTINGS_REPOSITORY,
+} from '../repositories/repository.tokens';
 import { BackupValidationResult, parseBackupContents, validateBackup } from './backup-validation';
 
 @Injectable({ providedIn: 'root' })
 export class BackupService {
   private readonly expenses = inject(EXPENSE_REPOSITORY);
   private readonly categories = inject(CATEGORY_REPOSITORY);
+  private readonly incomes = inject(INCOME_REPOSITORY);
+  private readonly savingsGoals = inject(SAVINGS_GOAL_REPOSITORY);
+  private readonly budgets = inject(BUDGET_REPOSITORY);
+  private readonly recurrenceExceptions = inject(RECURRENCE_EXCEPTION_REPOSITORY);
   private readonly settings = inject(SETTINGS_REPOSITORY);
   private readonly data = inject(DATA_REPOSITORY);
 
   async exportToFile(): Promise<AppBackup> {
-    const [expenses, categories, currentSettings] = await Promise.all([
+    const [expenses, categories, monthlyIncomes, savingsGoals, savingsTransactions, monthlyBudgets, recurrenceExceptions, currentSettings] = await Promise.all([
       this.expenses.getAll(),
       this.categories.getAll(),
+      this.incomes.getAll(),
+      this.savingsGoals.getAll(),
+      this.savingsGoals.getTransactions(),
+      this.budgets.getAll(),
+      this.recurrenceExceptions.getAll(),
       this.settings.get(),
     ]);
     if (!currentSettings) throw new Error('Não foi possível ler as preferências locais.');
 
     const exportedAt = new Date().toISOString();
     const nextSettings = { ...currentSettings, lastExportAt: exportedAt, changesSinceExport: 0 };
-    const backup: AppBackup = { schemaVersion: 1, exportedAt, settings: nextSettings, categories, expenses };
+    const backup: AppBackup = {
+      schemaVersion: 4,
+      exportedAt,
+      settings: nextSettings,
+      categories,
+      expenses,
+      monthlyIncomes,
+      savingsGoals,
+      savingsTransactions,
+      monthlyBudgets,
+      recurrenceExceptions,
+    };
     const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -32,17 +61,13 @@ export class BackupService {
     return backup;
   }
 
-  parse(contents: string): BackupValidationResult {
-    return parseBackupContents(contents);
-  }
+  parse(contents: string): BackupValidationResult { return parseBackupContents(contents); }
 
   async importValidated(backup: AppBackup): Promise<void> {
     const validation = validateBackup(backup);
     if (!validation.valid) throw new Error(validation.errors.join(' '));
-    await this.data.replaceAll(backup);
+    await this.data.replaceAll(validation.backup);
   }
 
-  clearAll(): Promise<void> {
-    return this.data.clearAll();
-  }
+  clearAll(): Promise<void> { return this.data.clearAll(); }
 }

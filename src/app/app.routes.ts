@@ -35,6 +35,16 @@ export const appRoutes: Routes = [
         loadComponent: () => import('./features/expenses/expenses.component').then((module) => module.ExpensesComponent),
       },
       {
+        path: 'orcamentos',
+        title: 'Orçamentos | OndeVai',
+        loadComponent: () => import('./features/budgets/budgets.component').then((module) => module.BudgetsComponent),
+      },
+      {
+        path: 'poupancas',
+        title: 'Poupanças | OndeVai',
+        loadComponent: () => import('./features/savings/savings.component').then((module) => module.SavingsComponent),
+      },
+      {
         path: 'categorias',
         title: 'Categorias | OndeVai',
         loadComponent: () => import('./features/categories/categories.component').then((module) => module.CategoriesComponent),

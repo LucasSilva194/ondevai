@@ -169,11 +169,14 @@ a { color: var(--accent-strong); }
 @keyframes modal-in { from { opacity: 0; transform: translateY(22px) scale(0.975); } to { opacity: 1; transform: translateY(0) scale(1); } }
 
 @media (max-width: 760px) {
-  .page { padding: 54px 16px 94px; }
-  .page-header, .page-header-row { margin-bottom: 32px; }
+  .page { padding: 28px 14px 94px; }
+  .page-header, .page-header-row { margin-bottom: 26px; }
   .page-header-row { align-items: flex-start; flex-direction: column; }
   .page-header-row .btn { width: 100%; }
-  .page h1 { font-size: clamp(2.35rem, 13vw, 3.8rem); }
+  .page h1 { font-size: clamp(2rem, 9vw, 2.75rem); }
+  .page-intro { margin-top: 13px; font-size: .92rem; line-height: 1.58; }
+  .eyebrow { margin-bottom: 12px; padding: 6px 9px; font-size: .64rem; }
+  .card-padding { padding: 20px; }
   .two-column, .form-grid { grid-template-columns: 1fr; }
   .form-grid .wide { grid-column: auto; }
   .modal-backdrop { align-items: end; padding: 0; }
