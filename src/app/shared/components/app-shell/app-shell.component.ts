@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AppStore } from '../../../core/stores/app.store';
+import { PwaService } from '../../../core/services/pwa.service';
 
 @Component({
   selector: 'app-shell',
@@ -55,6 +56,13 @@ import { AppStore } from '../../../core/stores/app.store';
           </div>
         }
 
+        @if (pwa.offline()) {
+          <div class="offline-banner" role="status">Está offline. O OndeVai continua disponível e guarda os dados neste dispositivo.</div>
+        }
+        @if (pwa.updateReady()) {
+          <div class="update-banner" role="status"><span>Está disponível uma nova versão do OndeVai.</span><button class="btn btn-secondary btn-compact" type="button" (click)="applyUpdate()">Atualizar agora</button></div>
+        }
+
         <main id="main-content" tabindex="-1">
           <router-outlet />
         </main>
@@ -72,10 +80,12 @@ import { AppStore } from '../../../core/stores/app.store';
 })
 export class AppShellComponent {
   readonly store = inject(AppStore);
+  readonly pwa = inject(PwaService);
   readonly backupDismissed = signal(false);
   readonly navigation = [
     { path: '/visao-geral', label: 'Visão geral', shortLabel: 'Resumo' },
     { path: '/despesas', label: 'Despesas', shortLabel: 'Despesas' },
+    { path: '/orcamentos', label: 'Orçamentos', shortLabel: 'Limites' },
     { path: '/poupancas', label: 'Poupanças', shortLabel: 'Poupar' },
     { path: '/categorias', label: 'Categorias', shortLabel: 'Categorias' },
     { path: '/dados-e-privacidade', label: 'Dados e privacidade', shortLabel: 'Dados' },
@@ -88,5 +98,9 @@ export class AppShellComponent {
     } catch {
       // The store exposes the contextual error to the global alert.
     }
+  }
+
+  async applyUpdate(): Promise<void> {
+    await this.pwa.activateUpdate();
   }
 }

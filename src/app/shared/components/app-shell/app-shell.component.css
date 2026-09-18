@@ -97,6 +97,8 @@
   color: var(--danger);
   box-shadow: inset 0 0 0 1px var(--danger-border);
 }
+.offline-banner, .update-banner { margin: 12px clamp(24px, 5vw, 72px) 0; padding: 11px 15px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface-subtle); color: var(--text-soft); font-size: .8rem; }
+.update-banner { display: flex; align-items: center; justify-content: space-between; gap: 16px; background: var(--accent-soft); color: var(--accent-strong); border-color: var(--accent-border); }
 
 @media (max-width: 1050px) {
   .sidebar { display: none; }
@@ -126,7 +128,7 @@
     inset: auto 12px 12px;
     height: 64px;
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(6, 1fr);
     padding: 5px;
     border: 1px solid var(--border);
     border-radius: 22px;
@@ -140,4 +142,5 @@
   .backup-banner { margin: 14px 14px 0; align-items: flex-start; flex-direction: column; gap: 14px; }
   .backup-banner .button-row { flex-wrap: wrap; }
   .global-error { margin: 14px 14px 0; }
+  .offline-banner, .update-banner { margin: 10px 14px 0; }
 }

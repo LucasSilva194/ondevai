@@ -43,7 +43,7 @@ import { formatDate } from '../../shared/utils/date.utils';
       <section class="data-section card card-padding">
         <div class="section-copy">
           <h2>Cópia de segurança JSON</h2>
-          <p>O ficheiro inclui despesas, categorias, rendimentos, objetivos de poupança e preferências. Não inclui totais ou gráficos.</p>
+          <p>O ficheiro inclui despesas, recorrências e exceções, orçamentos, rendimentos, objetivos, movimentos de poupança e preferências. Não inclui totais ou gráficos.</p>
           <p class="last-export"><strong>Última exportação:</strong> {{ lastExportLabel() }}</p>
         </div>
         <button class="btn btn-primary" type="button" (click)="exportData()" [disabled]="store.operationPending()">Exportar JSON</button>
@@ -69,8 +69,11 @@ import { formatDate } from '../../shared/utils/date.utils';
               <div><dt>Categorias</dt><dd>{{ data.categoryCount }}</dd></div>
               <div><dt>Rendimentos</dt><dd>{{ data.incomeCount }}</dd></div>
               <div><dt>Objetivos</dt><dd>{{ data.savingsGoalCount }}</dd></div>
-              <div><dt>Primeira data</dt><dd>{{ data.firstDate ? formatDate(data.firstDate) : 'Sem despesas' }}</dd></div>
-              <div><dt>Última data</dt><dd>{{ data.lastDate ? formatDate(data.lastDate) : 'Sem despesas' }}</dd></div>
+              <div><dt>Movimentos de poupança</dt><dd>{{ data.savingsTransactionCount }}</dd></div>
+              <div><dt>Orçamentos</dt><dd>{{ data.budgetCount }}</dd></div>
+              <div><dt>Exceções de recorrência</dt><dd>{{ data.recurrenceExceptionCount }}</dd></div>
+              <div><dt>Primeira data</dt><dd>{{ data.firstDate ? formatDate(data.firstDate) : 'Sem movimentos' }}</dd></div>
+              <div><dt>Última data</dt><dd>{{ data.lastDate ? formatDate(data.lastDate) : 'Sem movimentos' }}</dd></div>
               <div><dt>Exportado em</dt><dd>{{ formatIsoDate(data.exportedAt) }}</dd></div>
             </dl>
             <div class="replace-warning"><strong>Os dados atuais serão substituídos.</strong><p>Esta ação não pode ser anulada sem outra cópia de segurança.</p></div>

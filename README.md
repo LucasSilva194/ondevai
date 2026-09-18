@@ -10,12 +10,15 @@ O OndeVai é uma aplicação web local-first para registar, organizar e analisar
 - Criação, edição, eliminação, pesquisa, filtro e ordenação de despesas.
 - Valores guardados como cêntimos inteiros e apresentados em EUR com locale `pt-PT`.
 - Categorias e subcategorias personalizáveis, ordenáveis e arquiváveis.
-- Dashboard mensal e anual com totais, comparação mensal, evolução, distribuição e rankings.
+- Dashboard mensal e anual com totais, comparação de despesas/rendimentos/saldo, média dos três meses anteriores, evolução, distribuição e rankings.
+- Orçamentos mensais por categoria, cópia do mês anterior e estados normal, atenção (80%) e excedido (100%).
 - Configuração do mês de recebimento para salários, subsídios, trabalho independente e outros rendimentos.
-- Rendimentos e despesas pontuais ou fixos, com recorrência mensal nos totais da visão geral.
+- Rendimentos e despesas pontuais ou recorrentes, com frequência semanal, mensal ou anual, intervalos, pausa, fim inclusivo e exceções por ocorrência.
 - Saldo mensal calculado a partir dos rendimentos menos as despesas do período.
 - Objetivos de poupança para fundo de reserva, casa, carro, viagem, educação ou outros planos.
-- Reforços e levantamentos em objetivos, com metas, progresso, data e contribuição mensal planeada.
+- Ledger auditável de poupanças, com saldo inicial, reforços e levantamentos editáveis, metas, progresso, data e contribuição mensal planeada.
+- Insights determinísticos e locais para orçamentos, evolução por categoria, valores anormais, peso das recorrências, planos de poupança e saldo.
+- PWA instalável, app shell offline e atualização controlada pelo utilizador.
 - Alternativas textuais acessíveis para todos os gráficos.
 - Exportação integral para JSON e importação por substituição com validação e pré-visualização.
 - Substituição atómica das coleções na importação: uma falha mantém os dados anteriores.
@@ -99,16 +102,23 @@ Interfaces de repositório
 Implementações Dexie / IndexedDB
 ```
 
-Os componentes nunca acedem diretamente ao IndexedDB. Totais, comparações e agrupamentos são calculados em memória por funções puras e não são persistidos.
+Os componentes nunca acedem diretamente ao IndexedDB. Totais, comparações, materialização de recorrências, agrupamentos e insights são calculados em memória por funções puras e não são persistidos.
+
+As ocorrências virtuais usam a chave estável `tipo:seriesId:AAAA-MM-DD`. Só as exceções são persistidas: uma edição substitui a ocorrência original e uma omissão impede que ela reapareça, sem pré-gerar movimentos futuros.
+
+A deteção de despesa anormal exige pelo menos cinco despesas históricas da mesma categoria. O valor atual tem de ser simultaneamente igual ou superior ao dobro da mediana e exceder essa mediana em pelo menos 25 €.
 
 ## IndexedDB
 
-A base de dados chama-se `ondevai` e está na versão 3. Inclui seis coleções:
+A base de dados chama-se `ondevai` e está na versão 4. Inclui nove coleções:
 
 - `expenses`
 - `categories`
 - `monthlyIncomes`
 - `savingsGoals`
+- `savingsTransactions`
+- `monthlyBudgets`
+- `recurrenceExceptions`
 - `settings`
 - `metadata`
 
@@ -122,13 +132,16 @@ A exportação cria um ficheiro com o nome `ondevai-backup-AAAA-MM-DD.json`:
 
 ```json
 {
-  "schemaVersion": 3,
+  "schemaVersion": 4,
   "exportedAt": "2026-09-17T18:30:00.000Z",
   "settings": {},
   "categories": [],
   "expenses": [],
   "monthlyIncomes": [],
-  "savingsGoals": []
+  "savingsGoals": [],
+  "savingsTransactions": [],
+  "monthlyBudgets": [],
+  "recurrenceExceptions": []
 }
 ```
 
@@ -143,7 +156,7 @@ A importação funciona apenas por substituição. Backups das versões 1 e 2 co
 - datas e valores monetários;
 - contagens e intervalo de datas apresentados na pré-visualização.
 
-A substituição das seis coleções ocorre numa única transação Dexie. Um ficheiro inválido ou uma falha de escrita não altera os dados existentes.
+A substituição de todas as coleções ocorre numa única transação Dexie. Um ficheiro inválido ou uma falha de escrita não altera os dados existentes. Backups das versões 1, 2 e 3 são migrados para recorrências e ledger; o saldo existente de cada objetivo é preservado num movimento de abertura.
 
 O JSON não está encriptado. Deve ser guardado num local seguro.
 
@@ -154,10 +167,15 @@ A suite cobre:
 - conversão e formatação monetária;
 - totais mensais e anuais;
 - comparação com o mês anterior;
+- janeiro versus dezembro, percentagens sem base e média dos três meses anteriores;
+- CRUD e cópia de orçamentos;
 - agrupamentos por categoria e subcategoria;
 - criação, edição e eliminação de despesas;
 - criação e edição de rendimentos e objetivos de poupança;
-- reforços e levantamentos em objetivos, sem permitir saldos negativos;
+- criação, edição e eliminação de movimentos em objetivos, sem permitir saldos negativos;
+- migração de saldos existentes para movimentos de abertura;
+- recorrências semanais, mensais e anuais, limites de calendário, pausa, fim e exceções;
+- regras de insights e ausência de conclusões sem dados suficientes;
 - cálculo de rendimentos, despesas fixas e saldo em cada mês;
 - arquivo de categorias sem quebra do histórico;
 - validação e rejeição de backups inválidos;
@@ -167,11 +185,11 @@ A suite cobre:
 
 ## Privacidade e rede
 
-O bundle não carrega fontes, imagens, scripts ou estilos externos. A aplicação não contém endpoints de dados e não faz pedidos de rede para processar informação financeira. O alojamento serve apenas os ficheiros estáticos do build.
+O bundle não carrega fontes, imagens, scripts ou estilos externos. A aplicação não contém endpoints de dados e não faz pedidos de rede para processar informação financeira. O service worker guarda apenas o app shell, bundles, estilos, manifest e ícones locais; o IndexedDB continua a ser a única fonte dos dados financeiros.
 
 ## Limitações atuais
 
-- Sem orçamentos, património ou recorrências semanais e anuais.
+- Sem gestão de património ou contas bancárias.
 - Sem importação CSV, anexos ou fotografias de recibos.
 - Sem encriptação do ficheiro de backup.
 - Sem merge de backups: a importação substitui o conteúdo local.

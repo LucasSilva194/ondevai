@@ -3,6 +3,7 @@
 .period-selectors .field { gap: 6px; }
 .period-selectors .field label { padding-left: 5px; color: var(--text-muted); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em; }
 .period-selectors .field select { min-height: 42px; border-radius: 13px; }
+.period-note { margin: -24px 0 24px; padding: 13px 16px; border: 1px solid var(--accent-border); border-radius: 16px; background: var(--accent-soft); color: var(--accent-strong); font-size: .84rem; }
 
 .metrics { display: grid; grid-template-columns: 1.45fr 0.8fr 0.9fr; gap: 16px; margin-bottom: 22px; }
 .metric-primary, .metric { padding: 5px; border: 1px solid var(--border); border-radius: var(--radius-card); background: var(--bezel); box-shadow: var(--shadow-soft); transition: transform var(--motion), box-shadow var(--motion); }
@@ -19,6 +20,31 @@
 .metric small { color: var(--text-muted); line-height: 1.4; }
 .dashboard-empty { margin-top: 24px; }
 .empty-actions { justify-content: center; }
+.comparison-section, .insights-section { margin: 48px 0; }
+.section-title-row { display: flex; align-items: end; justify-content: space-between; margin-bottom: 18px; }
+.section-title-row p { margin: 7px 0 0; color: var(--text-muted); }
+.comparison-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.comparison-grid article { min-height: 132px; display: flex; flex-direction: column; justify-content: space-between; padding: 20px; }
+.comparison-grid span { color: var(--text-muted); font-size: .72rem; font-weight: 760; text-transform: uppercase; letter-spacing: .05em; }
+.comparison-grid strong { font-size: 1.45rem; font-variant-numeric: tabular-nums; }
+.comparison-grid small { font-weight: 700; }
+.comparison-up { color: var(--warning); }
+.comparison-down { color: var(--accent-strong); }
+.comparison-same, .comparison-no-baseline { color: var(--text-muted); }
+.average-note { margin: 14px 0 0; color: var(--text-soft); font-size: .83rem; line-height: 1.6; }
+.dashboard-budget { display: grid; grid-template-columns: minmax(220px, 1fr) minmax(300px, 1.2fr) auto; align-items: center; gap: 24px; margin: 30px 0; }
+.dashboard-budget p { margin: 7px 0 0; color: var(--text-muted); }
+.budget-mini-stats { display: flex; gap: 10px; flex-wrap: wrap; }
+.budget-mini-stats span { display: grid; gap: 4px; padding: 10px 12px; border-radius: 14px; background: var(--surface-subtle); color: var(--text-muted); font-size: .72rem; }
+.budget-mini-stats strong { color: var(--text); font-size: .92rem; }
+.insight-grid { display: grid; grid-template-columns: repeat(5, minmax(180px, 1fr)); gap: 12px; overflow-x: auto; padding-bottom: 6px; }
+.insight-card { min-height: 190px; padding: 20px; border: 5px solid var(--bezel); border-radius: 22px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--border); }
+.insight-card > span { color: var(--text-muted); font-size: .65rem; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
+.insight-card h3 { margin-top: 24px; }
+.insight-card p { margin: 9px 0 0; color: var(--text-soft); font-size: .82rem; line-height: 1.55; }
+.insight-card.critical { box-shadow: inset 0 0 0 1px var(--danger-border); }
+.insight-card.warning { box-shadow: inset 0 0 0 1px var(--warning); }
+.insight-card.positive { box-shadow: inset 0 0 0 1px var(--accent-border); background: var(--accent-soft); }
 
 .chart-layout { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(320px, 0.8fr); gap: 20px; }
 .chart-layout .card { transition: transform var(--motion), box-shadow var(--motion); }
@@ -48,12 +74,13 @@ th:last-child, td:last-child { text-align: right; }
   .metrics { grid-template-columns: 1fr 1fr; }
   .metric-primary { grid-column: 1 / -1; }
   .chart-layout { grid-template-columns: 1fr; }
+  .dashboard-budget { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 620px) {
   .dashboard-header { min-height: auto; }
   .period-selectors { width: 100%; grid-template-columns: 1fr 1fr; }
-  .metrics, .rankings { grid-template-columns: 1fr; }
+  .metrics, .rankings, .comparison-grid { grid-template-columns: 1fr; }
   .metric-primary { grid-column: auto; }
   .metric-core, .metric-primary .metric-core { min-height: 154px; }
   .ranking-block { padding: 22px; }

@@ -1,6 +1,13 @@
 import { Injectable, inject } from '@angular/core';
-import { Expense, Settings } from '../../models/domain.models';
-import { CATEGORY_REPOSITORY, EXPENSE_REPOSITORY, SETTINGS_REPOSITORY } from '../repositories/repository.tokens';
+import { Expense, RecurrenceException, RecurrenceExceptionChanges, RecurrenceRule, Settings } from '../../models/domain.models';
+import { isDateString } from '../../shared/utils/date.utils';
+import { validateRecurrenceRule } from '../../shared/utils/recurrence.utils';
+import {
+  CATEGORY_REPOSITORY,
+  EXPENSE_REPOSITORY,
+  RECURRENCE_EXCEPTION_REPOSITORY,
+  SETTINGS_REPOSITORY,
+} from '../repositories/repository.tokens';
 
 export interface ExpenseInput {
   date: string;
@@ -8,13 +15,14 @@ export interface ExpenseInput {
   categoryId: string;
   subcategoryId?: string;
   description?: string;
-  fixed: boolean;
+  recurrence?: RecurrenceRule;
 }
 
 @Injectable({ providedIn: 'root' })
 export class ExpenseService {
   private readonly expenses = inject(EXPENSE_REPOSITORY);
   private readonly categories = inject(CATEGORY_REPOSITORY);
+  private readonly exceptions = inject(RECURRENCE_EXCEPTION_REPOSITORY);
   private readonly settings = inject(SETTINGS_REPOSITORY);
 
   async create(input: ExpenseInput): Promise<Expense> {
@@ -25,11 +33,11 @@ export class ExpenseService {
       date: input.date,
       amountCents: input.amountCents,
       categoryId: input.categoryId,
-      fixed: input.fixed,
       createdAt: now,
       updatedAt: now,
       ...(input.subcategoryId ? { subcategoryId: input.subcategoryId } : {}),
       ...(input.description?.trim() ? { description: input.description.trim() } : {}),
+      ...(input.recurrence ? { recurrence: input.recurrence } : {}),
     };
     await this.expenses.put(expense);
     await this.registerChange();
@@ -45,16 +53,59 @@ export class ExpenseService {
       date: input.date,
       amountCents: input.amountCents,
       categoryId: input.categoryId,
-      fixed: input.fixed,
       updatedAt: new Date().toISOString(),
       ...(input.subcategoryId ? { subcategoryId: input.subcategoryId } : {}),
       ...(input.description?.trim() ? { description: input.description.trim() } : {}),
+      ...(input.recurrence ? { recurrence: input.recurrence } : {}),
     };
     if (!input.subcategoryId) delete expense.subcategoryId;
     if (!input.description?.trim()) delete expense.description;
+    if (!input.recurrence) delete expense.recurrence;
     await this.expenses.put(expense);
     await this.registerChange();
     return expense;
+  }
+
+  async overrideOccurrence(seriesId: string, occurrenceDate: string, changes: RecurrenceExceptionChanges): Promise<void> {
+    const series = await this.expenses.getById(seriesId);
+    if (!series?.recurrence) throw new Error('A série de despesas já não existe.');
+    const input: ExpenseInput = {
+      date: changes.date ?? occurrenceDate,
+      amountCents: changes.amountCents ?? series.amountCents,
+      categoryId: changes.categoryId ?? series.categoryId,
+      ...(changes.subcategoryId ? { subcategoryId: changes.subcategoryId } : {}),
+      ...(changes.description ? { description: changes.description } : {}),
+    };
+    await this.validate(input);
+    const now = new Date().toISOString();
+    const exception: RecurrenceException = {
+      id: `expense:${seriesId}:${occurrenceDate}`,
+      seriesType: 'expense',
+      seriesId,
+      occurrenceDate,
+      action: 'override',
+      changes,
+      createdAt: now,
+      updatedAt: now,
+    };
+    await this.exceptions.put(exception);
+    await this.registerChange();
+  }
+
+  async skipOccurrence(seriesId: string, occurrenceDate: string): Promise<void> {
+    const series = await this.expenses.getById(seriesId);
+    if (!series?.recurrence) throw new Error('A série de despesas já não existe.');
+    const now = new Date().toISOString();
+    await this.exceptions.put({
+      id: `expense:${seriesId}:${occurrenceDate}`,
+      seriesType: 'expense',
+      seriesId,
+      occurrenceDate,
+      action: 'skip',
+      createdAt: now,
+      updatedAt: now,
+    });
+    await this.registerChange();
   }
 
   async delete(id: string): Promise<void> {
@@ -64,8 +115,11 @@ export class ExpenseService {
   }
 
   private async validate(input: ExpenseInput): Promise<void> {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(input.date)) throw new Error('Indique uma data válida.');
+    if (!isDateString(input.date)) throw new Error('Indique uma data válida.');
     if (!Number.isSafeInteger(input.amountCents) || input.amountCents <= 0) throw new Error('O valor tem de ser superior a zero.');
+    if (input.recurrence && (!validateRecurrenceRule(input.recurrence) || input.recurrence.startDate !== input.date)) {
+      throw new Error('A regra de recorrência não é válida.');
+    }
     const category = await this.categories.getById(input.categoryId);
     if (!category) throw new Error('A categoria selecionada não existe.');
     if (input.subcategoryId && !category.subcategories.some((item) => item.id === input.subcategoryId)) {

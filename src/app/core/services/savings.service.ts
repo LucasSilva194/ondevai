@@ -2,12 +2,20 @@ import { Injectable, inject } from '@angular/core';
 import {
   IncomeKind,
   MonthlyIncome,
+  RecurrenceException,
+  RecurrenceExceptionChanges,
+  RecurrenceRule,
   SavingsGoal,
   SavingsGoalKind,
+  SavingsTransaction,
+  SavingsTransactionType,
   Settings,
 } from '../../models/domain.models';
+import { isDateString, todayDateString } from '../../shared/utils/date.utils';
+import { validateRecurrenceRule } from '../../shared/utils/recurrence.utils';
 import {
   INCOME_REPOSITORY,
+  RECURRENCE_EXCEPTION_REPOSITORY,
   SAVINGS_GOAL_REPOSITORY,
   SETTINGS_REPOSITORY,
 } from '../repositories/repository.tokens';
@@ -16,9 +24,8 @@ export interface IncomeInput {
   name: string;
   kind: IncomeKind;
   amountCents: number;
-  receivedMonth: string;
-  fixed: boolean;
-  active: boolean;
+  date: string;
+  recurrence?: RecurrenceRule;
 }
 
 export interface SavingsGoalInput {
@@ -30,13 +37,22 @@ export interface SavingsGoalInput {
   targetDate?: string;
 }
 
+export interface SavingsTransactionInput {
+  type: Exclude<SavingsTransactionType, 'opening'> | SavingsTransactionType;
+  amountCents: number;
+  effectiveDate: string;
+  note?: string;
+}
+
 const incomeKinds = new Set<IncomeKind>(['salary', 'subsidy', 'freelance', 'other']);
 const goalKinds = new Set<SavingsGoalKind>(['general', 'reserve', 'home', 'car', 'travel', 'education', 'other']);
+const transactionKinds = new Set<SavingsTransactionType>(['opening', 'deposit', 'withdrawal']);
 
 @Injectable({ providedIn: 'root' })
 export class SavingsService {
   private readonly incomes = inject(INCOME_REPOSITORY);
   private readonly goals = inject(SAVINGS_GOAL_REPOSITORY);
+  private readonly exceptions = inject(RECURRENCE_EXCEPTION_REPOSITORY);
   private readonly settings = inject(SETTINGS_REPOSITORY);
 
   async createIncome(input: IncomeInput): Promise<MonthlyIncome> {
@@ -47,11 +63,10 @@ export class SavingsService {
       name: input.name.trim(),
       kind: input.kind,
       amountCents: input.amountCents,
-      receivedMonth: input.receivedMonth,
-      fixed: input.fixed,
-      active: input.active,
+      date: input.date,
       createdAt: now,
       updatedAt: now,
+      ...(input.recurrence ? { recurrence: input.recurrence } : {}),
     };
     await this.incomes.put(income);
     await this.registerChange();
@@ -67,14 +82,53 @@ export class SavingsService {
       name: input.name.trim(),
       kind: input.kind,
       amountCents: input.amountCents,
-      receivedMonth: input.receivedMonth,
-      fixed: input.fixed,
-      active: input.active,
+      date: input.date,
       updatedAt: new Date().toISOString(),
+      ...(input.recurrence ? { recurrence: input.recurrence } : {}),
     };
+    if (!input.recurrence) delete income.recurrence;
     await this.incomes.put(income);
     await this.registerChange();
     return income;
+  }
+
+  async overrideIncomeOccurrence(seriesId: string, occurrenceDate: string, changes: RecurrenceExceptionChanges): Promise<void> {
+    const series = await this.incomes.getById(seriesId);
+    if (!series?.recurrence) throw new Error('A série de rendimentos já não existe.');
+    this.validateIncome({
+      name: changes.name ?? series.name,
+      kind: changes.kind ?? series.kind,
+      amountCents: changes.amountCents ?? series.amountCents,
+      date: changes.date ?? occurrenceDate,
+    });
+    const now = new Date().toISOString();
+    const exception: RecurrenceException = {
+      id: `income:${seriesId}:${occurrenceDate}`,
+      seriesType: 'income',
+      seriesId,
+      occurrenceDate,
+      action: 'override',
+      changes,
+      createdAt: now,
+      updatedAt: now,
+    };
+    await this.exceptions.put(exception);
+    await this.registerChange();
+  }
+
+  async skipIncomeOccurrence(seriesId: string, occurrenceDate: string): Promise<void> {
+    if (!(await this.incomes.getById(seriesId))?.recurrence) throw new Error('A série de rendimentos já não existe.');
+    const now = new Date().toISOString();
+    await this.exceptions.put({
+      id: `income:${seriesId}:${occurrenceDate}`,
+      seriesType: 'income',
+      seriesId,
+      occurrenceDate,
+      action: 'skip',
+      createdAt: now,
+      updatedAt: now,
+    });
+    await this.registerChange();
   }
 
   async deleteIncome(id: string): Promise<void> {
@@ -97,7 +151,10 @@ export class SavingsService {
       updatedAt: now,
       ...(input.targetDate ? { targetDate: input.targetDate } : {}),
     };
-    await this.goals.put(goal);
+    const opening = input.currentAmountCents > 0
+      ? this.buildTransaction(goal.id, { type: 'opening', amountCents: input.currentAmountCents, effectiveDate: todayDateString(), note: 'Saldo inicial' }, now)
+      : undefined;
+    await this.goals.createGoal(goal, opening);
     await this.registerChange();
     return goal;
   }
@@ -106,6 +163,14 @@ export class SavingsService {
     this.validateGoal(input);
     const current = await this.goals.getById(id);
     if (!current) throw new Error('O objetivo que tentou editar já não existe.');
+    const now = new Date().toISOString();
+    const difference = input.currentAmountCents - current.currentAmountCents;
+    const adjustment = difference === 0 ? undefined : this.buildTransaction(id, {
+      type: difference > 0 ? 'deposit' : 'withdrawal',
+      amountCents: Math.abs(difference),
+      effectiveDate: todayDateString(),
+      note: 'Ajuste registado ao editar o objetivo',
+    }, now);
     const goal: SavingsGoal = {
       ...current,
       name: input.name.trim(),
@@ -113,25 +178,56 @@ export class SavingsService {
       targetAmountCents: input.targetAmountCents,
       currentAmountCents: input.currentAmountCents,
       monthlyContributionCents: input.monthlyContributionCents,
-      updatedAt: new Date().toISOString(),
+      updatedAt: now,
       ...(input.targetDate ? { targetDate: input.targetDate } : {}),
     };
     if (!input.targetDate) delete goal.targetDate;
-    await this.goals.put(goal);
+    await this.goals.updateGoal(goal, adjustment);
     await this.registerChange();
     return goal;
   }
 
-  async adjustGoal(id: string, deltaCents: number): Promise<SavingsGoal> {
-    if (!Number.isSafeInteger(deltaCents) || deltaCents === 0) throw new Error('Indique um valor válido.');
-    const current = await this.goals.getById(id);
-    if (!current) throw new Error('O objetivo já não existe.');
-    const nextAmount = current.currentAmountCents + deltaCents;
-    if (nextAmount < 0) throw new Error('Não pode retirar mais do que o valor atualmente poupado.');
-    const goal = { ...current, currentAmountCents: nextAmount, updatedAt: new Date().toISOString() };
-    await this.goals.put(goal);
+  async createTransaction(goalId: string, input: SavingsTransactionInput): Promise<SavingsTransaction> {
+    this.validateTransaction(input);
+    const now = new Date().toISOString();
+    const transaction = this.buildTransaction(goalId, input, now);
+    await this.goals.addTransaction(transaction);
     await this.registerChange();
-    return goal;
+    return transaction;
+  }
+
+  async updateTransaction(id: string, goalId: string, input: SavingsTransactionInput): Promise<SavingsTransaction> {
+    this.validateTransaction(input);
+    const current = (await this.goals.getTransactions()).find((item) => item.id === id);
+    if (!current) throw new Error('O movimento já não existe.');
+    const transaction: SavingsTransaction = {
+      ...current,
+      goalId,
+      type: input.type,
+      amountCents: input.amountCents,
+      effectiveDate: input.effectiveDate,
+      updatedAt: new Date().toISOString(),
+      ...(input.note?.trim() ? { note: input.note.trim() } : {}),
+    };
+    if (!input.note?.trim()) delete transaction.note;
+    await this.goals.updateTransaction(transaction);
+    await this.registerChange();
+    return transaction;
+  }
+
+  async deleteTransaction(id: string): Promise<void> {
+    await this.goals.deleteTransaction(id);
+    await this.registerChange();
+  }
+
+  async adjustGoal(id: string, deltaCents: number, effectiveDate = todayDateString(), note?: string): Promise<SavingsTransaction> {
+    if (!Number.isSafeInteger(deltaCents) || deltaCents === 0) throw new Error('Indique um valor válido.');
+    return this.createTransaction(id, {
+      type: deltaCents > 0 ? 'deposit' : 'withdrawal',
+      amountCents: Math.abs(deltaCents),
+      effectiveDate,
+      ...(note?.trim() ? { note: note.trim() } : {}),
+    });
   }
 
   async deleteGoal(id: string): Promise<void> {
@@ -144,7 +240,10 @@ export class SavingsService {
     if (!input.name.trim() || input.name.trim().length > 80) throw new Error('Indique um nome com até 80 caracteres.');
     if (!incomeKinds.has(input.kind)) throw new Error('Selecione um tipo de rendimento válido.');
     if (!Number.isSafeInteger(input.amountCents) || input.amountCents <= 0) throw new Error('O rendimento tem de ser superior a zero.');
-    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(input.receivedMonth)) throw new Error('Indique um mês de recebimento válido.');
+    if (!isDateString(input.date)) throw new Error('Indique uma data de recebimento válida.');
+    if (input.recurrence && (!validateRecurrenceRule(input.recurrence) || input.recurrence.startDate !== input.date)) {
+      throw new Error('A regra de recorrência não é válida.');
+    }
   }
 
   private validateGoal(input: SavingsGoalInput): void {
@@ -153,7 +252,27 @@ export class SavingsService {
     if (!Number.isSafeInteger(input.targetAmountCents) || input.targetAmountCents <= 0) throw new Error('O objetivo tem de ser superior a zero.');
     if (!Number.isSafeInteger(input.currentAmountCents) || input.currentAmountCents < 0) throw new Error('O valor já poupado não pode ser negativo.');
     if (!Number.isSafeInteger(input.monthlyContributionCents) || input.monthlyContributionCents < 0) throw new Error('O reforço mensal não pode ser negativo.');
-    if (input.targetDate && !/^\d{4}-\d{2}-\d{2}$/.test(input.targetDate)) throw new Error('Indique uma data objetivo válida.');
+    if (input.targetDate && !isDateString(input.targetDate)) throw new Error('Indique uma data objetivo válida.');
+  }
+
+  private validateTransaction(input: SavingsTransactionInput): void {
+    if (!transactionKinds.has(input.type)) throw new Error('Selecione um tipo de movimento válido.');
+    if (!Number.isSafeInteger(input.amountCents) || input.amountCents <= 0) throw new Error('O valor do movimento tem de ser superior a zero.');
+    if (!isDateString(input.effectiveDate)) throw new Error('Indique uma data efetiva válida.');
+    if ((input.note?.trim().length ?? 0) > 180) throw new Error('A nota não pode exceder 180 caracteres.');
+  }
+
+  private buildTransaction(goalId: string, input: SavingsTransactionInput, now: string): SavingsTransaction {
+    return {
+      id: crypto.randomUUID(),
+      goalId,
+      type: input.type,
+      amountCents: input.amountCents,
+      effectiveDate: input.effectiveDate,
+      createdAt: now,
+      updatedAt: now,
+      ...(input.note?.trim() ? { note: input.note.trim() } : {}),
+    };
   }
 
   private async registerChange(): Promise<void> {
