@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { RouterLink } from '@angular/router';
 import { AppStore } from '../../core/stores/app.store';
 import { ChartComponent } from '../../shared/components/chart/chart.component';
+import { IconComponent } from '../../shared/components/icon/icon.component';
 import { generateInsights } from '../../shared/utils/insights.utils';
 import { formatCurrency } from '../../shared/utils/money.utils';
 import {
@@ -22,33 +23,34 @@ import {
 
 @Component({
   selector: 'app-dashboard',
-  imports: [RouterLink, ChartComponent],
+  imports: [RouterLink, ChartComponent, IconComponent],
   template: `
     <div class="page">
       <header class="page-header dashboard-header">
-        <div><p class="eyebrow">Visão geral</p><h1>O seu dinheiro, explicado.</h1><p class="page-intro">Veja quanto entrou, quanto saiu e o saldo real de cada mês.</p></div>
+        <div class="dashboard-heading"><p class="eyebrow">Visão geral</p><h1><span class="desktop-heading">O seu dinheiro, explicado.</span><span class="mobile-heading">Visão geral</span></h1><p class="page-intro">Veja quanto entrou, quanto saiu e o saldo real de cada mês.</p></div>
         <div class="period-selectors" aria-label="Período do dashboard">
+          <span class="period-symbol" aria-hidden="true"><app-icon name="calendar" /></span>
           <div class="field"><label for="dashboard-month">Mês</label><select id="dashboard-month" [value]="selectedMonth()" (change)="setMonth($event)">@for (month of months; track $index) { <option [value]="$index + 1" [selected]="$index + 1 === selectedMonth()">{{ month }}</option> }</select></div>
           <div class="field"><label for="dashboard-year">Ano</label><select id="dashboard-year" [value]="selectedYear()" (change)="setYear($event)">@for (year of availableYears(); track year) { <option [value]="year" [selected]="year === selectedYear()">{{ year }}</option> }</select></div>
         </div>
       </header>
 
-      @if (isFuturePeriod()) { <p class="period-note" role="status">Período futuro: são mostrados apenas movimentos já planeados, sem comparações ou conclusões.</p> }
-      @else if (isPartialPeriod()) { <p class="period-note" role="status">Mês em curso: os valores e comparações são parciais até hoje.</p> }
+      @if (isFuturePeriod()) { <p class="period-note" role="status"><span class="desktop-note">Período futuro: são mostrados apenas movimentos já planeados, sem comparações ou conclusões.</span><span class="mobile-note">Período futuro · apenas movimentos planeados</span></p> }
+      @else if (isPartialPeriod()) { <p class="period-note" role="status"><span class="desktop-note">Mês em curso: os valores e comparações são parciais até hoje.</span><span class="mobile-note">Mês em curso · valores parciais</span></p> }
 
       <section class="metrics" aria-label="Resumo do período">
-        <article class="metric-primary" [class.negative]="monthBalance() < 0"><div class="metric-core"><span>Saldo em {{ monthName() }}</span><strong>{{ formatCurrency(monthBalance()) }}</strong><small>Rendimentos menos despesas</small></div></article>
-        <article class="metric"><div class="metric-core"><span>Rendimentos</span><strong>{{ formatCurrency(monthIncomeTotal()) }}</strong><small>{{ monthIncomes().length }} {{ monthIncomes().length === 1 ? 'rendimento' : 'rendimentos' }} no mês</small></div></article>
-        <article class="metric"><div class="metric-core"><span>Despesas</span><strong>{{ formatCurrency(monthExpenseTotal()) }}</strong><small>{{ monthExpenses().length }} {{ monthExpenses().length === 1 ? 'despesa' : 'despesas' }} no mês</small></div></article>
+        <article class="metric-primary" [class.negative]="monthBalance() < 0"><div class="metric-core"><div class="metric-label"><span class="metric-icon" aria-hidden="true"><app-icon name="balance" /></span><span>Saldo em {{ monthName() }}</span></div><strong>{{ formatCurrency(monthBalance()) }}</strong><small>Rendimentos menos despesas</small></div></article>
+        <article class="metric"><div class="metric-core"><div class="metric-label"><span class="metric-icon" aria-hidden="true"><app-icon name="income" /></span><span>Entradas</span></div><strong>{{ formatCurrency(monthIncomeTotal()) }}</strong><small>{{ monthIncomes().length }} {{ monthIncomes().length === 1 ? 'rendimento' : 'rendimentos' }}</small></div></article>
+        <article class="metric"><div class="metric-core"><div class="metric-label"><span class="metric-icon" aria-hidden="true"><app-icon name="expenses" /></span><span>Saídas</span></div><strong>{{ formatCurrency(monthExpenseTotal()) }}</strong><small>{{ monthExpenses().length }} {{ monthExpenses().length === 1 ? 'despesa' : 'despesas' }}</small></div></article>
       </section>
 
       @if (!isFuturePeriod()) {
         <section class="comparison-section" aria-labelledby="comparison-title">
           <div class="section-title-row"><div><h2 id="comparison-title">Comparação com o mês anterior</h2><p>{{ isPartialPeriod() ? 'Comparação parcial, com os dados disponíveis.' : 'Diferença absoluta e percentual.' }}</p></div></div>
           <div class="comparison-grid">
-            <article class="card-flat"><span>Despesas</span><strong>{{ signedCurrency(comparisons().expenses.differenceCents) }}</strong><small [class]="directionClass(comparisons().expenses)">{{ comparisonLabel(comparisons().expenses) }}</small></article>
-            <article class="card-flat"><span>Rendimentos</span><strong>{{ signedCurrency(comparisons().incomes.differenceCents) }}</strong><small [class]="directionClass(comparisons().incomes)">{{ comparisonLabel(comparisons().incomes) }}</small></article>
-            <article class="card-flat"><span>Saldo</span><strong>{{ signedCurrency(comparisons().balance.differenceCents) }}</strong><small [class]="directionClass(comparisons().balance)">{{ comparisonLabel(comparisons().balance) }}</small></article>
+            <article class="card-flat"><div class="comparison-label"><app-icon name="expenses" /><span>Despesas</span></div><strong>{{ signedCurrency(comparisons().expenses.differenceCents) }}</strong><small [class]="directionClass(comparisons().expenses)">{{ comparisonLabel(comparisons().expenses) }}</small></article>
+            <article class="card-flat"><div class="comparison-label"><app-icon name="income" /><span>Rendimentos</span></div><strong>{{ signedCurrency(comparisons().incomes.differenceCents) }}</strong><small [class]="directionClass(comparisons().incomes)">{{ comparisonLabel(comparisons().incomes) }}</small></article>
+            <article class="card-flat"><div class="comparison-label"><app-icon name="balance" /><span>Saldo</span></div><strong>{{ signedCurrency(comparisons().balance.differenceCents) }}</strong><small [class]="directionClass(comparisons().balance)">{{ comparisonLabel(comparisons().balance) }}</small></article>
           </div>
           @if (threeMonthAverage(); as average) {
             <p class="average-note">Média dos três meses anteriores: <strong>{{ formatCurrency(average.expensesCents) }}</strong> em despesas, <strong>{{ formatCurrency(average.incomesCents) }}</strong> em rendimentos e saldo médio de <strong>{{ formatCurrency(average.balanceCents) }}</strong>.</p>
@@ -59,7 +61,7 @@ import {
       <section class="dashboard-budget card card-padding" aria-labelledby="budget-title">
         <div><h2 id="budget-title">Orçamento do mês</h2>@if (budgetSummary().totalBudgetedCents > 0) { <p>{{ budgetSummary().usedPercentage }}% utilizado · {{ formatCurrency(budgetSummary().remainingCents) }} restantes</p> } @else { <p>Ainda não definiu limites para este mês.</p> }</div>
         <div class="budget-mini-stats"><span><strong>{{ formatCurrency(budgetSummary().totalBudgetedCents) }}</strong> planeados</span><span><strong>{{ budgetSummary().nearLimit.length }}</strong> perto do limite</span><span><strong>{{ budgetSummary().exceeded.length }}</strong> excedidos</span></div>
-        <a class="btn btn-secondary" routerLink="/orcamentos">Gerir orçamentos</a>
+        <a class="btn btn-secondary budget-link" routerLink="/orcamentos"><span>Gerir orçamentos</span><app-icon name="arrow-right" /></a>
       </section>
 
       @if (insights().length > 0 && !isFuturePeriod()) {
