@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { Category, Expense, Settings } from '../../models/domain.models';
 import { CATEGORY_REPOSITORY, SETTINGS_REPOSITORY } from '../repositories/repository.tokens';
+import { isPocketBaseId } from '../pocketbase/pocketbase.ids';
 import { CategoryService } from './category.service';
 
 describe('CategoryService', () => {
@@ -34,5 +35,18 @@ describe('CategoryService', () => {
     expect(categories[0].archived).toBe(true);
     expect(historicalExpense.categoryId).toBe(categories[0].id);
     expect(settings.changesSinceExport).toBe(1);
+  });
+
+  it('atribui IDs PocketBase às categorias sugeridas sem alterar IDs de subcategorias', async () => {
+    categories = [];
+
+    await service.useSuggestedCategories();
+
+    expect(categories.length).toBeGreaterThan(0);
+    expect(categories.every((category) => isPocketBaseId(category.id))).toBe(true);
+    expect(categories[0].subcategories[0].id).toBe('cat-habitacao-sub-1');
+    const firstIds = categories.map((category) => category.id);
+    await service.useSuggestedCategories();
+    expect(categories.map((category) => category.id)).toEqual(firstIds);
   });
 });

@@ -1,4 +1,13 @@
 export const POCKETBASE_ENDPOINTS = {
+  categories: {
+    bulkUpsert: '/api/ondevai/categories/bulk-upsert',
+  },
+  budgets: {
+    bulkUpsert: '/api/ondevai/budgets/bulk-upsert',
+  },
+  series: {
+    delete: '/api/ondevai/series/delete',
+  },
   savings: {
     createGoal: '/api/ondevai/savings/goals/create',
     updateGoal: '/api/ondevai/savings/goals/update',

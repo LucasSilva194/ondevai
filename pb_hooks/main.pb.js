@@ -5,3 +5,4 @@
 // mecanismo CommonJS incorporado no JSVM.
 require(`${__hooks}/validation/ownership.pb.js`)
 require(`${__hooks}/validation/user-cascade.pb.js`)
+require(`${__hooks}/routes/wave2.pb.js`)

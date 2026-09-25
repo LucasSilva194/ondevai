@@ -1,7 +1,15 @@
 import { TestBed } from '@angular/core/testing';
 import PocketBase, { ClientResponseError } from 'pocketbase';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { Expense, SavingsGoal, SavingsTransaction, Settings } from '../../models/domain.models';
+import {
+  Category,
+  Expense,
+  MonthlyBudget,
+  RecurrenceException,
+  SavingsGoal,
+  SavingsTransaction,
+  Settings,
+} from '../../models/domain.models';
 import { PocketBaseClientService } from '../pocketbase/pocketbase.client';
 import { POCKETBASE_ENDPOINTS, PocketBasePendingEndpointError } from '../pocketbase/pocketbase.endpoints';
 import { POCKETBASE_COLLECTIONS, PocketBaseRecordBase, SavingsGoalRecord, SettingsRecord } from '../pocketbase/pocketbase.types';
@@ -11,6 +19,7 @@ import {
   PocketBaseDataRepository,
   PocketBaseExpenseRepository,
   PocketBaseIncomeRepository,
+  PocketBaseRecurrenceExceptionRepository,
   PocketBaseSavingsGoalRepository,
   PocketBaseSettingsRepository,
 } from './pocketbase.repositories';
@@ -81,6 +90,7 @@ describe('PocketBase repositories', () => {
         PocketBaseCategoryRepository,
         PocketBaseIncomeRepository,
         PocketBaseSavingsGoalRepository,
+        PocketBaseRecurrenceExceptionRepository,
         PocketBaseBudgetRepository,
         PocketBaseSettingsRepository,
         PocketBaseDataRepository,
@@ -159,6 +169,69 @@ describe('PocketBase repositories', () => {
     expect(collections[POCKETBASE_COLLECTIONS.budgets].getFullList).toHaveBeenCalledWith(expect.objectContaining({ sort: '-month' }));
   });
 
+  it('usa endpoints atómicos para bulks de categorias e orçamentos', async () => {
+    const category: Category = {
+      id: categoryId,
+      name: 'Casa',
+      color: '#112233',
+      order: 0,
+      archived: false,
+      subcategories: [{ id: 'sub-local', name: 'Renda', archived: false }],
+    };
+    const budget: MonthlyBudget = {
+      id: 'b'.repeat(15),
+      month: '2026-09',
+      categoryId,
+      amountCents: 50000,
+      createdAt: '2026-09-25T10:00:00.000Z',
+      updatedAt: '2026-09-25T10:00:00.000Z',
+    };
+    client.send
+      .mockResolvedValueOnce([{
+        ...baseRecord(categoryId, POCKETBASE_COLLECTIONS.categories),
+        name: category.name,
+        color: category.color,
+        icon: '',
+        order: 0,
+        archived: false,
+        subcategories: category.subcategories,
+      }])
+      .mockResolvedValueOnce([{
+        ...baseRecord(budget.id, POCKETBASE_COLLECTIONS.budgets),
+        month: budget.month,
+        category: categoryId,
+        amountCents: budget.amountCents,
+      }]);
+
+    await TestBed.inject(PocketBaseCategoryRepository).bulkPut([category]);
+    await TestBed.inject(PocketBaseBudgetRepository).bulkPut([budget]);
+
+    expect(client.send).toHaveBeenNthCalledWith(1, POCKETBASE_ENDPOINTS.categories.bulkUpsert, {
+      method: 'POST',
+      body: { owner, categories: [expect.objectContaining({ id: categoryId, owner, subcategories: category.subcategories })] },
+    });
+    expect(client.send).toHaveBeenNthCalledWith(2, POCKETBASE_ENDPOINTS.budgets.bulkUpsert, {
+      method: 'POST',
+      body: { owner, budgets: [expect.objectContaining({ id: budget.id, owner, category: categoryId })] },
+    });
+    expect(collections[POCKETBASE_COLLECTIONS.categories].create).not.toHaveBeenCalled();
+    expect(collections[POCKETBASE_COLLECTIONS.budgets].create).not.toHaveBeenCalled();
+  });
+
+  it('elimina séries e respetivas exceções apenas através do endpoint atómico', async () => {
+    await TestBed.inject(PocketBaseExpenseRepository).delete(expenseId);
+    await TestBed.inject(PocketBaseIncomeRepository).delete('i'.repeat(15));
+
+    expect(client.send).toHaveBeenNthCalledWith(1, POCKETBASE_ENDPOINTS.series.delete, {
+      method: 'POST', body: { seriesType: 'expense', seriesId: expenseId },
+    });
+    expect(client.send).toHaveBeenNthCalledWith(2, POCKETBASE_ENDPOINTS.series.delete, {
+      method: 'POST', body: { seriesType: 'income', seriesId: 'i'.repeat(15) },
+    });
+    expect(collections[POCKETBASE_COLLECTIONS.expenses].delete).not.toHaveBeenCalled();
+    expect(collections[POCKETBASE_COLLECTIONS.incomes].delete).not.toHaveBeenCalled();
+  });
+
   it('devolve settings inexistentes e mapeia settings existentes', async () => {
     const records = collections[POCKETBASE_COLLECTIONS.settings];
     const repository = TestBed.inject(PocketBaseSettingsRepository);
@@ -189,6 +262,45 @@ describe('PocketBase repositories', () => {
       onboardingCompleted: true,
       lastExportAt: '',
     }));
+  });
+
+  it('faz upsert de exceções pela chave semântica e só cria após 404', async () => {
+    const records = collections[POCKETBASE_COLLECTIONS.recurrenceExceptions];
+    const repository = TestBed.inject(PocketBaseRecurrenceExceptionRepository);
+    const exception: RecurrenceException = {
+      id: 'x'.repeat(15),
+      seriesType: 'expense',
+      seriesId: expenseId,
+      occurrenceDate: '2026-10-25',
+      action: 'skip',
+      createdAt: '2026-09-25T10:00:00.000Z',
+      updatedAt: '2026-09-25T10:00:00.000Z',
+    };
+
+    records.getFirstListItem.mockResolvedValueOnce({ id: 'z'.repeat(15) }).mockRejectedValueOnce(notFound());
+    await repository.put(exception);
+    await repository.put({ ...exception, id: 'y'.repeat(15), action: 'override', changes: { amountCents: 1500 } });
+
+    expect(records.update).toHaveBeenCalledWith('z'.repeat(15), expect.objectContaining({ action: 'skip', changes: null }));
+    expect(records.create).toHaveBeenCalledWith(expect.objectContaining({ id: 'y'.repeat(15), action: 'override' }));
+    expect(client.filter).toHaveBeenCalledWith(expect.stringContaining('occurrenceDate'), {
+      owner,
+      seriesType: 'expense',
+      seriesId: expenseId,
+      occurrenceDate: '2026-10-25',
+    });
+  });
+
+  it('não transforma falhas de pesquisa de exceções diferentes de 404 em create', async () => {
+    const records = collections[POCKETBASE_COLLECTIONS.recurrenceExceptions];
+    records.getFirstListItem.mockRejectedValueOnce(new ClientResponseError({ status: 403, response: {} }));
+    const exception: RecurrenceException = {
+      id: 'x'.repeat(15), seriesType: 'expense', seriesId: expenseId, occurrenceDate: '2026-10-25', action: 'skip',
+      createdAt: '2026-09-25T10:00:00.000Z', updatedAt: '2026-09-25T10:00:00.000Z',
+    };
+
+    await expect(TestBed.inject(PocketBaseRecurrenceExceptionRepository).put(exception)).rejects.toMatchObject({ code: 'authorization' });
+    expect(records.create).not.toHaveBeenCalled();
   });
 
   it('encaminha goal+ledger para os endpoints financeiros futuros sem read-modify-write', async () => {

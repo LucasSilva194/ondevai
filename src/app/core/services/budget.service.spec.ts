@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { Category, MonthlyBudget, Settings } from '../../models/domain.models';
 import { BUDGET_REPOSITORY, CATEGORY_REPOSITORY, SETTINGS_REPOSITORY } from '../repositories/repository.tokens';
 import { BudgetService } from './budget.service';
+import { isPocketBaseId } from '../pocketbase/pocketbase.ids';
 
 describe('BudgetService', () => {
   let service: BudgetService;
@@ -23,6 +24,7 @@ describe('BudgetService', () => {
 
   it('faz CRUD e garante um orçamento por mês e categoria', async () => {
     const created = await service.save({ month: '2026-01', categoryId: 'food', amountCents: 10000 });
+    expect(isPocketBaseId(created.id)).toBe(true);
     const updated = await service.save({ month: '2026-01', categoryId: 'food', amountCents: 12000 }, created.id);
     expect(updated.amountCents).toBe(12000);
     await expect(service.save({ month: '2026-01', categoryId: 'food', amountCents: 5000 })).rejects.toThrow(/Já existe/);
@@ -34,6 +36,7 @@ describe('BudgetService', () => {
     await service.save({ month: '2025-12', categoryId: 'food', amountCents: 10000 });
     expect(await service.copyPreviousMonth('2026-01')).toBe(1);
     expect(budgets.find((item) => item.month === '2026-01')).toMatchObject({ categoryId: 'food', amountCents: 10000 });
+    expect(isPocketBaseId(budgets.find((item) => item.month === '2026-01')?.id ?? '')).toBe(true);
     expect(await service.copyPreviousMonth('2026-01')).toBe(0);
   });
 });

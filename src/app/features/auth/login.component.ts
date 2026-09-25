@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
+import { UserSessionService } from '../../core/auth/user-session.service';
 import { AuthPageComponent } from './auth-page.component';
 
 @Component({
@@ -37,6 +38,7 @@ import { AuthPageComponent } from './auth-page.component';
       </form>
 
       @if (auth.error()) { <p class="form-message error" role="alert">{{ auth.error() }}</p> }
+      @if (session.error()) { <p class="form-message error" role="alert">{{ session.error() }}</p> }
       @if (auth.loading()) { <p class="helper" role="status">A validar os seus dados.</p> }
 
       <nav class="auth-links" aria-label="Outras opções de autenticação">
@@ -50,6 +52,7 @@ import { AuthPageComponent } from './auth-page.component';
 })
 export class LoginComponent {
   readonly auth = inject(AuthService);
+  readonly session = inject(UserSessionService);
   private readonly formBuilder = inject(FormBuilder);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
@@ -77,14 +80,18 @@ export class LoginComponent {
 
     const { email, password } = this.form.getRawValue();
     try {
-      await this.auth.login(email, password);
-      if (!this.auth.user()?.verified) {
+      const destination = await this.session.login(email, password);
+      if (destination === 'verification-required') {
         await this.router.navigate(['/confirmar-email']);
+        return;
+      }
+      if (destination === 'migration') {
+        await this.router.navigate(['/migrar-dados']);
         return;
       }
       await this.router.navigateByUrl(this.safeReturnUrl());
     } catch {
-      // AuthService exposes the translated error to the template.
+      // AuthService/UserSessionService expose the translated error to the template.
     }
   }
 

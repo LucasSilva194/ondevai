@@ -215,25 +215,35 @@ status="$(api_request POST '/api/collections/categories/records' \
   "${token_a}" "${response}")"
 expect_status 400 "${status}" 'cor não hexadecimal é rejeitada'
 
-goal_a="$(create_record savings_goals \
-  "$(jq -cn --arg owner "${user_a}" '{owner:$owner,name:"Objetivo A",kind:"general",targetAmountCents:10000,currentAmountCents:0,monthlyContributionCents:0}')" \
-  "${token_a}" 'criação do objetivo A')"
-goal_b="$(create_record savings_goals \
-  "$(jq -cn --arg owner "${user_b}" '{owner:$owner,name:"Objetivo B",kind:"general",targetAmountCents:10000,currentAmountCents:0,monthlyContributionCents:0}')" \
-  "${token_b}" 'criação do objetivo B')"
+goal_a_id='goala0000000000'
+status="$(api_request POST '/api/ondevai/savings/goals/create' \
+  "$(jq -cn --arg owner "${user_a}" --arg id "${goal_a_id}" '{owner:$owner,goal:{id:$id,owner:$owner,name:"Objetivo A",kind:"general",targetAmountCents:10000,currentAmountCents:0,monthlyContributionCents:0}}')" \
+  "${token_a}" "${response}")"
+expect_status 200 "${status}" 'criação transacional do objetivo A'
+goal_a="$(json_value "${response}" '.id')"
 
-transaction_a="$(create_record savings_transactions \
-  "$(jq -cn --arg owner "${user_a}" --arg goal "${goal_a}" '{owner:$owner,goal:$goal,type:"deposit",amountCents:100,effectiveDate:"2026-09-25"}')" \
-  "${token_a}" 'criação do movimento A')"
+goal_b_id='goalb0000000000'
+status="$(api_request POST '/api/ondevai/savings/goals/create' \
+  "$(jq -cn --arg owner "${user_b}" --arg id "${goal_b_id}" '{owner:$owner,goal:{id:$id,owner:$owner,name:"Objetivo B",kind:"general",targetAmountCents:10000,currentAmountCents:0,monthlyContributionCents:0}}')" \
+  "${token_b}" "${response}")"
+expect_status 200 "${status}" 'criação transacional do objetivo B'
+goal_b="$(json_value "${response}" '.id')"
+
+transaction_a_id='transa000000000'
+status="$(api_request POST '/api/ondevai/savings/transactions/create' \
+  "$(jq -cn --arg owner "${user_a}" --arg id "${transaction_a_id}" --arg goal "${goal_a}" '{owner:$owner,transaction:{id:$id,owner:$owner,goal:$goal,type:"deposit",amountCents:100,effectiveDate:"2026-09-25"}}')" \
+  "${token_a}" "${response}")"
+expect_status 200 "${status}" 'criação transacional do movimento A'
+transaction_a="${transaction_a_id}"
 
 status="$(api_request POST '/api/collections/savings_transactions/records' \
   "$(jq -cn --arg owner "${user_a}" --arg goal "${goal_b}" '{owner:$owner,goal:$goal,type:"deposit",amountCents:100,effectiveDate:"2026-09-25"}')" \
   "${token_a}" "${response}")"
-expect_status 400 "${status}" 'objetivo de outro owner é rejeitado'
+expect_status 403 "${status}" 'Records API de movimentos está bloqueada'
 
 status="$(api_request PATCH "/api/collections/savings_transactions/records/${transaction_a}" \
   "$(jq -cn --arg goal "${goal_b}" '{goal:$goal}')" "${token_a}" "${response}")"
-expect_status 400 "${status}" 'update para objetivo de outro owner é rejeitado'
+expect_status 403 "${status}" 'update direto de movimentos está bloqueado'
 
 income_b="$(create_record monthly_incomes \
   "$(jq -cn --arg owner "${user_b}" '{owner:$owner,name:"Rendimento B",kind:"salary",amountCents:100000,date:"2026-09-25"}')" \
@@ -296,6 +306,15 @@ printf 'y\n' | "${PB_BIN}" migrate down 1 \
   --migrationsDir "${PROJECT_DIR}/pb_migrations" \
   --hooksDir "${HOOKS_DIR}"
 
+restored_savings_rule="$(sqlite3 "${DATA_DIR}/data.db" \
+  "SELECT createRule FROM _collections WHERE name = 'savings_goals';")"
+[[ "${restored_savings_rule}" == *'@request.body.owner = @request.auth.id'* ]] || fail 'rollback da Onda 2 não repôs a rule de savings_goals'
+
+printf 'y\n' | "${PB_BIN}" migrate down 1 \
+  --dir "${DATA_DIR}" \
+  --migrationsDir "${PROJECT_DIR}/pb_migrations" \
+  --hooksDir "${HOOKS_DIR}"
+
 remaining="$(sqlite3 "${DATA_DIR}/data.db" \
   "SELECT count(*) FROM _collections WHERE name IN ('users','user_settings','categories','expenses','monthly_incomes','savings_goals','savings_transactions','monthly_budgets','recurrence_exceptions');")"
 [[ "${remaining}" == '1' ]] || fail 'migrate down não removeu as oito coleções privadas da Onda 1'
@@ -304,4 +323,4 @@ restored_users_rule="$(sqlite3 "${DATA_DIR}/data.db" \
   "SELECT deleteRule FROM _collections WHERE name = 'users';")"
 [[ "${restored_users_rule}" == 'id = @request.auth.id' ]] || fail 'migrate down não repôs a rule original de users'
 
-printf 'OK: migrate up e migrate down validados.\n'
+printf 'OK: migrate up e rollback das Ondas 2 e 1 validados.\n'

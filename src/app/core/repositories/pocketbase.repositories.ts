@@ -33,7 +33,13 @@ import {
   settingsFromRecord,
   settingsToRecordData,
 } from '../pocketbase/pocketbase.mappers';
-import { POCKETBASE_COLLECTIONS, SavingsGoalRecord, SettingsRecord } from '../pocketbase/pocketbase.types';
+import {
+  BudgetRecord,
+  CategoryRecord,
+  POCKETBASE_COLLECTIONS,
+  SavingsGoalRecord,
+  SettingsRecord,
+} from '../pocketbase/pocketbase.types';
 import {
   BudgetRepository,
   CategoryRepository,
@@ -101,7 +107,7 @@ abstract class PocketBaseRepositoryBase {
     // request before every write. A concurrent delete/create can still race; the
     // server remains authoritative and any resulting conflict is surfaced.
     assertPocketBaseId(id);
-    await withPocketBaseErrors(async () => {
+    return withPocketBaseErrors(async () => {
       let exists = true;
       try {
         await this.client.collection(collection).getOne(id, { fields: 'id' });
@@ -117,7 +123,7 @@ abstract class PocketBaseRepositoryBase {
 
   protected async deleteRecord(collection: string, id: string): Promise<void> {
     this.requireOwner();
-    await withPocketBaseErrors(async () => {
+    return withPocketBaseErrors(async () => {
       await this.client.collection(collection).delete(id);
     });
   }
@@ -145,7 +151,18 @@ export class PocketBaseExpenseRepository extends PocketBaseRepositoryBase implem
   }
 
   delete(id: string): Promise<void> {
-    return this.deleteRecord(POCKETBASE_COLLECTIONS.expenses, id);
+    return this.deleteSeries('expense', id);
+  }
+
+  private async deleteSeries(seriesType: 'expense', seriesId: string): Promise<void> {
+    this.requireOwner();
+    assertPocketBaseId(seriesId);
+    await withPocketBaseErrors(async () => {
+      await this.client.send<unknown>(POCKETBASE_ENDPOINTS.series.delete, {
+        method: 'POST',
+        body: { seriesType, seriesId },
+      });
+    });
   }
 }
 
@@ -166,7 +183,22 @@ export class PocketBaseCategoryRepository extends PocketBaseRepositoryBase imple
   }
 
   async bulkPut(categories: Category[]): Promise<void> {
-    for (const category of categories) await this.put(category);
+    const owner = this.requireOwner();
+    for (const category of categories) assertPocketBaseId(category.id);
+    await withPocketBaseErrors(async () => {
+      const records = await this.client.send<CategoryRecord[]>(POCKETBASE_ENDPOINTS.categories.bulkUpsert, {
+        method: 'POST',
+        body: {
+          owner,
+          categories: categories.map((category) => ({
+            id: category.id,
+            ...categoryToRecordData(category, owner),
+            icon: category.icon ?? null,
+          })),
+        },
+      });
+      records.map(categoryFromRecord);
+    });
   }
 }
 
@@ -187,7 +219,18 @@ export class PocketBaseIncomeRepository extends PocketBaseRepositoryBase impleme
   }
 
   delete(id: string): Promise<void> {
-    return this.deleteRecord(POCKETBASE_COLLECTIONS.incomes, id);
+    return this.deleteSeries('income', id);
+  }
+
+  private async deleteSeries(seriesType: 'income', seriesId: string): Promise<void> {
+    this.requireOwner();
+    assertPocketBaseId(seriesId);
+    await withPocketBaseErrors(async () => {
+      await this.client.send<unknown>(POCKETBASE_ENDPOINTS.series.delete, {
+        method: 'POST',
+        body: { seriesType, seriesId },
+      });
+    });
   }
 }
 
@@ -205,12 +248,12 @@ export class PocketBaseSavingsGoalRepository extends PocketBaseRepositoryBase im
     return this.list(POCKETBASE_COLLECTIONS.savingsTransactions, '-effectiveDate', savingsTransactionFromRecord);
   }
 
-  async createGoal(goal: SavingsGoal, opening?: SavingsTransaction): Promise<void> {
+  async createGoal(goal: SavingsGoal, opening?: SavingsTransaction): Promise<SavingsGoal> {
     const owner = this.requireOwner();
     assertPocketBaseId(goal.id);
     if (opening) assertPocketBaseId(opening.id);
-    await withPocketBaseErrors(async () => {
-      await this.client.send<unknown>(POCKETBASE_ENDPOINTS.savings.createGoal, {
+    return withPocketBaseErrors(async () => {
+      const record = await this.client.send<SavingsGoalRecord>(POCKETBASE_ENDPOINTS.savings.createGoal, {
         method: 'POST',
         body: {
           owner,
@@ -218,15 +261,16 @@ export class PocketBaseSavingsGoalRepository extends PocketBaseRepositoryBase im
           ...(opening ? { opening: { id: opening.id, ...savingsTransactionToRecordData(opening, owner) } } : {}),
         },
       });
+      return savingsGoalFromRecord(record);
     });
   }
 
-  async updateGoal(goal: SavingsGoal, adjustment?: SavingsTransaction): Promise<void> {
+  async updateGoal(goal: SavingsGoal, adjustment?: SavingsTransaction): Promise<SavingsGoal> {
     const owner = this.requireOwner();
     assertPocketBaseId(goal.id);
     if (adjustment) assertPocketBaseId(adjustment.id);
-    await withPocketBaseErrors(async () => {
-      await this.client.send<unknown>(POCKETBASE_ENDPOINTS.savings.updateGoal, {
+    return withPocketBaseErrors(async () => {
+      const record = await this.client.send<SavingsGoalRecord>(POCKETBASE_ENDPOINTS.savings.updateGoal, {
         method: 'POST',
         body: {
           owner,
@@ -234,6 +278,7 @@ export class PocketBaseSavingsGoalRepository extends PocketBaseRepositoryBase im
           ...(adjustment ? { adjustment: { id: adjustment.id, ...savingsTransactionToRecordData(adjustment, owner) } } : {}),
         },
       });
+      return savingsGoalFromRecord(record);
     });
   }
 
@@ -310,7 +355,21 @@ export class PocketBaseBudgetRepository extends PocketBaseRepositoryBase impleme
   }
 
   async bulkPut(budgets: MonthlyBudget[]): Promise<void> {
-    for (const budget of budgets) await this.put(budget);
+    const owner = this.requireOwner();
+    for (const budget of budgets) assertPocketBaseId(budget.id);
+    await withPocketBaseErrors(async () => {
+      const records = await this.client.send<BudgetRecord[]>(POCKETBASE_ENDPOINTS.budgets.bulkUpsert, {
+        method: 'POST',
+        body: {
+          owner,
+          budgets: budgets.map((budget) => ({
+            id: budget.id,
+            ...budgetToRecordData(budget, owner),
+          })),
+        },
+      });
+      records.map(budgetFromRecord);
+    });
   }
 
   delete(id: string): Promise<void> {
@@ -326,12 +385,28 @@ export class PocketBaseRecurrenceExceptionRepository extends PocketBaseRepositor
 
   async put(exception: RecurrenceException): Promise<void> {
     const owner = this.requireOwner();
-    await this.upsert(
-      POCKETBASE_COLLECTIONS.recurrenceExceptions,
-      exception.id,
-      recurrenceExceptionToRecordData(exception, owner),
-      { ...recurrenceExceptionToRecordData(exception, owner), changes: exception.changes ?? null },
-    );
+    assertPocketBaseId(exception.id);
+    await withPocketBaseErrors(async () => {
+      const collection = this.client.collection(POCKETBASE_COLLECTIONS.recurrenceExceptions);
+      const data = recurrenceExceptionToRecordData(exception, owner);
+      const uniqueFilter = this.client.filter(
+        'owner = {:owner} && seriesType = {:seriesType} && seriesId = {:seriesId} && occurrenceDate = {:occurrenceDate}',
+        {
+          owner,
+          seriesType: exception.seriesType,
+          seriesId: exception.seriesId,
+          occurrenceDate: exception.occurrenceDate,
+        },
+      );
+
+      try {
+        const existing = await collection.getFirstListItem(uniqueFilter, { fields: 'id' });
+        await collection.update(existing.id, { ...data, changes: exception.changes ?? null });
+      } catch (error: unknown) {
+        if (!isPocketBaseNotFound(error)) throw error;
+        await collection.create({ id: exception.id, ...data });
+      }
+    });
   }
 
   delete(id: string): Promise<void> {

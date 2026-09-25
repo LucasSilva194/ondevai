@@ -36,8 +36,8 @@ export interface SavingsGoalRepository {
   getAll(): Promise<SavingsGoal[]>;
   getById(id: string): Promise<SavingsGoal | undefined>;
   getTransactions(): Promise<SavingsTransaction[]>;
-  createGoal(goal: SavingsGoal, opening?: SavingsTransaction): Promise<void>;
-  updateGoal(goal: SavingsGoal, adjustment?: SavingsTransaction): Promise<void>;
+  createGoal(goal: SavingsGoal, opening?: SavingsTransaction): Promise<SavingsGoal>;
+  updateGoal(goal: SavingsGoal, adjustment?: SavingsTransaction): Promise<SavingsGoal>;
   addTransaction(transaction: SavingsTransaction): Promise<SavingsGoal>;
   updateTransaction(transaction: SavingsTransaction): Promise<SavingsGoal>;
   deleteTransaction(id: string): Promise<SavingsGoal>;
