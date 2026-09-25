@@ -39,7 +39,11 @@ export class UserSessionService {
 
     try {
       const local = await this.migration.detectLocalData();
-      if (local.totalRecords > 0 && this.remoteAccountIsEmpty()) return 'migration';
+      if (
+        local.totalRecords > 0
+        && this.migration.getMigrationStatus().status !== 'completed'
+        && this.remoteAccountIsEmpty()
+      ) return 'migration';
     } catch {
       // Uma falha ao inspecionar o IndexedDB legado não invalida a sessão cloud.
     }

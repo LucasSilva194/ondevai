@@ -1,7 +1,8 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { LocalDataMigrationService } from '../../core/migration/local-data-migration.service';
+import { AppStore } from '../../core/stores/app.store';
 import { formatDate } from '../../shared/utils/date.utils';
 
 @Component({
@@ -87,16 +88,19 @@ import { formatDate } from '../../shared/utils/date.utils';
 
             @if (migration.status() === 'failed') {
               <div class="error-card" role="alert" aria-live="assertive">
-                <h2>{{ migration.state().failureKind === 'endpoint-unavailable' ? 'Importação ainda indisponível' : 'Não foi possível concluir' }}</h2>
+                <h2>
+                  @if (migration.state().failureKind === 'endpoint-unavailable') { Importação ainda indisponível }
+                  @else if (migration.state().failureKind === 'account-not-empty') { A conta já tem dados }
+                  @else { Não foi possível concluir }
+                </h2>
                 <p>{{ migration.error() }}</p>
                 <p class="error-assurance">Os dados locais não foram alterados.</p>
               </div>
             }
 
-            <div class="pending-note">
-              <strong>Nota desta versão</strong>
-              <p>O serviço remoto de importação ainda pode estar indisponível. Se isso acontecer, pode voltar a tentar mais tarde.</p>
-            </div>
+            @if (postImportError()) {
+              <div class="error-card" role="alert"><h2>Os dados foram copiados</h2><p>{{ postImportError() }}</p></div>
+            }
 
             <div class="actions">
               <button
@@ -125,8 +129,10 @@ import { formatDate } from '../../shared/utils/date.utils';
 export class LocalDataMigrationComponent implements OnInit {
   readonly migration = inject(LocalDataMigrationService);
   private readonly auth = inject(AuthService);
+  private readonly store = inject(AppStore);
   private readonly router = inject(Router);
   readonly formatDate = formatDate;
+  readonly postImportError = signal<string | null>(null);
 
   ngOnInit(): void {
     void this.migration.detectLocalData().catch(() => undefined);
@@ -135,16 +141,27 @@ export class LocalDataMigrationComponent implements OnInit {
   async startMigration(): Promise<void> {
     const user = this.auth.user();
     if (!user) return;
+    this.postImportError.set(null);
     try {
       const snapshot = await this.migration.createLocalSnapshot();
       const attempt = await this.migration.createMigrationAttempt(user.id, snapshot);
       await this.migration.uploadMigration(snapshot, attempt);
+      await this.store.loadAuthenticatedUser();
+      if (!this.store.dataReady()) {
+        this.postImportError.set('Não foi possível atualizar a vista da conta. Os dados locais continuam intactos; volte a entrar para carregar a cópia cloud.');
+        return;
+      }
+      await this.navigateAfterMigration();
     } catch {
       // The service exposes a translated, recoverable error to the live region.
     }
   }
 
   async continueWithoutImport(): Promise<void> {
-    await this.router.navigate(['/visao-geral']);
+    await this.navigateAfterMigration();
+  }
+
+  private async navigateAfterMigration(): Promise<void> {
+    await this.router.navigate([this.store.settings().onboardingCompleted ? '/visao-geral' : '/onboarding']);
   }
 }

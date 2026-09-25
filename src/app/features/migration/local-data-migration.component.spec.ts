@@ -8,6 +8,7 @@ import {
   LocalDataMigrationState,
   LocalDataSummary,
 } from '../../core/migration/local-data-migration.service';
+import { AppStore } from '../../core/stores/app.store';
 import { LocalDataMigrationComponent } from './local-data-migration.component';
 
 describe('LocalDataMigrationComponent', () => {
@@ -33,6 +34,9 @@ describe('LocalDataMigrationComponent', () => {
   const createMigrationAttempt = vi.fn();
   const uploadMigration = vi.fn();
   const navigate = vi.fn().mockResolvedValue(true);
+  const loadAuthenticatedUser = vi.fn().mockResolvedValue(undefined);
+  const dataReady = signal(true);
+  const settings = signal({ onboardingCompleted: true });
   let fixture: ComponentFixture<LocalDataMigrationComponent>;
 
   beforeEach(async () => {
@@ -42,6 +46,9 @@ describe('LocalDataMigrationComponent', () => {
     createMigrationAttempt.mockReset();
     uploadMigration.mockReset();
     navigate.mockClear();
+    loadAuthenticatedUser.mockClear();
+    dataReady.set(true);
+    settings.set({ onboardingCompleted: true });
     await TestBed.configureTestingModule({
       imports: [LocalDataMigrationComponent],
       providers: [
@@ -59,6 +66,7 @@ describe('LocalDataMigrationComponent', () => {
           },
         },
         { provide: AuthService, useValue: { user: () => ({ id: 'user-a', email: 'user@example.com', verified: true }) } },
+        { provide: AppStore, useValue: { loadAuthenticatedUser, dataReady: dataReady.asReadonly(), settings: settings.asReadonly() } },
         { provide: Router, useValue: { navigate } },
       ],
     }).compileComponents();
@@ -90,6 +98,21 @@ describe('LocalDataMigrationComponent', () => {
     expect(uploadMigration).toHaveBeenCalledWith(snapshot, attempt);
     expect(createLocalSnapshot.mock.invocationCallOrder[0]).toBeLessThan(createMigrationAttempt.mock.invocationCallOrder[0]);
     expect(createMigrationAttempt.mock.invocationCallOrder[0]).toBeLessThan(uploadMigration.mock.invocationCallOrder[0]);
+    expect(loadAuthenticatedUser).toHaveBeenCalledOnce();
+    expect(navigate).toHaveBeenCalledWith(['/visao-geral']);
+  });
+
+  it('depois da migração recarrega a conta e encaminha para onboarding quando ainda não foi concluído', async () => {
+    settings.set({ onboardingCompleted: false });
+    createLocalSnapshot.mockResolvedValue({ schemaVersion: 4 });
+    createMigrationAttempt.mockResolvedValue({ idempotencyKey: 'key' });
+    uploadMigration.mockResolvedValue({ status: 'already_imported' });
+
+    await fixture.componentInstance.startMigration();
+
+    expect(loadAuthenticatedUser).toHaveBeenCalledOnce();
+    expect(dataReady()).toBe(true);
+    expect(navigate).toHaveBeenCalledWith(['/onboarding']);
   });
 
   it('permite continuar sem importar sem limpar metadata nem IndexedDB', async () => {

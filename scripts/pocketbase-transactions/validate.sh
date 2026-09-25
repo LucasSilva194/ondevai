@@ -409,6 +409,17 @@ kill "${SERVER_PID}"
 wait "${SERVER_PID}" || true
 SERVER_PID=""
 
+# Retirar primeiro a migration operacional da Onda 3; o rollback verificado
+# abaixo pertence à migration da Onda 2 que bloqueia escritas financeiras.
+printf 'y\n' | "${PB_BIN}" migrate down 1 \
+  --dir "${DATA_DIR}" \
+  --migrationsDir "${PROJECT_DIR}/pb_migrations" \
+  --hooksDir "${HOOKS_DIR}"
+
+wave3_remaining="$(sqlite3 "${DATA_DIR}/data.db" \
+  "SELECT count(*) FROM _collections WHERE name = 'data_imports';")"
+[[ "${wave3_remaining}" == '0' ]] || fail 'rollback da Onda 3 nao removeu data_imports'
+
 printf 'y\n' | "${PB_BIN}" migrate down 1 \
   --dir "${DATA_DIR}" \
   --migrationsDir "${PROJECT_DIR}/pb_migrations" \

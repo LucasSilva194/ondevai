@@ -196,6 +196,7 @@ describe('LocalDataMigrationService', () => {
     expect(send).toHaveBeenCalledWith('/api/ondevai/data/replace-all', {
       method: 'POST',
       body: {
+        mode: 'migrate-empty',
         idempotencyKey: attempt.idempotencyKey,
         snapshotHash: attempt.snapshotHash,
         backup: snapshot,
@@ -207,6 +208,19 @@ describe('LocalDataMigrationService', () => {
     expect(metadata?.value).toMatchObject({ version: 1, attempt, result: { status } });
     expect(metadata?.value).not.toHaveProperty('backup');
     expect(metadata?.value).not.toHaveProperty('token');
+  });
+
+  it('explica o conflito quando migrate-empty encontra dados na conta e preserva o Dexie', async () => {
+    await seedFullDatabase(database);
+    const snapshot = await service.createLocalSnapshot();
+    const attempt = await service.createMigrationAttempt('user-a', snapshot);
+    send.mockRejectedValueOnce({ status: 409 });
+
+    await expect(service.uploadMigration(snapshot, attempt)).rejects.toEqual({ status: 409 });
+
+    expect(service.state().failureKind).toBe('account-not-empty');
+    expect(service.error()).toContain('nunca substitui dados cloud');
+    expect(await database.expenses.count()).toBe(2);
   });
 
   it.each([1, 2, 3, 4])('lê dados provenientes do schema Dexie v%i após o upgrade normal para v4', async (version) => {

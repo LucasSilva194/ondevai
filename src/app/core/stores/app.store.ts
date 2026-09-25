@@ -406,14 +406,14 @@ export class AppStore {
     await this.execute(async () => {
       await this.backupService.importValidated(backup);
       return this.loadSnapshot();
-    }, (snapshot) => this.applySnapshot(snapshot));
+    }, (snapshot) => this.applyBulkSnapshot(snapshot));
   }
 
   async clearAll(): Promise<void> {
     await this.execute(async () => {
       await this.backupService.clearAll();
       return this.loadSnapshot();
-    }, (snapshot) => this.applySnapshot(snapshot));
+    }, (snapshot) => this.applyBulkSnapshot(snapshot));
   }
 
   clearError(): void {
@@ -520,6 +520,13 @@ export class AppStore {
     this._monthlyBudgets.set(sortBudgets(snapshot.monthlyBudgets));
     this._recurrenceExceptions.set(snapshot.recurrenceExceptions);
     this._settings.set(snapshot.settings);
+  }
+
+  private applyBulkSnapshot(snapshot: AppSnapshot): void {
+    this.applySnapshot(snapshot);
+    this._dataReady.set(true);
+    this._lastSyncedAt.set(new Date().toISOString());
+    this._connectionError.set(null);
   }
 
   private async updateCategory(action: () => Promise<Category>): Promise<void> {

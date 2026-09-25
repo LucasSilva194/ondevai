@@ -15,5 +15,7 @@ describe('appRoutes authentication integration', () => {
     expect(appRoutes.find((route) => route.path === 'migrar-dados')?.canActivate).toEqual([authGuard, verifiedGuard]);
     expect(appRoutes.find((route) => route.path === 'onboarding')?.canActivate).toEqual([authGuard, verifiedGuard]);
     expect(appRoutes.find((route) => route.path === '')?.canActivate).toEqual([authGuard, verifiedGuard]);
+    const privateChildren = appRoutes.find((route) => route.path === '')?.children;
+    expect(privateChildren?.find((route) => route.path === 'conta')?.canActivate).toEqual([authGuard, verifiedGuard]);
   });
 });

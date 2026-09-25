@@ -1,5 +1,6 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { BackupValidationResult, validateBackup } from '../backup/backup-validation';
+import { calculateBackupFingerprint, createBackupAttemptKey } from '../backup/backup-fingerprint';
 import { OndeVaiDatabase, SettingsRecord } from '../database/ondevai.database';
 import { POCKETBASE_ENDPOINTS } from '../pocketbase/pocketbase.endpoints';
 import { PocketBaseClientService } from '../pocketbase/pocketbase.client';
@@ -28,6 +29,7 @@ export type LocalDataMigrationStatus =
 export type LocalDataMigrationFailureKind =
   | 'endpoint-unavailable'
   | 'network'
+  | 'account-not-empty'
   | 'validation'
   | 'authentication'
   | 'unexpected';
@@ -142,7 +144,7 @@ export class LocalDataMigrationService {
         && metadata.attempt.userId === this.pocketBase.authStore.record?.id
       ) {
         const current = validateBackup(createSnapshot(collections, new Date().toISOString()));
-        completed = current.valid && await hashSnapshot(current.backup) === metadata.attempt.snapshotHash;
+        completed = current.valid && await calculateBackupFingerprint(current.backup) === metadata.attempt.snapshotHash;
       }
       this.stateState.set({
         status: summary.totalRecords === 0 ? 'none' : completed ? 'completed' : 'available',
@@ -195,12 +197,12 @@ export class LocalDataMigrationService {
       throw new LocalDataValidationError(validation.errors);
     }
 
-    const snapshotHash = await hashSnapshot(validation.backup);
+    const snapshotHash = await calculateBackupFingerprint(validation.backup);
     const stored = await this.readMetadata();
     const attempt = stored?.attempt.userId === normalizedUserId && stored.attempt.snapshotHash === snapshotHash
       ? stored.attempt
       : {
-          idempotencyKey: createIdempotencyKey(),
+          idempotencyKey: createBackupAttemptKey(),
           snapshotHash,
           userId: normalizedUserId,
           createdAt: new Date().toISOString(),
@@ -222,7 +224,7 @@ export class LocalDataMigrationService {
       this.fail(validation.errors.join(' '), 'validation');
       throw new LocalDataValidationError(validation.errors);
     }
-    const currentHash = await hashSnapshot(validation.backup);
+    const currentHash = await calculateBackupFingerprint(validation.backup);
     if (currentHash !== attempt.snapshotHash) {
       const message = 'Os dados locais mudaram depois da preparação. Prepare uma nova tentativa antes de continuar.';
       this.fail(message, 'validation');
@@ -241,6 +243,7 @@ export class LocalDataMigrationService {
       const response = await this.pocketBase.send<unknown>(POCKETBASE_ENDPOINTS.data.replaceAll, {
         method: 'POST',
         body: {
+          mode: 'migrate-empty',
           idempotencyKey: attempt.idempotencyKey,
           snapshotHash: attempt.snapshotHash,
           backup: validation.backup,
@@ -257,6 +260,10 @@ export class LocalDataMigrationService {
       }
       if (isErrorStatus(error, 0)) {
         this.fail('Não foi possível contactar o servidor. Verifique a ligação e tente novamente.', 'network');
+      } else if (isErrorStatus(error, 409)) {
+        this.fail('A conta já contém dados financeiros. A migração local só pode ser feita para uma conta vazia e nunca substitui dados cloud.', 'account-not-empty');
+      } else if (isErrorStatus(error, 400) || isErrorStatus(error, 413)) {
+        this.fail('O servidor não aceitou os dados preparados. Confirme o ficheiro e os limites da importação.', 'validation');
       } else {
         this.fail('Não foi possível copiar os dados para a conta. Tente novamente.', 'unexpected');
       }
@@ -421,37 +428,6 @@ function sortBy<T>(values: readonly T[], key: (value: T) => string): T[] {
 
 function padNumber(value: number): string {
   return String(value).padStart(12, '0');
-}
-
-async function hashSnapshot(snapshot: AppBackup): Promise<string> {
-  const cryptoApi = globalThis.crypto;
-  if (!cryptoApi?.subtle) throw new Error('Web Crypto não está disponível neste browser.');
-  const normalized = { ...snapshot, exportedAt: '' };
-  const bytes = new TextEncoder().encode(stableStringify(normalized));
-  const digest = await cryptoApi.subtle.digest('SHA-256', bytes);
-  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
-}
-
-function stableStringify(value: unknown): string {
-  if (Array.isArray(value)) return `[${value.map(stableStringify).join(',')}]`;
-  if (value && typeof value === 'object') {
-    const entries = Object.entries(value as Record<string, unknown>)
-      .filter(([, item]) => item !== undefined)
-      .sort(([left], [right]) => left.localeCompare(right, 'en'));
-    return `{${entries.map(([key, item]) => `${JSON.stringify(key)}:${stableStringify(item)}`).join(',')}}`;
-  }
-  return JSON.stringify(value);
-}
-
-function createIdempotencyKey(): string {
-  const cryptoApi = globalThis.crypto;
-  if (!cryptoApi) throw new Error('Web Crypto não está disponível neste browser.');
-  if (typeof cryptoApi.randomUUID === 'function') return cryptoApi.randomUUID();
-  const bytes = cryptoApi.getRandomValues(new Uint8Array(16));
-  bytes[6] = (bytes[6] & 0x0f) | 0x40;
-  bytes[8] = (bytes[8] & 0x3f) | 0x80;
-  const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
-  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 
 function parseUploadResponse(value: unknown): MigrationUploadResponse {

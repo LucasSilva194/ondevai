@@ -110,6 +110,7 @@ describe('AppStore incremental e realtime', () => {
   let expenseService: Record<string, ReturnType<typeof vi.fn>>;
   let savingsService: Record<string, ReturnType<typeof vi.fn>>;
   let store: AppStore;
+  let backupService: { exportToFile: ReturnType<typeof vi.fn>; parse: ReturnType<typeof vi.fn>; importValidated: ReturnType<typeof vi.fn>; clearAll: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
     authUser = signal<AuthUser | null>(userOne);
@@ -170,7 +171,7 @@ describe('AppStore incremental e realtime', () => {
       getOrCreate: vi.fn(async () => settings),
       setOnboardingCompleted: vi.fn(async (completed: boolean) => ({ ...settings, onboardingCompleted: completed })),
     };
-    const backupService = {
+    backupService = {
       exportToFile: vi.fn(), parse: vi.fn(), importValidated: vi.fn(), clearAll: vi.fn(),
     };
 
@@ -372,6 +373,29 @@ describe('AppStore incremental e realtime', () => {
     expect(incomeRepository.getAll).not.toHaveBeenCalled();
     expect(budgetRepository.getAll).not.toHaveBeenCalled();
     expect(exceptionRepository.getAll).not.toHaveBeenCalled();
+  });
+
+  it('recarrega um snapshot completo após importação e clear-all sem reiniciar realtime', async () => {
+    await store.loadAuthenticatedUser();
+    const starts = realtime.start.mock.calls.length;
+    expenses = [expense('expense12345678', 3200)];
+
+    await store.importBackup({} as never);
+
+    expect(backupService.importValidated).toHaveBeenCalledOnce();
+    expect(store.expenses()).toEqual(expenses);
+    expect(store.dataReady()).toBe(true);
+    expect(store.lastSyncedAt()).not.toBeNull();
+    expect(realtime.start).toHaveBeenCalledTimes(starts);
+
+    expenses = [];
+    settings = { ...DEFAULT_SETTINGS };
+    await store.clearAll();
+
+    expect(backupService.clearAll).toHaveBeenCalledOnce();
+    expect(store.expenses()).toEqual([]);
+    expect(store.settings().onboardingCompleted).toBe(false);
+    expect(realtime.start).toHaveBeenCalledTimes(starts);
   });
 
   function clearRepositoryCalls(): void {

@@ -92,6 +92,12 @@ export const appRoutes: Routes = [
         title: 'Dados e privacidade | OndeVai',
         loadComponent: () => import('./features/data-management/data-management.component').then((module) => module.DataManagementComponent),
       },
+      {
+        path: 'conta',
+        canActivate: [authGuard, verifiedGuard],
+        title: 'Conta | OndeVai',
+        loadComponent: () => import('./features/account/account.component').then((module) => module.AccountComponent),
+      },
     ],
   },
   { path: '**', redirectTo: '' },

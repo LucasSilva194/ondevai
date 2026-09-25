@@ -301,6 +301,18 @@ kill "${SERVER_PID}"
 wait "${SERVER_PID}" || true
 SERVER_PID=""
 
+# A stack atual inclui a migration da Onda 3. Retirá-la primeiro mantém este
+# validador focado nos rollbacks das Ondas 2 e 1 e evita atribuir o primeiro
+# `down` à migration errada.
+printf 'y\n' | "${PB_BIN}" migrate down 1 \
+  --dir "${DATA_DIR}" \
+  --migrationsDir "${PROJECT_DIR}/pb_migrations" \
+  --hooksDir "${HOOKS_DIR}"
+
+wave3_remaining="$(sqlite3 "${DATA_DIR}/data.db" \
+  "SELECT count(*) FROM _collections WHERE name = 'data_imports';")"
+[[ "${wave3_remaining}" == '0' ]] || fail 'rollback da Onda 3 não removeu data_imports'
+
 printf 'y\n' | "${PB_BIN}" migrate down 1 \
   --dir "${DATA_DIR}" \
   --migrationsDir "${PROJECT_DIR}/pb_migrations" \
@@ -323,4 +335,4 @@ restored_users_rule="$(sqlite3 "${DATA_DIR}/data.db" \
   "SELECT deleteRule FROM _collections WHERE name = 'users';")"
 [[ "${restored_users_rule}" == 'id = @request.auth.id' ]] || fail 'migrate down não repôs a rule original de users'
 
-printf 'OK: migrate up e rollback das Ondas 2 e 1 validados.\n'
+printf 'OK: migrate up e rollback das Ondas 3, 2 e 1 validados.\n'

@@ -15,7 +15,7 @@ describe('UserSessionService', () => {
   let calls: string[];
   let auth: { initialize: ReturnType<typeof vi.fn>; login: ReturnType<typeof vi.fn>; logout: ReturnType<typeof vi.fn>; user: typeof user };
   let store: Record<string, unknown>;
-  let migration: { detectLocalData: ReturnType<typeof vi.fn> };
+  let migration: { detectLocalData: ReturnType<typeof vi.fn>; getMigrationStatus: ReturnType<typeof vi.fn> };
   let router: { navigate: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
@@ -44,7 +44,10 @@ describe('UserSessionService', () => {
       monthlyBudgets: empty,
       recurrenceExceptions: empty,
     };
-    migration = { detectLocalData: vi.fn().mockResolvedValue({ totalRecords: 0 }) };
+    migration = {
+      detectLocalData: vi.fn().mockResolvedValue({ totalRecords: 0 }),
+      getMigrationStatus: vi.fn().mockReturnValue({ status: 'none' }),
+    };
     router = { navigate: vi.fn(async () => { calls.push('router.navigate'); return true; }) };
 
     TestBed.configureTestingModule({ providers: [
@@ -87,6 +90,15 @@ describe('UserSessionService', () => {
 
     await expect(TestBed.inject(UserSessionService).login('user@example.com', 'password')).rejects.toThrow('Servidor indisponível');
     expect(migration.detectLocalData).not.toHaveBeenCalled();
+  });
+
+  it('não volta a apresentar uma migração já concluída, mesmo que a cloud fique vazia', async () => {
+    user.set({ id: 'u'.repeat(15), email: 'user@example.com', verified: true });
+    dataReady.set(true);
+    migration.detectLocalData.mockResolvedValue({ totalRecords: 2 });
+    migration.getMigrationStatus.mockReturnValue({ status: 'completed' });
+
+    await expect(TestBed.inject(UserSessionService).login('user@example.com', 'password')).resolves.toBe('application');
   });
 
   it('no logout limpa dados e subscrições antes do auth store e da navegação', async () => {

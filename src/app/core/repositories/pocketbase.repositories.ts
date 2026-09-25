@@ -11,8 +11,10 @@ import {
   SavingsTransaction,
   Settings,
 } from '../../models/domain.models';
+import { calculateBackupFingerprint, createBackupAttemptKey } from '../backup/backup-fingerprint';
+import { validateBackup } from '../backup/backup-validation';
 import { PocketBaseClientService } from '../pocketbase/pocketbase.client';
-import { POCKETBASE_ENDPOINTS, PocketBasePendingEndpointError } from '../pocketbase/pocketbase.endpoints';
+import { POCKETBASE_ENDPOINTS } from '../pocketbase/pocketbase.endpoints';
 import { PocketBaseRepositoryError, isPocketBaseNotFound, withPocketBaseErrors } from '../pocketbase/pocketbase.errors';
 import { assertPocketBaseId } from '../pocketbase/pocketbase.ids';
 import {
@@ -450,12 +452,61 @@ export class PocketBaseSettingsRepository extends PocketBaseRepositoryBase imple
 export class PocketBaseDataRepository extends PocketBaseRepositoryBase implements DataRepository {
   async replaceAll(backup: AppBackup): Promise<void> {
     this.requireOwner();
-    void backup;
-    throw new PocketBasePendingEndpointError('replaceAll', POCKETBASE_ENDPOINTS.data.replaceAll);
+    const validation = validateBackup(backup);
+    if (!validation.valid) {
+      throw new PocketBaseRepositoryError('validation', validation.errors.join(' '));
+    }
+
+    const snapshotHash = await calculateBackupFingerprint(validation.backup);
+    const idempotencyKey = createBackupAttemptKey();
+    await withPocketBaseErrors(async () => {
+      const response = await this.client.send<unknown>(POCKETBASE_ENDPOINTS.data.replaceAll, {
+        method: 'POST',
+        body: {
+          mode: 'replace',
+          idempotencyKey,
+          snapshotHash,
+          backup: validation.backup,
+        },
+      });
+      assertImportResponse(response);
+    });
   }
 
   async clearAll(): Promise<void> {
     this.requireOwner();
-    throw new PocketBasePendingEndpointError('clearAll', POCKETBASE_ENDPOINTS.data.clearAll);
+    await withPocketBaseErrors(async () => {
+      await this.client.send<unknown>(POCKETBASE_ENDPOINTS.data.clearAll, {
+        method: 'POST',
+      });
+    });
   }
+}
+
+const IMPORT_COUNT_KEYS = [
+  'categories',
+  'expenses',
+  'monthlyIncomes',
+  'savingsGoals',
+  'savingsTransactions',
+  'monthlyBudgets',
+  'recurrenceExceptions',
+] as const;
+
+function assertImportResponse(value: unknown): void {
+  if (!isObject(value)
+    || (value['status'] !== 'imported' && value['status'] !== 'already_imported')
+    || !isObject(value['counts'])) {
+    throw new PocketBaseRepositoryError('remote', 'O servidor devolveu uma resposta de importação inválida.');
+  }
+  for (const key of IMPORT_COUNT_KEYS) {
+    const count = value['counts'][key];
+    if (!Number.isSafeInteger(count) || (count as number) < 0) {
+      throw new PocketBaseRepositoryError('remote', 'O servidor devolveu contagens de importação inválidas.');
+    }
+  }
+}
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }

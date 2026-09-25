@@ -17,6 +17,8 @@ type AuthOperation =
   | 'login'
   | 'register'
   | 'refresh'
+  | 'request-email-change'
+  | 'change-password'
   | 'request-verification'
   | 'confirm-verification'
   | 'request-password-reset'
@@ -87,6 +89,31 @@ export class AuthService {
 
   async refreshSession(): Promise<void> {
     await this.run('refresh', () => this.validateCurrentSession());
+  }
+
+  async requestEmailChange(email: string): Promise<void> {
+    const normalizedEmail = normalizeEmail(email);
+    if (!normalizedEmail) throw new Error('Indique o novo endereço de email.');
+    await this.run('request-email-change', async () => {
+      if (!this.user()) throw new SessionExpiredError('A sua sessão expirou. Inicie sessão novamente.');
+      await this.pocketBase.collection('users').requestEmailChange(normalizedEmail);
+    });
+  }
+
+  async changePassword(oldPassword: string, password: string, passwordConfirm: string): Promise<void> {
+    await this.run('change-password', async () => {
+      const user = this.user();
+      if (!user) throw new SessionExpiredError('A sua sessão expirou. Inicie sessão novamente.');
+      await this.pocketBase.collection('users').update<AuthUserRecord>(user.id, {
+        oldPassword,
+        password,
+        passwordConfirm,
+      });
+      // Alterar a palavra-passe invalida tokens anteriores. Uma nova autenticação
+      // mantém esta sessão ativa sem conservar qualquer credencial no cliente.
+      await this.pocketBase.collection('users').authWithPassword<AuthUserRecord>(user.email, password);
+      this.syncUser(this.pocketBase.authStore.record);
+    });
   }
 
   async requestVerification(): Promise<void> {
@@ -231,6 +258,12 @@ function authErrorMessage(error: unknown, operation: AuthOperation): string {
   }
   if (operation === 'register' && (error.status === 400 || error.status === 409)) {
     return 'Não foi possível criar a conta. Confirme os dados ou utilize outro email.';
+  }
+  if (operation === 'request-email-change' && (error.status === 400 || error.status === 409)) {
+    return 'Não foi possível pedir a alteração de email. Confirme o endereço indicado.';
+  }
+  if (operation === 'change-password' && (error.status === 400 || error.status === 401)) {
+    return 'Não foi possível alterar a palavra-passe. Confirme a palavra-passe atual e os novos dados.';
   }
   if (operation === 'refresh' && isInvalidSessionError(error)) {
     return 'A sua sessão expirou. Inicie sessão novamente.';

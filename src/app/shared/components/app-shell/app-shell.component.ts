@@ -1,5 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { AuthService } from '../../../core/auth/auth.service';
+import { UserSessionService } from '../../../core/auth/user-session.service';
 import { AppStore } from '../../../core/stores/app.store';
 import { PwaService } from '../../../core/services/pwa.service';
 import { IconComponent } from '../icon/icon.component';
@@ -23,7 +25,15 @@ import { IconComponent } from '../icon/icon.component';
         <a class="btn btn-primary add-expense" routerLink="/despesas" [queryParams]="{ nova: 1 }">
           <span>Nova despesa</span><span class="action-symbol" aria-hidden="true">+</span>
         </a>
-        <p class="local-note">Guardado localmente neste dispositivo</p>
+        <div class="account-panel">
+          <a routerLink="/conta" class="account-email">{{ auth.user()?.email }}</a>
+          <p class="sync-state" role="status">
+            @if (store.syncing()) { A sincronizar… }
+            @else if (store.lastSyncedAt()) { Sincronizado {{ lastSyncLabel() }} }
+            @else { Dados guardados na sua conta }
+          </p>
+          <button class="text-button logout-button" type="button" (click)="logout()">Terminar sessão</button>
+        </div>
       </aside>
 
       <div class="app-content">
@@ -51,6 +61,14 @@ import { IconComponent } from '../icon/icon.component';
               <span><strong>Dados e privacidade</strong><small>Backup, importação e armazenamento</small></span>
               <app-icon class="mobile-menu-arrow" name="arrow-right" />
             </a>
+            <a routerLink="/conta" routerLinkActive="active" (click)="mobileMenuOpen.set(false)">
+              <span class="mobile-menu-icon account-glyph" aria-hidden="true">@</span>
+              <span><strong>Conta</strong><small>{{ auth.user()?.email }}</small></span>
+              <app-icon class="mobile-menu-arrow" name="arrow-right" />
+            </a>
+            <button class="mobile-logout" type="button" (click)="logout()">
+              <span>Terminar sessão</span>
+            </button>
           </nav>
         }
 
@@ -59,7 +77,7 @@ import { IconComponent } from '../icon/icon.component';
             <span class="backup-symbol" aria-hidden="true"><app-icon name="backup" /></span>
             <div class="backup-copy">
               <strong><span class="desktop-backup-copy">Proteja os seus dados com uma cópia de segurança.</span><span class="mobile-backup-copy">Backup pendente</span></strong>
-              <p>O ficheiro JSON permite recuperar a informação se perder os dados deste browser.</p>
+              <p>O ficheiro JSON permite recuperar a informação da sua conta.</p>
             </div>
             <div class="button-row">
               <button class="btn btn-secondary backup-export" type="button" (click)="exportNow()" [disabled]="store.operationPending()" aria-label="Exportar cópia de segurança">
@@ -77,8 +95,14 @@ import { IconComponent } from '../icon/icon.component';
           </div>
         }
 
+        @if (store.connectionError()) {
+          <div class="connection-error" role="alert">
+            <span>{{ store.connectionError() }} Os dados já carregados continuam visíveis.</span>
+          </div>
+        }
+
         @if (pwa.offline()) {
-          <div class="offline-banner" role="status">Está offline. O OndeVai continua disponível e guarda os dados neste dispositivo.</div>
+          <div class="offline-banner" role="status">Está sem ligação. Os dados já apresentados podem continuar visíveis, mas não é possível garantir informação atualizada nem guardar alterações. Tentaremos restabelecer a ligação.</div>
         }
         @if (pwa.updateReady()) {
           <div class="update-banner" role="status"><span>Está disponível uma nova versão do OndeVai.</span><button class="btn btn-secondary btn-compact" type="button" (click)="applyUpdate()">Atualizar agora</button></div>
@@ -107,6 +131,8 @@ import { IconComponent } from '../icon/icon.component';
 export class AppShellComponent {
   readonly store = inject(AppStore);
   readonly pwa = inject(PwaService);
+  readonly auth = inject(AuthService);
+  private readonly session = inject(UserSessionService);
   readonly backupDismissed = signal(false);
   readonly mobileMenuOpen = signal(false);
   readonly navigation = [
@@ -116,7 +142,19 @@ export class AppShellComponent {
     { path: '/poupancas', label: 'Poupanças', shortLabel: 'Poupar', icon: 'savings', primary: true },
     { path: '/categorias', label: 'Categorias', shortLabel: 'Categorias', icon: 'categories', primary: true },
     { path: '/dados-e-privacidade', label: 'Dados e privacidade', shortLabel: 'Dados', icon: 'data', primary: false },
+    { path: '/conta', label: 'Conta', shortLabel: 'Conta', icon: 'data', primary: false },
   ] as const;
+
+  async logout(): Promise<void> {
+    this.mobileMenuOpen.set(false);
+    await this.session.logout();
+  }
+
+  lastSyncLabel(): string {
+    const value = this.store.lastSyncedAt();
+    if (!value) return '';
+    return new Intl.DateTimeFormat('pt-PT', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(value));
+  }
 
   async exportNow(): Promise<void> {
     try {

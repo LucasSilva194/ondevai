@@ -20,6 +20,9 @@ export const POCKETBASE_ENDPOINTS = {
     replaceAll: '/api/ondevai/data/replace-all',
     clearAll: '/api/ondevai/data/clear-all',
   },
+  account: {
+    delete: '/api/ondevai/account/delete',
+  },
 } as const;
 
 export class PocketBasePendingEndpointError extends Error {

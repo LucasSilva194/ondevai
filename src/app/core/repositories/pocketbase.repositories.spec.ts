@@ -11,7 +11,7 @@ import {
   Settings,
 } from '../../models/domain.models';
 import { PocketBaseClientService } from '../pocketbase/pocketbase.client';
-import { POCKETBASE_ENDPOINTS, PocketBasePendingEndpointError } from '../pocketbase/pocketbase.endpoints';
+import { POCKETBASE_ENDPOINTS } from '../pocketbase/pocketbase.endpoints';
 import { POCKETBASE_COLLECTIONS, PocketBaseRecordBase, SavingsGoalRecord, SettingsRecord } from '../pocketbase/pocketbase.types';
 import {
   PocketBaseBudgetRepository,
@@ -359,10 +359,52 @@ describe('PocketBase repositories', () => {
     expect(collections[POCKETBASE_COLLECTIONS.savingsGoals].update).not.toHaveBeenCalled();
   });
 
-  it('recusa replaceAll e clearAll enquanto não houver endpoints transacionais', async () => {
+  it('usa apenas os endpoints transacionais para replaceAll e clearAll', async () => {
     const repository = TestBed.inject(PocketBaseDataRepository);
-    await expect(repository.replaceAll({} as never)).rejects.toBeInstanceOf(PocketBasePendingEndpointError);
-    await expect(repository.clearAll()).rejects.toBeInstanceOf(PocketBasePendingEndpointError);
+    const backup = {
+      schemaVersion: 4 as const,
+      exportedAt: '2026-09-25T10:00:00.000Z',
+      settings: { currency: 'EUR' as const, locale: 'pt-PT' as const, onboardingCompleted: true, changesSinceExport: 0 },
+      categories: [], expenses: [], monthlyIncomes: [], savingsGoals: [], savingsTransactions: [],
+      monthlyBudgets: [], recurrenceExceptions: [],
+    };
+    client.send.mockResolvedValueOnce({
+      status: 'imported',
+      counts: {
+        categories: 0, expenses: 0, monthlyIncomes: 0, savingsGoals: 0,
+        savingsTransactions: 0, monthlyBudgets: 0, recurrenceExceptions: 0,
+      },
+    }).mockResolvedValueOnce(undefined);
+
+    await repository.replaceAll(backup);
+    await repository.clearAll();
+
+    expect(client.send).toHaveBeenNthCalledWith(1, POCKETBASE_ENDPOINTS.data.replaceAll, {
+      method: 'POST',
+      body: expect.objectContaining({
+        mode: 'replace',
+        idempotencyKey: expect.any(String),
+        snapshotHash: expect.stringMatching(/^[a-f0-9]{64}$/),
+        backup: expect.objectContaining({ schemaVersion: 4 }),
+      }),
+    });
+    expect(client.send).toHaveBeenNthCalledWith(2, POCKETBASE_ENDPOINTS.data.clearAll, { method: 'POST' });
+    expect(collections[POCKETBASE_COLLECTIONS.expenses].delete).not.toHaveBeenCalled();
+  });
+
+  it('rejeita backup inválido antes da rede e resposta remota inválida', async () => {
+    const repository = TestBed.inject(PocketBaseDataRepository);
+    await expect(repository.replaceAll({} as never)).rejects.toMatchObject({ code: 'validation' });
     expect(client.send).not.toHaveBeenCalled();
+
+    client.send.mockResolvedValueOnce({ status: 'imported', counts: {} });
+    const backup = {
+      schemaVersion: 4 as const,
+      exportedAt: '2026-09-25T10:00:00.000Z',
+      settings: { currency: 'EUR' as const, locale: 'pt-PT' as const, onboardingCompleted: false, changesSinceExport: 0 },
+      categories: [], expenses: [], monthlyIncomes: [], savingsGoals: [], savingsTransactions: [],
+      monthlyBudgets: [], recurrenceExceptions: [],
+    };
+    await expect(repository.replaceAll(backup)).rejects.toMatchObject({ code: 'remote' });
   });
 });

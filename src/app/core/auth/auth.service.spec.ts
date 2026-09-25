@@ -64,6 +64,8 @@ describe('AuthService', () => {
     authWithPassword: ReturnType<typeof vi.fn>;
     authRefresh: ReturnType<typeof vi.fn>;
     requestVerification: ReturnType<typeof vi.fn>;
+    requestEmailChange: ReturnType<typeof vi.fn>;
+    update: ReturnType<typeof vi.fn>;
     confirmVerification: ReturnType<typeof vi.fn>;
     requestPasswordReset: ReturnType<typeof vi.fn>;
     confirmPasswordReset: ReturnType<typeof vi.fn>;
@@ -81,6 +83,8 @@ describe('AuthService', () => {
       }),
       authRefresh: vi.fn().mockResolvedValue({ token: 'refreshed-token', record: userRecord() }),
       requestVerification: vi.fn().mockResolvedValue(true),
+      requestEmailChange: vi.fn().mockResolvedValue(true),
+      update: vi.fn().mockResolvedValue(userRecord()),
       confirmVerification: vi.fn().mockResolvedValue(true),
       requestPasswordReset: vi.fn().mockResolvedValue(true),
       confirmPasswordReset: vi.fn().mockResolvedValue(true),
@@ -194,6 +198,32 @@ describe('AuthService', () => {
     expect(authStore.clearCalls).toBe(1);
     expect(service.authenticated()).toBe(false);
     expect(service.user()).toBeNull();
+  });
+
+  it('pede a alteração de email pela API oficial sem alterar o record diretamente', async () => {
+    authStore.save('valid-token', userRecord());
+    const service = TestBed.inject(AuthService);
+
+    await service.requestEmailChange(' Novo@Example.com ');
+
+    expect(collection.requestEmailChange).toHaveBeenCalledWith('novo@example.com');
+    expect(collection.update).not.toHaveBeenCalled();
+    expect(service.user()?.email).toBe('pessoa@example.com');
+  });
+
+  it('altera a palavra-passe com a atual e renova a sessão com a nova', async () => {
+    authStore.save('valid-token', userRecord());
+    const service = TestBed.inject(AuthService);
+
+    await service.changePassword('password-antiga', 'password-nova', 'password-nova');
+
+    expect(collection.update).toHaveBeenCalledWith('user12345678901', {
+      oldPassword: 'password-antiga',
+      password: 'password-nova',
+      passwordConfirm: 'password-nova',
+    });
+    expect(collection.authWithPassword).toHaveBeenCalledWith('pessoa@example.com', 'password-nova');
+    expect(service.authenticated()).toBe(true);
   });
 
   it('não revela a existência do email na recuperação de palavra-passe', async () => {
