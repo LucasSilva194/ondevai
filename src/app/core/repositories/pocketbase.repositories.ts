@@ -95,7 +95,15 @@ abstract class PocketBaseRepositoryBase {
       const ownerFilter = this.ownerFilter(owner);
       const filter = additionalFilter ? `${ownerFilter} && ${additionalFilter}` : ownerFilter;
       const records = await this.client.collection<TRecord>(collection).getFullList({ filter, ...(sort ? { sort } : {}) });
-      return records.map(mapper);
+      return records.map((record) => {
+        try {
+          return mapper(record);
+        } catch (error: unknown) {
+          const recordId = typeof record.id === 'string' ? record.id : 'desconhecido';
+          const detail = error instanceof Error ? error.message : 'formato inesperado';
+          throw new Error(`Registo inválido na coleção ${collection} (${recordId}): ${detail}`, { cause: error });
+        }
+      });
     });
   }
 
