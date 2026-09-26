@@ -126,7 +126,10 @@ export class AppStore {
     this._loading.set(true);
     this._syncing.set(true);
 
-    await this.startRealtimeForSession(user.id, generation);
+    // Realtime is useful while the snapshot is loading so its events can be
+    // queued, but its connection handshake must not hold the initial screen
+    // behind a slow SSE connection.
+    void this.startRealtimeForSession(user.id, generation);
     if (!this.isCurrentSession(user.id, generation)) {
       await this.abandonSessionLoad(generation);
       return;
