@@ -1,0 +1,51 @@
+:host { display: block; min-height: 100dvh; }
+
+.auth-shell {
+  position: relative;
+  width: min(1040px, 100%);
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  margin: 0 auto;
+  padding: 24px clamp(18px, 5vw, 60px) 36px;
+}
+.auth-shell::before {
+  position: fixed;
+  right: -150px;
+  bottom: -180px;
+  z-index: -1;
+  width: 360px;
+  height: 360px;
+  border: 68px solid var(--accent-soft);
+  border-radius: 50%;
+  content: "";
+  pointer-events: none;
+}
+.auth-header {
+  min-height: 66px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 23px;
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  box-shadow: inset 0 0 0 4px var(--bezel), var(--shadow-soft);
+  backdrop-filter: blur(16px);
+}
+.auth-header p { margin: 0 8px 0 0; color: var(--text-muted); font-size: 0.72rem; font-weight: 760; }
+.auth-brand { display: inline-flex; align-items: center; gap: 11px; color: var(--text); font-weight: 780; letter-spacing: -0.025em; text-decoration: none; }
+.auth-mark { width: 36px; height: 36px; display: grid; place-items: center; border: 4px solid color-mix(in srgb, var(--accent) 82%, var(--surface-raised)); border-radius: 50%; background: var(--accent); color: var(--on-accent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--on-accent) 24%, transparent); }
+.auth-card { position: relative; width: min(510px, 100%); margin: auto; padding: clamp(30px, 6vw, 54px); border: 7px solid var(--bezel); border-radius: 34px; background: var(--surface-raised); box-shadow: inset 0 0 0 1px var(--inner-stroke), var(--shadow); animation: auth-in 520ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+.auth-card::after { position: absolute; top: 22px; right: 22px; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); content: ""; box-shadow: 0 0 0 7px var(--accent-soft); }
+.privacy-note { max-width: 48ch; margin: 32px auto 0; color: var(--text-muted); font-size: 0.72rem; line-height: 1.5; text-align: center; }
+
+@keyframes auth-in { from { opacity: 0; transform: translateY(24px) scale(0.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+@media (max-width: 620px) {
+  .auth-shell { padding: 12px 12px 26px; }
+  .auth-header { min-height: 60px; }
+  .auth-header p { display: none; }
+  .auth-card { margin: 38px auto auto; padding: 38px 22px 28px; border-width: 5px; border-radius: 28px; }
+}

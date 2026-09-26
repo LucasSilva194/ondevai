@@ -1,0 +1,28 @@
+:host { display: block; }
+.account-page { max-width: 1120px; }
+.feedback { margin-bottom: 18px; padding: 15px 18px; border: 1px solid var(--border); border-radius: 16px; font-weight: 680; }
+.feedback.success { border-color: var(--accent-border); background: var(--accent-soft); color: var(--accent-strong); }
+.feedback.error { border-color: var(--danger-border); background: var(--danger-soft); color: var(--danger); }
+.feedback.warning { background: var(--warning-soft); color: var(--warning); }
+.account-summary { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+.account-summary h2 { margin-top: 5px; overflow-wrap: anywhere; }
+.section-label { margin: 0; color: var(--text-muted); font-size: .7rem; font-weight: 780; letter-spacing: .08em; text-transform: uppercase; }
+.verification-badge { flex: none; padding: 8px 12px; border: 1px solid var(--danger-border); border-radius: 999px; background: var(--danger-soft); color: var(--danger); font-size: .77rem; font-weight: 740; }
+.verification-badge.verified { border-color: var(--accent-border); background: var(--accent-soft); color: var(--accent-strong); }
+.account-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; margin-top: 20px; }
+.account-grid section > p, .session-section p, .danger-zone p { margin: 8px 0 0; color: var(--text-soft); line-height: 1.6; }
+form { margin-top: 24px; }
+.field + .field { margin-top: 15px; }
+form > .btn { margin-top: 22px; }
+.field small { display: block; margin-top: 6px; color: var(--text-muted); }
+.field .field-error { color: var(--danger); }
+.session-section, .danger-zone { display: flex; align-items: center; justify-content: space-between; gap: 30px; margin-top: 20px; }
+.danger-zone { margin-top: 48px; padding: 28px; border: 5px solid color-mix(in srgb, var(--danger-border) 44%, transparent); border-radius: var(--radius-card); background: var(--danger-soft); box-shadow: inset 0 0 0 1px var(--danger-border); }
+.danger-zone h2 { color: var(--danger); }
+.form-actions { margin-top: 24px; }
+
+@media (max-width: 760px) {
+  .account-grid { grid-template-columns: 1fr; }
+  .account-summary, .session-section, .danger-zone { align-items: flex-start; flex-direction: column; }
+  .account-summary, .session-section { padding: 22px; }
+}

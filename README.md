@@ -1,203 +1,267 @@
 # OndeVai
 
-> O seu dinheiro, explicado. Os seus dados, no seu dispositivo.
+> O seu dinheiro, explicado. Os seus dados, sob o seu controlo.
 
-O OndeVai é uma aplicação web local-first para registar, organizar e analisar despesas, rendimentos e poupanças pessoais. Funciona inteiramente no browser: não existe backend, conta, sincronização cloud, integração bancária, analytics ou telemetria.
+O OndeVai é uma aplicação web cloud-first para organizar despesas, rendimentos,
+orçamentos e objetivos de poupança pessoais. O PocketBase alojado no PocketHost
+é a fonte de verdade dos dados. O frontend Angular mantém apenas uma projeção
+em memória da conta autenticada e acompanha alterações através de realtime.
 
-## Funcionalidades do MVP
+O backend de produção está publicado em `https://ondevai.pockethost.io`. O
+frontend de produção está preparado para Cloudflare Pages, mas ainda não está
+publicado. O repositório não contém credenciais, passwords, tokens, configuração
+SMTP ou dados de utilizadores.
 
-- Onboarding inicial com explicação do armazenamento local e escolha entre categorias sugeridas ou uma estrutura vazia.
-- Criação, edição, eliminação, pesquisa, filtro e ordenação de despesas.
-- Valores guardados como cêntimos inteiros e apresentados em EUR com locale `pt-PT`.
-- Categorias e subcategorias personalizáveis, ordenáveis e arquiváveis.
-- Dashboard mensal e anual com totais, comparação de despesas/rendimentos/saldo, média dos três meses anteriores, evolução, distribuição e rankings.
-- Orçamentos mensais por categoria, cópia do mês anterior e estados normal, atenção (80%) e excedido (100%).
-- Configuração do mês de recebimento para salários, subsídios, trabalho independente e outros rendimentos.
-- Rendimentos e despesas pontuais ou recorrentes, com frequência semanal, mensal ou anual, intervalos, pausa, fim inclusivo e exceções por ocorrência.
-- Saldo mensal calculado a partir dos rendimentos menos as despesas do período.
-- Objetivos de poupança para fundo de reserva, casa, carro, viagem, educação ou outros planos.
-- Ledger auditável de poupanças, com saldo inicial, reforços e levantamentos editáveis, metas, progresso, data e contribuição mensal planeada.
-- Insights determinísticos e locais para orçamentos, evolução por categoria, valores anormais, peso das recorrências, planos de poupança e saldo.
-- PWA instalável, app shell offline e atualização controlada pelo utilizador.
-- Alternativas textuais acessíveis para todos os gráficos.
-- Exportação integral para JSON e importação por substituição com validação e pré-visualização.
-- Substituição atómica das coleções na importação: uma falha mantém os dados anteriores.
-- Lembretes de backup e indicação permanente de armazenamento local.
-- Interface responsiva, navegável por teclado e com suporte automático para modo claro e escuro.
+## Funcionalidades
 
-O projeto não inclui despesas de exemplo nem dados pessoais.
+- Registo, confirmação de email, login, recuperação de palavra-passe e logout.
+- Gestão de conta com pedido de alteração de email, alteração de palavra-passe e eliminação segura da conta.
+- Despesas pontuais ou recorrentes, categorias e subcategorias personalizáveis.
+- Rendimentos, orçamentos mensais e objetivos de poupança com ledger de movimentos.
+- Dashboard mensal e anual, gráficos com alternativas textuais e insights determinísticos.
+- Realtime entre sessões PocketBase, com indicação da última sincronização e erros de ligação.
+- Exportação integral para JSON.
+- Importação manual por substituição atómica, com validação, pré-visualização e confirmação explícita.
+- Limpeza atómica dos dados financeiros cloud sem eliminar a conta.
+- Migração opcional de dados Dexie criados por versões antigas da aplicação, sem apagar o original.
+- Interface responsiva, navegação por teclado, live regions e modo claro/escuro.
+
+O projeto não inclui dados de exemplo, contas predefinidas, analytics ou telemetria.
 
 ## Requisitos
 
 - Node.js 22.12 ou superior na linha 22, ou uma versão suportada mais recente.
 - npm 10 ou superior.
+- PocketBase 0.40.4 para executar e validar o backend localmente.
+- `curl`, `jq` e `sqlite3` para os validadores descartáveis.
 
-## Instalação e execução
+## Desenvolvimento local
+
+Instale as dependências e execute o frontend:
 
 ```bash
 npm install
 npm start
 ```
 
-A aplicação de desenvolvimento fica disponível em `http://localhost:4200`.
+Por omissão, o frontend fica em `http://localhost:4200` e usa uma instância
+PocketBase descartável em `http://127.0.0.1:8090`. Este ambiente existe apenas
+para desenvolvimento e testes; não substitui nem sincroniza com produção.
 
-Scripts disponíveis:
+Arranque o PocketBase local com as migrations e hooks do repositório:
 
 ```bash
-npm start       # servidor de desenvolvimento
-npm run build   # build de produção em dist/ondevai
-npm test        # testes unitários em execução única
-npm run lint    # ESLint para TypeScript e templates Angular
+/caminho/pocketbase migrate up \
+  --dir /caminho/para/pb_data \
+  --migrationsDir /caminho/OndeVai/pb_migrations \
+  --hooksDir /caminho/OndeVai/pb_hooks
+
+/caminho/pocketbase serve \
+  --dir /caminho/para/pb_data \
+  --migrationsDir /caminho/OndeVai/pb_migrations \
+  --hooksDir /caminho/OndeVai/pb_hooks
 ```
 
-## Tecnologia e escolhas
+Não aponte testes, validadores ou desenvolvimento local para a instância de
+produção. Os scripts de validação criam uma base temporária e credenciais
+descartáveis.
 
-- Angular 21 e TypeScript em modo strict.
-- Componentes standalone e rotas lazy por funcionalidade.
-- Signals e computed values para estado e valores derivados.
-- Reactive Forms nos formulários de despesas, rendimentos, poupanças, categorias e confirmações.
-- Dexie 4 como implementação do IndexedDB.
-- Chart.js 4 carregado no bundle, sem recursos ou chamadas externas em runtime.
-- Vitest através do runner oficial do Angular e `fake-indexeddb` nos testes de persistência.
-- ESLint com as regras TypeScript e de acessibilidade de templates do Angular.
+Scripts npm:
 
-O Angular 21 foi escolhido por ser uma linha estável compatível com o Node 22 disponível. O Chart.js é usado diretamente num componente Angular pequeno para evitar uma camada adicional de integração.
+```bash
+npm start
+npm run lint
+npm test
+npm run build
+```
+
+## Configuração do PocketBase
+
+O SDK oficial recebe a origem através do `InjectionToken` `POCKETBASE_URL`,
+definido em `src/app/core/pocketbase/pocketbase.client.ts`.
+`src/environments/environment.ts` aponta o desenvolvimento para
+`http://127.0.0.1:8090`; o build de produção substitui esse ficheiro por
+`src/environments/environment.production.ts` e usa
+`https://ondevai.pockethost.io`.
+
+A URL do PocketBase é pública e pode estar no bundle. Credenciais, passwords,
+tokens e chaves nunca devem ser adicionados aos ficheiros de ambiente do
+frontend.
+
+Não existem variáveis de ambiente secretas necessárias ao frontend. Antes de
+publicar o frontend ainda é necessário:
+
+- configurar SMTP e URLs de confirmação/recuperação fora do repositório;
+- manter migrations e hooks validados na versão PocketBase usada pelo serviço;
+- rever CORS, backups operacionais e monitorização da infraestrutura.
 
 ## Arquitetura
 
 ```text
-src/app/
-├── core/
-│   ├── backup/          validação, exportação e importação
-│   ├── database/        esquema Dexie e versionamento
-│   ├── repositories/    interfaces, tokens e implementações IndexedDB
-│   ├── services/        regras de aplicação
-│   ├── settings/        estado do armazenamento do browser
-│   └── stores/          facade global baseada em Signals
-├── features/
-│   ├── onboarding/
-│   ├── dashboard/
-│   ├── expenses/
-│   ├── savings/
-│   ├── categories/
-│   └── data-management/
-├── models/
-├── shared/
-│   ├── components/
-│   └── utils/           funções financeiras e de datas puras
-└── app.routes.ts
+Componentes Angular standalone
+            ↓
+AppStore (projeção em memória com Angular Signals)
+            ↓
+Serviços de aplicação
+            ↓
+Repositórios PocketBase
+            ↓
+SDK PocketBase + realtime
+            ↓
+PocketBase 0.40.4 no PocketHost
+  records · rules · hooks · endpoints transacionais
 ```
 
-Fluxo de dados:
+Áreas principais:
 
 ```text
-Componentes
-    ↓
-AppStore com Signals
-    ↓
-Serviços de aplicação
-    ↓
-Interfaces de repositório
-    ↓
-Implementações Dexie / IndexedDB
+src/app/core/auth/          sessão e autenticação
+src/app/core/backup/        exportação, validação e fingerprint SHA-256
+src/app/core/migration/     migração opcional dos dados legados Dexie
+src/app/core/pocketbase/    cliente, contratos, mappers e erros
+src/app/core/realtime/      subscrições e isolamento por utilizador
+src/app/core/repositories/  persistência cloud e adaptador legado Dexie
+src/app/core/stores/        projeção em memória do estado remoto
+src/app/features/account/   gestão e eliminação da conta
+pb_migrations/              schema e alterações reversíveis
+pb_hooks/                   validações e endpoints server-side
+scripts/                    validadores locais descartáveis
 ```
 
-Os componentes nunca acedem diretamente ao IndexedDB. Totais, comparações, materialização de recorrências, agrupamentos e insights são calculados em memória por funções puras e não são persistidos.
+O caminho normal de leitura e escrita usa sempre PocketBase. Dexie não recebe
+novos dados e só é consultado para detetar e migrar informação criada pela
+versão antiga da aplicação.
 
-As ocorrências virtuais usam a chave estável `tipo:seriesId:AAAA-MM-DD`. Só as exceções são persistidas: uma edição substitui a ocorrência original e uma omissão impede que ela reapareça, sem pré-gerar movimentos futuros.
+As operações que precisam de atomicidade — movimentos de poupança, bulks,
+importação, limpeza integral e eliminação de conta — passam por endpoints
+server-side. O cliente nunca implementa substituições ou limpezas com eliminações
+coleção a coleção.
 
-A deteção de despesa anormal exige pelo menos cinco despesas históricas da mesma categoria. O valor atual tem de ser simultaneamente igual ou superior ao dobro da mediana e exceder essa mediana em pelo menos 25 €.
+## Autenticação e conta
 
-## IndexedDB
+A auth collection chama-se `users` e usa email/password. O email tem de ser verificado para aceder aos dados financeiros. Alterações de email usam o fluxo oficial de confirmação do PocketBase; alterações de palavra-passe exigem a password atual e renovam a sessão com a nova credencial.
 
-A base de dados chama-se `ondevai` e está na versão 4. Inclui nove coleções:
+O endpoint `POST /api/ondevai/account/delete` exige a password atual e a frase exata `APAGAR CONTA`. O backend deriva sempre o utilizador da sessão. Depois do sucesso, o frontend para o realtime, limpa o `AppStore` e o auth store e regressa ao login.
 
-- `expenses`
-- `categories`
-- `monthlyIncomes`
-- `savingsGoals`
-- `savingsTransactions`
-- `monthlyBudgets`
-- `recurrenceExceptions`
-- `settings`
-- `metadata`
+## Modelo cloud-first e conectividade
 
-O browser recebe um pedido de armazenamento persistente quando a API está disponível. A aplicação continua a funcionar se o browser não suportar ou não conceder esse modo.
+Depois da autenticação, o carregamento inicial obtém um snapshot do PocketBase e
+aplica eventos realtime que tenham chegado durante esse carregamento. Os eventos
+são filtrados pelo owner e aplicados de forma idempotente. Importações e limpezas
+recarregam o snapshot sem criar subscrições duplicadas.
 
-Os dados pertencem ao browser e perfil atuais. Fechar ou atualizar a página conserva os registos, mas limpar os dados do site, apagar o perfil ou perder o dispositivo pode removê-los.
+Não existe base financeira local ativa, sincronização offline bidirecional nem
+fila de escritas. Sem ligação:
 
-## Backups
+- o app shell e dados já existentes em memória podem continuar visíveis;
+- não se garante que a leitura esteja atualizada;
+- novas alterações não são guardadas localmente para envio posterior;
+- a aplicação tenta restabelecer a ligação.
 
-A exportação cria um ficheiro com o nome `ondevai-backup-AAAA-MM-DD.json`:
+O service worker guarda apenas os assets da aplicação. Não guarda uma cópia
+offline da conta nem transforma o browser numa segunda fonte de verdade.
 
-```json
-{
-  "schemaVersion": 4,
-  "exportedAt": "2026-09-17T18:30:00.000Z",
-  "settings": {},
-  "categories": [],
-  "expenses": [],
-  "monthlyIncomes": [],
-  "savingsGoals": [],
-  "savingsTransactions": [],
-  "monthlyBudgets": [],
-  "recurrenceExceptions": []
-}
+## Exportação, importação e migração legada
+
+A exportação cria `ondevai-backup-AAAA-MM-DD.json` no schema 4. O ficheiro inclui settings, categorias, despesas, rendimentos, objetivos, ledger, orçamentos e exceções de recorrência. Não inclui tokens nem valores derivados dos gráficos.
+
+Backups schema 1, 2 e 3 são migrados para schema 4 e validados no frontend. A importação manual usa o modo `replace`: valida o conteúdo novamente no servidor, confirma o hash, converte IDs legados, reescreve relações e substitui os dados financeiros numa transação. Uma falha preserva o snapshot anterior.
+
+A migração de dados Dexie destina-se exclusivamente a utilizadores da versão
+antiga e usa o modo `migrate-empty`: só é aceite quando a conta cloud não contém
+dados financeiros. A tentativa usa fingerprint SHA-256 e chave de idempotência,
+aceita retries e nunca substitui silenciosamente uma conta existente. O
+IndexedDB antigo não é apagado automaticamente, nem depois de sucesso, logout,
+limpeza integral ou eliminação da conta.
+
+O JSON exportado não é encriptado. Deve ser guardado num local seguro.
+
+## Privacidade
+
+Os dados financeiros são armazenados no PocketBase alojado no PocketHost e
+associados à conta autenticada. Rules, hooks e endpoints reforçam o isolamento
+por utilizador. Isto não significa encriptação ponta-a-ponta, anonimato ou
+impossibilidade de acesso administrativo à infraestrutura.
+
+O OndeVai não integra contas bancárias e não adiciona analytics ou telemetria.
+Backups operacionais do PocketHost são configuração de infraestrutura e não são
+definidos por este repositório.
+
+## Migrations, hooks e validação
+
+As migrations são incrementais; migrations já aplicadas não devem ser alteradas retroativamente. `pb_hooks/main.pb.js` carrega as validações e rotas porque o PocketBase não descobre hooks recursivamente.
+
+Validação local, quando existe um binário PocketBase 0.40.4:
+
+```bash
+./scripts/pocketbase-schema/validate.sh /caminho/pocketbase
+./scripts/pocketbase-transactions/validate.sh /caminho/pocketbase
+./scripts/pocketbase-wave3/validate.sh /caminho/pocketbase
 ```
 
-O ficheiro inclui todos os anos e ignora os filtros visíveis. Não inclui totais, gráficos ou outros valores derivados.
-
-A importação funciona apenas por substituição. Backups das versões 1 e 2 continuam a ser aceites. Registos antigos são migrados com valores seguros para a nova configuração de recorrência. Antes da confirmação são verificados:
-
-- versão e estrutura do schema;
-- tipos e campos obrigatórios;
-- IDs duplicados;
-- relações entre despesas, categorias e subcategorias;
-- datas e valores monetários;
-- contagens e intervalo de datas apresentados na pré-visualização.
-
-A substituição de todas as coleções ocorre numa única transação Dexie. Um ficheiro inválido ou uma falha de escrita não altera os dados existentes. Backups das versões 1, 2 e 3 são migrados para recorrências e ledger; o saldo existente de cada objetivo é preservado num movimento de abertura.
-
-O JSON não está encriptado. Deve ser guardado num local seguro.
+Os scripts usam `pb_data` temporário. Nunca aponte estes comandos a dados que queira preservar.
 
 ## Testes
 
-A suite cobre:
+A suite Angular cobre autenticação, guards, sessão, mappers, repositórios, realtime, CRUD financeiro, recorrências, cálculos, backups, fingerprint, migração Dexie e os fluxos de conta/dados. Execute:
 
-- conversão e formatação monetária;
-- totais mensais e anuais;
-- comparação com o mês anterior;
-- janeiro versus dezembro, percentagens sem base e média dos três meses anteriores;
-- CRUD e cópia de orçamentos;
-- agrupamentos por categoria e subcategoria;
-- criação, edição e eliminação de despesas;
-- criação e edição de rendimentos e objetivos de poupança;
-- criação, edição e eliminação de movimentos em objetivos, sem permitir saldos negativos;
-- migração de saldos existentes para movimentos de abertura;
-- recorrências semanais, mensais e anuais, limites de calendário, pausa, fim e exceções;
-- regras de insights e ausência de conclusões sem dados suficientes;
-- cálculo de rendimentos, despesas fixas e saldo em cada mês;
-- arquivo de categorias sem quebra do histórico;
-- validação e rejeição de backups inválidos;
-- exportação lógica e reimportação sem perda;
-- rollback de uma importação atómica que falha;
-- persistência após fechar e reabrir o IndexedDB.
+```bash
+npm run lint
+npm test
+npm run build
+git diff --check
+```
 
-## Privacidade e rede
+Os testes do frontend usam mocks ou `fake-indexeddb`. A validação real de transações, rules e hooks requer a instância PocketBase local descartável.
 
-O bundle não carrega fontes, imagens, scripts ou estilos externos. A aplicação não contém endpoints de dados e não faz pedidos de rede para processar informação financeira. O service worker guarda apenas o app shell, bundles, estilos, manifest e ícones locais; o IndexedDB continua a ser a única fonte dos dados financeiros.
+## Deploy
+
+### Backend
+
+O backend está publicado na instância PocketHost `ondevai`. O repositório está
+ligado a essa instância através de `.phioconfig`. Com Node.js 24 ou superior e o
+`phio` autenticado, hooks e migrations podem ser sincronizados com:
+
+```bash
+phio deploy
+```
+
+`phio` não envia `pb_data` por omissão. Migrations já aplicadas são imutáveis:
+qualquer alteração de schema deve ser entregue numa migration nova e validada
+localmente antes do deploy.
+
+Existe uma única instância PocketHost para a aplicação. As branches `dev` e
+`main` representam etapas do fluxo Git e não ambientes PocketBase distintos. O
+backend local descrito acima é descartável e nunca deve conter dados de produção.
+
+### Frontend
+
+O frontend está preparado para Cloudflare Pages com:
+
+```text
+Build command: npm ci && npm run build
+Output directory: dist/ondevai/browser
+```
+
+`public/_redirects` inclui o fallback de SPA necessário para abrir diretamente
+rotas como `/entrar` e `/visao-geral`. O build publicado comunica diretamente
+com `https://ondevai.pockethost.io`.
 
 ## Limitações atuais
 
-- Sem gestão de património ou contas bancárias.
-- Sem importação CSV, anexos ou fotografias de recibos.
-- Sem encriptação do ficheiro de backup.
-- Sem merge de backups: a importação substitui o conteúdo local.
-- Sem contas, perfis múltiplos, partilha ou sincronização entre dispositivos.
+- O frontend Cloudflare Pages ainda não está publicado.
+- O domínio público do frontend e o DNS ainda não estão definidos.
+- SMTP e URLs públicas de confirmação/recuperação de email ainda exigem configuração.
+- A política de backups, restauro e monitorização do PocketHost ainda tem de ser definida.
+- Sem base financeira offline, fila de escritas ou merge bidirecional.
+- Sem OAuth, importação CSV, anexos ou fotografias de recibos.
+- Sem encriptação ponta-a-ponta e sem encriptação do ficheiro JSON.
+- A importação é por substituição, não por merge.
+- Dexie permanece apenas para migrar dados de versões antigas; não participa no fluxo normal da aplicação.
 
 ## Branches e licença
 
 - `main`: versão estável.
-- `dev`: integração do trabalho em desenvolvimento.
+- `dev`: integração de trabalho em desenvolvimento.
 
-A licença do projeto ainda não foi definida. Nenhum ficheiro de licença é incluído.
+A licença ainda não foi definida; não existe ficheiro de licença no repositório.

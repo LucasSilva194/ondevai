@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Category, Settings, Subcategory } from '../../models/domain.models';
 import { cloneSuggestedCategories } from '../../models/suggested-categories';
+import { createPocketBaseId } from '../pocketbase/pocketbase.ids';
 import { CATEGORY_REPOSITORY, SETTINGS_REPOSITORY } from '../repositories/repository.tokens';
 
 @Injectable({ providedIn: 'root' })
@@ -10,7 +11,13 @@ export class CategoryService {
 
   async useSuggestedCategories(): Promise<void> {
     const existing = await this.categories.getAll();
-    if (existing.length === 0) await this.categories.bulkPut(cloneSuggestedCategories());
+    if (existing.length === 0) {
+      const suggested = cloneSuggestedCategories().map((category) => ({
+        ...category,
+        id: createPocketBaseId(),
+      }));
+      await this.categories.bulkPut(suggested);
+    }
   }
 
   async create(name: string, color: string, subcategoryNames: readonly string[]): Promise<Category> {
@@ -18,7 +25,7 @@ export class CategoryService {
     const trimmedName = name.trim();
     if (!trimmedName) throw new Error('Indique um nome para a categoria.');
     const category: Category = {
-      id: crypto.randomUUID(),
+      id: createPocketBaseId(),
       name: trimmedName,
       color,
       order: existing.length,

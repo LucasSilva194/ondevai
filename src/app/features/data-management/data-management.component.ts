@@ -1,43 +1,57 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
+import { LocalDataMigrationService } from '../../core/migration/local-data-migration.service';
+import { PwaService } from '../../core/services/pwa.service';
 import { AppStore } from '../../core/stores/app.store';
-import { StorageService } from '../../core/settings/storage.service';
-import { AppBackup, ImportPreview, StorageStatus } from '../../models/domain.models';
+import { AppBackup, ImportPreview } from '../../models/domain.models';
 import { formatDate } from '../../shared/utils/date.utils';
 
 @Component({
   selector: 'app-data-management',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, RouterLink],
   template: `
     <div class="page">
       <header class="page-header">
         <p class="eyebrow">Dados e privacidade</p>
         <h1>Os seus dados são seus</h1>
-        <p class="page-intro">O OndeVai funciona sem backend. Toda a informação financeira fica no IndexedDB deste browser.</p>
+        <p class="page-intro">A informação financeira é guardada na sua conta cloud. Pode exportá-la, substituí-la ou apagá-la quando quiser.</p>
       </header>
 
       @if (successMessage()) {
         <div class="success-message" role="status">{{ successMessage() }}</div>
       }
+      @if (operationError()) {
+        <div class="validation-errors" role="alert">{{ operationError() }}</div>
+      }
 
       <section class="privacy-grid">
         <article class="local-card">
           <span class="local-symbol" aria-hidden="true">✓</span>
-          <div><h2>Guardado localmente</h2><p>As despesas, categorias, rendimentos, poupanças e preferências nunca são enviadas para servidores.</p></div>
+          <div><h2>Guardado na sua conta</h2><p>As despesas, categorias, rendimentos, poupanças e preferências são armazenadas no PocketBase e ficam disponíveis entre dispositivos.</p></div>
         </article>
         <article class="storage-card card-flat">
-          <h2>Estado do armazenamento</h2>
-          @if (storageStatus(); as status) {
-            <dl>
-              <div><dt>IndexedDB</dt><dd>Disponível</dd></div>
-              <div><dt>Armazenamento persistente</dt><dd>{{ persistenceLabel(status) }}</dd></div>
-              @if (status.usageBytes !== undefined) { <div><dt>Espaço utilizado</dt><dd>{{ formatBytes(status.usageBytes) }}</dd></div> }
-            </dl>
-          } @else {
-            <p class="muted">A verificar o armazenamento do browser...</p>
-          }
+          <h2>Estado cloud</h2>
+          <dl>
+            <div><dt>Sincronização</dt><dd>{{ store.syncing() ? 'Em curso' : store.connectionError() ? 'Com erro' : 'Ligada' }}</dd></div>
+            <div><dt>Última sincronização</dt><dd>{{ lastSyncLabel() }}</dd></div>
+          </dl>
+          @if (store.connectionError()) { <p class="sync-warning" role="alert">{{ store.connectionError() }}</p> }
         </article>
+      </section>
+
+      <section class="legacy-section card-flat card-padding">
+        <div>
+          <h2>Dados locais legados</h2>
+          @if (migration.summary()?.totalRecords) {
+            <p>Encontrámos {{ migration.summary()?.totalRecords }} registos no IndexedDB antigo. Permanecem neste browser até existir uma ação separada para os remover.</p>
+          } @else {
+            <p>Não foram encontrados dados financeiros da versão local neste browser.</p>
+          }
+        </div>
+        @if (migration.summary()?.totalRecords && migration.status() !== 'completed') {
+          <a class="btn btn-secondary" routerLink="/migrar-dados">Migrar para a conta</a>
+        }
       </section>
 
       <section class="data-section card card-padding">
@@ -46,13 +60,13 @@ import { formatDate } from '../../shared/utils/date.utils';
           <p>O ficheiro inclui despesas, recorrências e exceções, orçamentos, rendimentos, objetivos, movimentos de poupança e preferências. Não inclui totais ou gráficos.</p>
           <p class="last-export"><strong>Última exportação:</strong> {{ lastExportLabel() }}</p>
         </div>
-        <button class="btn btn-primary" type="button" (click)="exportData()" [disabled]="store.operationPending()">Exportar JSON</button>
+        <button class="btn btn-primary" type="button" (click)="exportData()" [disabled]="store.operationPending() || pwa.offline()">Exportar JSON</button>
       </section>
 
       <section class="data-section card-flat card-padding import-section">
         <div class="section-copy">
           <h2>Importar uma cópia de segurança</h2>
-          <p>A importação substitui todos os dados locais. O ficheiro é validado antes de qualquer alteração.</p>
+          <p>A importação substitui atomicamente todos os dados financeiros desta conta. O ficheiro é migrado e validado antes do envio; o IndexedDB legado não é alterado.</p>
         </div>
         <label class="btn btn-secondary file-button">
           Selecionar JSON
@@ -77,7 +91,10 @@ import { formatDate } from '../../shared/utils/date.utils';
               <div><dt>Exportado em</dt><dd>{{ formatIsoDate(data.exportedAt) }}</dd></div>
             </dl>
             <div class="replace-warning"><strong>Os dados atuais serão substituídos.</strong><p>Esta ação não pode ser anulada sem outra cópia de segurança.</p></div>
-            <div class="button-row"><button class="btn btn-danger" type="button" (click)="confirmImport()" [disabled]="store.operationPending()">Substituir dados locais</button><button class="btn btn-ghost" type="button" (click)="cancelImport()">Cancelar</button></div>
+            <form [formGroup]="importForm" (ngSubmit)="confirmImport()">
+              <div class="field"><label for="replace-confirmation">Escreva SUBSTITUIR para confirmar</label><input id="replace-confirmation" formControlName="confirmation" autocomplete="off"></div>
+              <div class="button-row"><button class="btn btn-danger" type="submit" [disabled]="store.operationPending() || pwa.offline() || importForm.controls.confirmation.value !== 'SUBSTITUIR'">Substituir dados da conta</button><button class="btn btn-ghost" type="button" (click)="cancelImport()">Cancelar</button></div>
+            </form>
           </div>
         }
       </section>
@@ -85,9 +102,9 @@ import { formatDate } from '../../shared/utils/date.utils';
       <section class="information-section">
         <h2>Como funciona a privacidade</h2>
         <div class="information-columns">
-          <div><h3>Neste dispositivo</h3><p>O IndexedDB pertence a este browser e perfil. Atualizar ou fechar a aplicação não apaga os registos.</p></div>
-          <div><h3>Sem rede de dados</h3><p>Não existe autenticação, sincronização, integração bancária, analytics ou telemetria.</p></div>
-          <div><h3>Backup portátil</h3><p>O JSON pode ser importado noutro browser. Como não está encriptado, deve ser guardado em segurança.</p></div>
+          <div><h3>Na sua conta</h3><p>É necessária autenticação. O servidor associa os registos à sua conta e a aplicação sincroniza alterações em tempo real.</p></div>
+          <div><h3>Sem fila offline</h3><p>Dados já carregados podem ficar visíveis sem rede, mas não garantimos leitura atualizada nem guardamos novas alterações offline.</p></div>
+          <div><h3>Backup portátil</h3><p>O JSON pode ser reimportado por substituição. Como não está encriptado, deve ser guardado em segurança.</p></div>
         </div>
       </section>
 
@@ -96,8 +113,13 @@ import { formatDate } from '../../shared/utils/date.utils';
         <button class="btn btn-secondary" type="button" (click)="repeatOnboarding()">Repetir onboarding</button>
       </section>
 
+      <section class="secondary-actions card-flat card-padding">
+        <div><h2>Eliminar a conta</h2><p>A eliminação da conta é uma operação separada, exige a sua palavra-passe e está disponível na página Conta.</p></div>
+        <a class="btn btn-secondary" routerLink="/conta">Gerir conta</a>
+      </section>
+
       <section class="danger-zone">
-        <div><h2>Apagar todos os dados locais</h2><p>Remove despesas, categorias, rendimentos, poupanças e preferências deste browser. Exporte primeiro se quiser conservar uma cópia.</p></div>
+        <div><h2>Apagar dados financeiros cloud</h2><p>Remove despesas, categorias, rendimentos, poupanças e preferências da conta, mas mantém a sessão e não apaga dados antigos do IndexedDB.</p></div>
         <button class="btn btn-danger" type="button" (click)="deleteDialogOpen.set(true)">Apagar dados</button>
       </section>
     </div>
@@ -105,10 +127,10 @@ import { formatDate } from '../../shared/utils/date.utils';
     @if (deleteDialogOpen()) {
       <div class="modal-backdrop">
         <section class="modal delete-modal" role="dialog" aria-modal="true" aria-labelledby="delete-title">
-          <header class="modal-header"><div><h2 id="delete-title">Apagar tudo neste dispositivo?</h2><p>Esta ação remove permanentemente todos os dados locais.</p></div></header>
+          <header class="modal-header"><div><h2 id="delete-title">Apagar os dados financeiros cloud?</h2><p>A conta e os dados locais legados permanecem.</p></div></header>
           <form [formGroup]="deleteForm" (ngSubmit)="deleteAll()">
-            <div class="field"><label for="delete-confirmation">Escreva APAGAR para confirmar</label><input id="delete-confirmation" formControlName="confirmation" autocomplete="off"></div>
-            <div class="button-row form-actions"><button class="btn btn-danger" type="submit" [disabled]="deleteForm.controls.confirmation.value !== 'APAGAR' || store.operationPending()">Apagar permanentemente</button><button class="btn btn-secondary" type="button" (click)="closeDeleteDialog()">Cancelar</button></div>
+            <div class="field"><label for="delete-confirmation">Escreva APAGAR DADOS para confirmar</label><input id="delete-confirmation" formControlName="confirmation" autocomplete="off"></div>
+            <div class="button-row form-actions"><button class="btn btn-danger" type="submit" [disabled]="deleteForm.controls.confirmation.value !== 'APAGAR DADOS' || store.operationPending() || pwa.offline()">Apagar permanentemente</button><button class="btn btn-secondary" type="button" (click)="closeDeleteDialog()">Cancelar</button></div>
           </form>
         </section>
       </div>
@@ -117,34 +139,38 @@ import { formatDate } from '../../shared/utils/date.utils';
   styleUrl: './data-management.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class DataManagementComponent {
+export class DataManagementComponent implements OnInit {
   readonly store = inject(AppStore);
-  private readonly storage = inject(StorageService);
+  readonly migration = inject(LocalDataMigrationService);
+  readonly pwa = inject(PwaService);
   private readonly router = inject(Router);
   private readonly formBuilder = inject(FormBuilder);
-  readonly storageStatus = signal<StorageStatus | null>(null);
   readonly preview = signal<ImportPreview | null>(null);
   readonly pendingBackup = signal<AppBackup | null>(null);
   readonly importErrors = signal<string[]>([]);
+  readonly operationError = signal<string | null>(null);
   readonly successMessage = signal<string | null>(null);
   readonly deleteDialogOpen = signal(false);
+  readonly importForm = this.formBuilder.nonNullable.group({ confirmation: ['', Validators.required] });
   readonly deleteForm = this.formBuilder.nonNullable.group({ confirmation: ['', Validators.required] });
   readonly formatDate = formatDate;
 
-  constructor() {
-    void this.loadStorageStatus();
+  ngOnInit(): void {
+    void this.migration.detectLocalData().catch(() => undefined);
   }
 
   async exportData(): Promise<void> {
     this.successMessage.set(null);
+    this.operationError.set(null);
     try {
       await this.store.exportBackup();
       this.successMessage.set('A cópia de segurança foi criada com sucesso.');
-    } catch { /* Global error is visible. */ }
+    } catch (error: unknown) { this.captureOperationError(error, 'Não foi possível exportar os dados.'); }
   }
 
   async selectFile(event: Event): Promise<void> {
     this.cancelImport();
+    this.operationError.set(null);
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
@@ -168,25 +194,28 @@ export class DataManagementComponent {
 
   async confirmImport(): Promise<void> {
     const backup = this.pendingBackup();
-    if (!backup) return;
+    if (!backup || this.importForm.controls.confirmation.value !== 'SUBSTITUIR' || this.pwa.offline()) return;
+    this.operationError.set(null);
+    this.successMessage.set(null);
     try {
       await this.store.importBackup(backup);
       this.cancelImport();
-      this.successMessage.set('Os dados foram restaurados com sucesso.');
-    } catch { /* Global error is visible. */ }
+      this.successMessage.set('Os dados da conta foram substituídos com sucesso.');
+    } catch (error: unknown) { this.captureOperationError(error, 'Não foi possível importar o ficheiro. Os dados anteriores foram preservados.'); }
   }
 
   cancelImport(): void {
     this.preview.set(null);
     this.pendingBackup.set(null);
     this.importErrors.set([]);
+    this.importForm.reset({ confirmation: '' });
   }
 
   async repeatOnboarding(): Promise<void> {
     try {
       await this.store.repeatOnboarding();
       await this.router.navigate(['/onboarding']);
-    } catch { /* Global error is visible. */ }
+    } catch (error: unknown) { this.captureOperationError(error, 'Não foi possível abrir o onboarding.'); }
   }
 
   closeDeleteDialog(): void {
@@ -195,12 +224,14 @@ export class DataManagementComponent {
   }
 
   async deleteAll(): Promise<void> {
-    if (this.deleteForm.controls.confirmation.value !== 'APAGAR') return;
+    if (this.deleteForm.controls.confirmation.value !== 'APAGAR DADOS' || this.pwa.offline()) return;
+    this.operationError.set(null);
+    this.successMessage.set(null);
     try {
       await this.store.clearAll();
       this.closeDeleteDialog();
       await this.router.navigate(['/onboarding']);
-    } catch { /* Global error is visible. */ }
+    } catch (error: unknown) { this.captureOperationError(error, 'Não foi possível apagar os dados. Nenhuma alteração parcial foi aplicada.'); }
   }
 
   lastExportLabel(): string {
@@ -212,20 +243,12 @@ export class DataManagementComponent {
     return new Intl.DateTimeFormat('pt-PT', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
   }
 
-  formatBytes(bytes: number): string {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
-    return `${(bytes / 1024 / 1024).toFixed(1).replace('.', ',')} MB`;
+  lastSyncLabel(): string {
+    const value = this.store.lastSyncedAt();
+    return value ? this.formatIsoDate(value) : 'Ainda não disponível';
   }
 
-  persistenceLabel(status: StorageStatus): string {
-    if (!status.supported) return 'Não suportado pelo browser';
-    if (status.persisted === true) return 'Protegido contra limpeza automática';
-    if (status.persisted === false) return 'Gerido pelo browser';
-    return 'Estado indisponível';
-  }
-
-  private async loadStorageStatus(): Promise<void> {
-    this.storageStatus.set(await this.storage.requestPersistence());
+  private captureOperationError(error: unknown, fallback: string): void {
+    this.operationError.set(error instanceof Error ? error.message : fallback);
   }
 }

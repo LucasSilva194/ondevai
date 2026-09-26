@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { MonthlyBudget, Settings } from '../../models/domain.models';
 import { previousMonth } from '../../shared/utils/statistics.utils';
+import { createPocketBaseId } from '../pocketbase/pocketbase.ids';
 import { BUDGET_REPOSITORY, CATEGORY_REPOSITORY, SETTINGS_REPOSITORY } from '../repositories/repository.tokens';
 
 export interface BudgetInput {
@@ -24,7 +25,7 @@ export class BudgetService {
     if (id && !existing) throw new Error('O orçamento que tentou editar já não existe.');
     const now = new Date().toISOString();
     const budget: MonthlyBudget = {
-      id: existing?.id ?? crypto.randomUUID(),
+      id: existing?.id ?? createPocketBaseId(),
       month: input.month,
       categoryId: input.categoryId,
       amountCents: input.amountCents,
@@ -51,7 +52,7 @@ export class BudgetService {
     const existingCategoryIds = new Set(current.map((item) => item.categoryId));
     const now = new Date().toISOString();
     const copies = source.filter((item) => !existingCategoryIds.has(item.categoryId)).map((item): MonthlyBudget => ({
-      id: crypto.randomUUID(),
+      id: createPocketBaseId(),
       month,
       categoryId: item.categoryId,
       amountCents: item.amountCents,

@@ -13,6 +13,7 @@ import {
 } from '../../models/domain.models';
 import { isDateString, todayDateString } from '../../shared/utils/date.utils';
 import { validateRecurrenceRule } from '../../shared/utils/recurrence.utils';
+import { createPocketBaseId } from '../pocketbase/pocketbase.ids';
 import {
   INCOME_REPOSITORY,
   RECURRENCE_EXCEPTION_REPOSITORY,
@@ -59,7 +60,7 @@ export class SavingsService {
     this.validateIncome(input);
     const now = new Date().toISOString();
     const income: MonthlyIncome = {
-      id: crypto.randomUUID(),
+      id: createPocketBaseId(),
       name: input.name.trim(),
       kind: input.kind,
       amountCents: input.amountCents,
@@ -103,7 +104,7 @@ export class SavingsService {
     });
     const now = new Date().toISOString();
     const exception: RecurrenceException = {
-      id: `income:${seriesId}:${occurrenceDate}`,
+      id: createPocketBaseId(),
       seriesType: 'income',
       seriesId,
       occurrenceDate,
@@ -120,7 +121,7 @@ export class SavingsService {
     if (!(await this.incomes.getById(seriesId))?.recurrence) throw new Error('A série de rendimentos já não existe.');
     const now = new Date().toISOString();
     await this.exceptions.put({
-      id: `income:${seriesId}:${occurrenceDate}`,
+      id: createPocketBaseId(),
       seriesType: 'income',
       seriesId,
       occurrenceDate,
@@ -141,7 +142,7 @@ export class SavingsService {
     this.validateGoal(input);
     const now = new Date().toISOString();
     const goal: SavingsGoal = {
-      id: crypto.randomUUID(),
+      id: createPocketBaseId(),
       name: input.name.trim(),
       kind: input.kind,
       targetAmountCents: input.targetAmountCents,
@@ -154,9 +155,9 @@ export class SavingsService {
     const opening = input.currentAmountCents > 0
       ? this.buildTransaction(goal.id, { type: 'opening', amountCents: input.currentAmountCents, effectiveDate: todayDateString(), note: 'Saldo inicial' }, now)
       : undefined;
-    await this.goals.createGoal(goal, opening);
+    const savedGoal = await this.goals.createGoal(goal, opening);
     await this.registerChange();
-    return goal;
+    return savedGoal;
   }
 
   async updateGoal(id: string, input: SavingsGoalInput): Promise<SavingsGoal> {
@@ -182,9 +183,9 @@ export class SavingsService {
       ...(input.targetDate ? { targetDate: input.targetDate } : {}),
     };
     if (!input.targetDate) delete goal.targetDate;
-    await this.goals.updateGoal(goal, adjustment);
+    const savedGoal = await this.goals.updateGoal(goal, adjustment);
     await this.registerChange();
-    return goal;
+    return savedGoal;
   }
 
   async createTransaction(goalId: string, input: SavingsTransactionInput): Promise<SavingsTransaction> {
@@ -264,7 +265,7 @@ export class SavingsService {
 
   private buildTransaction(goalId: string, input: SavingsTransactionInput, now: string): SavingsTransaction {
     return {
-      id: crypto.randomUUID(),
+      id: createPocketBaseId(),
       goalId,
       type: input.type,
       amountCents: input.amountCents,

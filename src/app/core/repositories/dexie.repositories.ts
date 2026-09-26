@@ -72,16 +72,17 @@ export class DexieSavingsGoalRepository implements SavingsGoalRepository {
     return this.database.savingsTransactions.orderBy('effectiveDate').reverse().toArray();
   }
 
-  async createGoal(goal: SavingsGoal, opening?: SavingsTransaction): Promise<void> {
+  async createGoal(goal: SavingsGoal, opening?: SavingsTransaction): Promise<SavingsGoal> {
     const openingAmount = opening ? signedAmount(opening) : 0;
     if (goal.currentAmountCents !== openingAmount || openingAmount < 0) throw new Error('O saldo inicial não é consistente.');
     await this.database.transaction('rw', [this.database.savingsGoals, this.database.savingsTransactions], async () => {
       await this.database.savingsGoals.add(goal);
       if (opening) await this.database.savingsTransactions.add(opening);
     });
+    return goal;
   }
 
-  async updateGoal(goal: SavingsGoal, adjustment?: SavingsTransaction): Promise<void> {
+  async updateGoal(goal: SavingsGoal, adjustment?: SavingsTransaction): Promise<SavingsGoal> {
     await this.database.transaction('rw', [this.database.savingsGoals, this.database.savingsTransactions], async () => {
       const current = await this.database.savingsGoals.get(goal.id);
       if (!current) throw new Error('O objetivo já não existe.');
@@ -90,6 +91,7 @@ export class DexieSavingsGoalRepository implements SavingsGoalRepository {
       await this.database.savingsGoals.put(goal);
       if (adjustment) await this.database.savingsTransactions.add(adjustment);
     });
+    return goal;
   }
 
   async addTransaction(transaction: SavingsTransaction): Promise<SavingsGoal> {

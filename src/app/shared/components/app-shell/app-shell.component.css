@@ -65,8 +65,12 @@
 
 .add-expense { width: 100%; margin-top: 32px; justify-content: space-between; padding-left: 17px; }
 .action-symbol { width: 28px; height: 28px; display: grid; place-items: center; flex: none; border-radius: 50%; background: color-mix(in srgb, var(--on-accent) 18%, transparent); font-size: 1.15rem; line-height: 1; }
-.local-note { margin: auto 5px 4px; padding-top: 24px; color: var(--text-muted); font-size: 0.72rem; line-height: 1.55; }
-.local-note::before { display: inline-block; width: 7px; height: 7px; margin-right: 8px; border-radius: 50%; background: var(--accent); content: ""; box-shadow: 0 0 0 4px var(--accent-soft); }
+.account-panel { min-width: 0; margin: auto 5px 4px; padding-top: 24px; }
+.account-email { display: block; overflow: hidden; color: var(--text); font-size: .76rem; font-weight: 720; text-decoration: none; text-overflow: ellipsis; white-space: nowrap; }
+.account-email:hover { color: var(--accent-strong); }
+.sync-state { margin: 7px 0 0; color: var(--text-muted); font-size: 0.68rem; line-height: 1.45; }
+.sync-state::before { display: inline-block; width: 7px; height: 7px; margin-right: 8px; border-radius: 50%; background: var(--accent); content: ""; box-shadow: 0 0 0 4px var(--accent-soft); }
+.logout-button { margin-top: 9px; font-size: .72rem; }
 
 .app-content { min-height: 100dvh; margin-left: 286px; }
 .mobile-header, .mobile-nav { display: none; }
@@ -101,7 +105,8 @@
   color: var(--danger);
   box-shadow: inset 0 0 0 1px var(--danger-border);
 }
-.offline-banner, .update-banner { margin: 12px clamp(24px, 5vw, 72px) 0; padding: 11px 15px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface-subtle); color: var(--text-soft); font-size: .8rem; }
+.offline-banner, .update-banner, .connection-error { margin: 12px clamp(24px, 5vw, 72px) 0; padding: 11px 15px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface-subtle); color: var(--text-soft); font-size: .8rem; }
+.connection-error { border-color: var(--danger-border); background: var(--danger-soft); color: var(--danger); }
 .update-banner { display: flex; align-items: center; justify-content: space-between; gap: 16px; background: var(--accent-soft); color: var(--accent-strong); border-color: var(--accent-border); }
 
 @media (max-width: 1050px) {
@@ -144,6 +149,9 @@
   .mobile-more-menu strong { font-size: .84rem; }
   .mobile-more-menu small { overflow: hidden; color: var(--text-muted); font-size: .67rem; text-overflow: ellipsis; white-space: nowrap; }
   .mobile-menu-arrow { width: 17px; height: 17px; color: var(--text-muted); }
+  .account-glyph { font-weight: 820; }
+  .mobile-logout { width: 100%; min-height: 44px; margin-top: 4px; padding: 9px 13px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface-subtle); color: var(--text-soft); font: inherit; font-size: .8rem; font-weight: 720; text-align: left; cursor: pointer; }
+  .mobile-logout:hover { background: var(--danger-soft); color: var(--danger); }
   .mobile-nav {
     position: fixed;
     inset: auto 12px 12px;
@@ -176,7 +184,7 @@
   .backup-banner .btn span { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
   .backup-dismiss { color: var(--text-muted); }
   .global-error { margin: 14px 14px 0; }
-  .offline-banner, .update-banner { margin: 10px 14px 0; }
+  .offline-banner, .update-banner, .connection-error { margin: 10px 14px 0; }
 }
 
 @media (max-width: 460px) {

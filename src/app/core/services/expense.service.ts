@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { Expense, RecurrenceException, RecurrenceExceptionChanges, RecurrenceRule, Settings } from '../../models/domain.models';
 import { isDateString } from '../../shared/utils/date.utils';
 import { validateRecurrenceRule } from '../../shared/utils/recurrence.utils';
+import { createPocketBaseId } from '../pocketbase/pocketbase.ids';
 import {
   CATEGORY_REPOSITORY,
   EXPENSE_REPOSITORY,
@@ -29,7 +30,7 @@ export class ExpenseService {
     await this.validate(input);
     const now = new Date().toISOString();
     const expense: Expense = {
-      id: crypto.randomUUID(),
+      id: createPocketBaseId(),
       date: input.date,
       amountCents: input.amountCents,
       categoryId: input.categoryId,
@@ -79,7 +80,7 @@ export class ExpenseService {
     await this.validate(input);
     const now = new Date().toISOString();
     const exception: RecurrenceException = {
-      id: `expense:${seriesId}:${occurrenceDate}`,
+      id: createPocketBaseId(),
       seriesType: 'expense',
       seriesId,
       occurrenceDate,
@@ -97,7 +98,7 @@ export class ExpenseService {
     if (!series?.recurrence) throw new Error('A série de despesas já não existe.');
     const now = new Date().toISOString();
     await this.exceptions.put({
-      id: `expense:${seriesId}:${occurrenceDate}`,
+      id: createPocketBaseId(),
       seriesType: 'expense',
       seriesId,
       occurrenceDate,
