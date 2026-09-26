@@ -1,8 +1,10 @@
 import { ApplicationConfig, inject, isDevMode, provideAppInitializer } from '@angular/core';
 import { provideRouter, withComponentInputBinding, withInMemoryScrolling } from '@angular/router';
 import { provideServiceWorker } from '@angular/service-worker';
+import { environment } from '../environments/environment';
 import { appRoutes } from './app.routes';
 import { UserSessionService } from './core/auth/user-session.service';
+import { POCKETBASE_URL } from './core/pocketbase/pocketbase.client';
 import {
   BUDGET_REPOSITORY,
   CATEGORY_REPOSITORY,
@@ -34,6 +36,7 @@ export const appConfig: ApplicationConfig = {
       withComponentInputBinding(),
       withInMemoryScrolling({ scrollPositionRestoration: 'top' }),
     ),
+    { provide: POCKETBASE_URL, useValue: environment.pocketBaseUrl },
     { provide: EXPENSE_REPOSITORY, useExisting: PocketBaseExpenseRepository },
     { provide: CATEGORY_REPOSITORY, useExisting: PocketBaseCategoryRepository },
     { provide: INCOME_REPOSITORY, useExisting: PocketBaseIncomeRepository },

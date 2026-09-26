@@ -4,7 +4,9 @@
 
 O OndeVai é uma aplicação web para organizar despesas, rendimentos, orçamentos e objetivos de poupança pessoais. Uma conta autenticada e com email verificado guarda os dados num backend PocketBase; o frontend Angular mantém o estado em memória e recebe atualizações em tempo real.
 
-Esta versão prepara a migração para PocketHost, mas não inclui um deploy de produção, credenciais reais, SMTP ou DNS configurados.
+O build de produção está configurado para usar o backend PocketHost em
+`https://ondevai.pockethost.io`. O repositório não inclui credenciais reais,
+SMTP ou DNS configurados.
 
 ## Funcionalidades
 
@@ -67,13 +69,12 @@ npm run build
 
 ## Configuração do PocketBase
 
-O SDK oficial recebe a origem através do `InjectionToken` `POCKETBASE_URL`, definido em `src/app/core/pocketbase/pocketbase.client.ts`. O valor seguro por omissão é `http://127.0.0.1:8090`. Para outro ambiente, forneça o token no bootstrap/configuração desse ambiente; não coloque tokens, passwords ou chaves no bundle.
+O SDK oficial recebe a origem através do `InjectionToken` `POCKETBASE_URL`, definido em `src/app/core/pocketbase/pocketbase.client.ts`. `src/environments/environment.ts` mantém o desenvolvimento em `http://127.0.0.1:8090`; o build de produção substitui esse ficheiro por `src/environments/environment.production.ts` e usa `https://ondevai.pockethost.io`. Não coloque tokens, passwords ou chaves no bundle.
 
 Não existem variáveis de ambiente secretas necessárias ao frontend. Antes de um lançamento real ainda é necessário:
 
-- fornecer a origem PocketHost do ambiente;
 - configurar SMTP e URLs de confirmação/recuperação fora do repositório;
-- aplicar e validar migrations e hooks na versão exata do serviço;
+- manter migrations e hooks validados na versão PocketBase usada pelo serviço;
 - rever CORS, backups operacionais e monitorização da infraestrutura.
 
 ## Arquitetura
@@ -172,9 +173,26 @@ git diff --check
 
 Os testes do frontend usam mocks ou `fake-indexeddb`. A validação real de transações, rules e hooks requer a instância PocketBase local descartável.
 
+## Deploy do frontend
+
+O frontend pode ser publicado no Cloudflare Pages com:
+
+```text
+Build command: npm ci && npm run build
+Output directory: dist/ondevai/browser
+```
+
+`public/_redirects` inclui o fallback de SPA necessário para abrir diretamente
+rotas como `/entrar` e `/visao-geral`.
+
+O repositório está ligado à instância `ondevai` em `.phioconfig`. Com Node.js
+24 ou superior e o `phio` autenticado, o backend pode ser publicado com
+`phio deploy`; por omissão, este sincroniza `pb_hooks` e `pb_migrations` sem
+enviar `pb_data`.
+
 ## Limitações atuais
 
-- Não existe deploy PocketHost concluído nesta tarefa.
+- O backend está publicado no PocketHost, mas o frontend ainda precisa de ser publicado.
 - SMTP, DNS, URLs públicas e backups operacionais ainda exigem configuração humana.
 - Sem fila offline ou merge bidirecional.
 - Sem OAuth, importação CSV, anexos ou fotografias de recibos.

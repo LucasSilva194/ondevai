@@ -1,7 +1,8 @@
 import { Injectable, InjectionToken, inject } from '@angular/core';
 import PocketBase from 'pocketbase';
+import { environment } from '../../../environments/environment';
 
-export const DEFAULT_POCKETBASE_URL = 'http://127.0.0.1:8090';
+export const DEFAULT_POCKETBASE_URL = environment.pocketBaseUrl;
 
 export const POCKETBASE_URL = new InjectionToken<string>('POCKETBASE_URL', {
   providedIn: 'root',
