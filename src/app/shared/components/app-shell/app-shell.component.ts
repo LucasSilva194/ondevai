@@ -19,7 +19,10 @@ import { IconComponent } from '../icon/icon.component';
         </a>
         <nav class="nav-list">
           @for (item of navigation; track item.path) {
-            <a [routerLink]="item.path" routerLinkActive="active">{{ item.label }}</a>
+            <a [routerLink]="item.path" routerLinkActive="active">
+              <app-icon [name]="item.icon" />
+              <span>{{ item.label }}</span>
+            </a>
           }
         </nav>
         <a class="btn btn-primary add-expense" routerLink="/despesas" [queryParams]="{ nova: 1 }">
@@ -72,22 +75,6 @@ import { IconComponent } from '../icon/icon.component';
           </nav>
         }
 
-        @if (store.shouldRemindBackup() && !backupDismissed()) {
-          <section class="backup-banner" aria-label="Lembrete de cópia de segurança">
-            <span class="backup-symbol" aria-hidden="true"><app-icon name="backup" /></span>
-            <div class="backup-copy">
-              <strong><span class="desktop-backup-copy">Proteja os seus dados com uma cópia de segurança.</span><span class="mobile-backup-copy">Backup pendente</span></strong>
-              <p>O ficheiro JSON permite recuperar a informação da sua conta.</p>
-            </div>
-            <div class="button-row">
-              <button class="btn btn-secondary backup-export" type="button" (click)="exportNow()" [disabled]="store.operationPending()" aria-label="Exportar cópia de segurança">
-                <app-icon name="backup" /><span>Exportar agora</span>
-              </button>
-              <button class="btn btn-ghost backup-dismiss" type="button" (click)="backupDismissed.set(true)" aria-label="Lembrar mais tarde"><app-icon name="close" /><span>Lembrar mais tarde</span></button>
-            </div>
-          </section>
-        }
-
         @if (store.error()) {
           <div class="global-error" role="alert">
             <span>{{ store.error() }}</span>
@@ -133,7 +120,6 @@ export class AppShellComponent {
   readonly pwa = inject(PwaService);
   readonly auth = inject(AuthService);
   private readonly session = inject(UserSessionService);
-  readonly backupDismissed = signal(false);
   readonly mobileMenuOpen = signal(false);
   readonly navigation = [
     { path: '/visao-geral', label: 'Visão geral', shortLabel: 'Resumo', icon: 'overview', primary: true },
@@ -154,15 +140,6 @@ export class AppShellComponent {
     const value = this.store.lastSyncedAt();
     if (!value) return '';
     return new Intl.DateTimeFormat('pt-PT', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(value));
-  }
-
-  async exportNow(): Promise<void> {
-    try {
-      await this.store.exportBackup();
-      this.backupDismissed.set(true);
-    } catch {
-      // The store exposes the contextual error to the global alert.
-    }
   }
 
   async applyUpdate(): Promise<void> {
