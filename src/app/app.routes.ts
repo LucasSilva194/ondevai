@@ -15,6 +15,12 @@ const onboardingGuard: CanMatchFn = () => {
 
 export const appRoutes: Routes = [
   {
+    path: '',
+    pathMatch: 'full',
+    title: 'OndeVai | O seu dinheiro, explicado',
+    loadComponent: () => import('./features/landing/landing.component').then((module) => module.LandingComponent),
+  },
+  {
     path: 'entrar',
     canActivate: [guestGuard],
     title: 'Entrar | OndeVai',

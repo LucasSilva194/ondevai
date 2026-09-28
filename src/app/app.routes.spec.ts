@@ -12,10 +12,16 @@ describe('appRoutes authentication integration', () => {
   });
 
   it('protege onboarding e a aplicação privada com autenticação e verificação', () => {
+    const privateAppRoute = appRoutes.find((route) => route.children);
     expect(appRoutes.find((route) => route.path === 'migrar-dados')?.canActivate).toEqual([authGuard, verifiedGuard]);
     expect(appRoutes.find((route) => route.path === 'onboarding')?.canActivate).toEqual([authGuard, verifiedGuard]);
-    expect(appRoutes.find((route) => route.path === '')?.canActivate).toEqual([authGuard, verifiedGuard]);
-    const privateChildren = appRoutes.find((route) => route.path === '')?.children;
+    expect(privateAppRoute?.canActivate).toEqual([authGuard, verifiedGuard]);
+    const privateChildren = privateAppRoute?.children;
     expect(privateChildren?.find((route) => route.path === 'conta')?.canActivate).toEqual([authGuard, verifiedGuard]);
+  });
+
+  it('abre a landing page pública na raiz', () => {
+    expect(appRoutes[0]).toMatchObject({ path: '', pathMatch: 'full' });
+    expect(appRoutes[0]?.canActivate).toBeUndefined();
   });
 });
