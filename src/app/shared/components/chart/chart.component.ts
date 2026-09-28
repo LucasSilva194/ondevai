@@ -68,7 +68,11 @@ export class ChartComponent implements AfterViewInit, OnChanges, OnDestroy {
         maintainAspectRatio: false,
         animation: { duration: matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 260 },
         plugins: {
-          legend: { display: this.type === 'doughnut', position: 'bottom', labels: { color: textColor, usePointStyle: true, boxWidth: 8 } },
+          legend: { display: this.type === 'doughnut', position: 'bottom', labels: { color: textColor, usePointStyle: true, boxWidth: 8, generateLabels: (chart) => {
+            const defaultLabels = Chart.defaults.plugins.legend.labels.generateLabels?.(chart) ?? [];
+            if (this.type !== 'doughnut') return defaultLabels;
+            return defaultLabels.map((item) => ({ ...item, text: `${item.text} · ${new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(this.values[item.index ?? 0] / 100)}` }));
+          } } },
           tooltip: { callbacks: { label: (item) => new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(Number(item.raw)) } },
         },
         scales: this.type === 'bar' ? {

@@ -10,6 +10,9 @@
 .category-name i { width: 11px; height: 42px; flex: none; border-radius: 999px; box-shadow: 0 0 0 4px var(--surface-subtle); }
 .category-name span { display: block; margin-top: 5px; color: var(--text-muted); font-size: 0.75rem; }
 .order-actions { display: flex; gap: 6px; }
+.subcategory-toggle { width: 100%; min-height: 42px; display: flex; align-items: center; justify-content: space-between; margin-top: 16px; padding: 0 12px; border: 1px solid var(--border); border-radius: 13px; background: var(--surface-subtle); color: var(--text-soft); font: inherit; font-size: .78rem; font-weight: 690; text-align: left; cursor: pointer; transition: background-color var(--motion), border-color var(--motion); }
+.subcategory-toggle:hover { border-color: var(--accent-border); background: var(--accent-soft); }
+.toggle-chevron { color: var(--accent-strong); font-size: 1.2rem; }
 .mini-button { width: 32px; height: 32px; border: 1px solid var(--border); border-radius: 50%; background: var(--surface-raised); cursor: pointer; transition: transform var(--motion), background-color var(--motion), border-color var(--motion); }
 .mini-button:hover:not(:disabled) { transform: translateY(-2px); background: var(--accent-soft); border-color: var(--accent-border); }
 .mini-button:disabled { opacity: 0.32; cursor: not-allowed; }

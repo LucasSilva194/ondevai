@@ -64,6 +64,11 @@ import { IconComponent } from '../icon/icon.component';
               <span><strong>Dados e privacidade</strong><small>Backup, importação e armazenamento</small></span>
               <app-icon class="mobile-menu-arrow" name="arrow-right" />
             </a>
+            <a routerLink="/categorias" routerLinkActive="active" (click)="mobileMenuOpen.set(false)">
+              <span class="mobile-menu-icon"><app-icon name="categories" /></span>
+              <span><strong>Categorias</strong><small>Gerir categorias e subcategorias</small></span>
+              <app-icon class="mobile-menu-arrow" name="arrow-right" />
+            </a>
             <a routerLink="/conta" routerLinkActive="active" (click)="mobileMenuOpen.set(false)">
               <span class="mobile-menu-icon account-glyph" aria-hidden="true">@</span>
               <span><strong>Conta</strong><small>{{ auth.user()?.email }}</small></span>
@@ -126,7 +131,7 @@ export class AppShellComponent {
     { path: '/despesas', label: 'Despesas', shortLabel: 'Despesas', icon: 'expenses', primary: true },
     { path: '/orcamentos', label: 'Orçamentos', shortLabel: 'Limites', icon: 'budgets', primary: true },
     { path: '/poupancas', label: 'Poupanças', shortLabel: 'Poupar', icon: 'savings', primary: true },
-    { path: '/categorias', label: 'Categorias', shortLabel: 'Categorias', icon: 'categories', primary: true },
+    { path: '/categorias', label: 'Categorias', shortLabel: 'Categorias', icon: 'categories', primary: false },
     { path: '/dados-e-privacidade', label: 'Dados e privacidade', shortLabel: 'Dados', icon: 'data', primary: false },
     { path: '/conta', label: 'Conta', shortLabel: 'Conta', icon: 'data', primary: false },
   ] as const;
