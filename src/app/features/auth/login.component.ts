@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
@@ -16,7 +16,7 @@ import { AuthPageComponent } from './auth-page.component';
       <p class="intro">Aceda aos seus dados financeiros com o seu email e palavra-passe.</p>
 
       <form class="auth-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
-        <fieldset [disabled]="auth.loading()">
+        <fieldset [disabled]="auth.loading() || submitting()">
           <div class="field">
             <label for="login-email">Email</label>
             <input id="login-email" type="email" formControlName="email" autocomplete="username" inputmode="email"
@@ -31,15 +31,15 @@ import { AuthPageComponent } from './auth-page.component';
             @if (showPasswordError()) { <p id="login-password-error" class="field-error">Introduza a sua palavra-passe.</p> }
           </div>
 
-          <button class="btn btn-primary" type="submit" [disabled]="auth.loading()">
-            {{ auth.loading() ? 'A entrar...' : 'Entrar' }}
+          <button class="btn btn-primary" type="submit" [disabled]="auth.loading() || submitting()">
+            {{ auth.loading() || submitting() ? 'A entrar...' : 'Entrar' }}
           </button>
         </fieldset>
       </form>
 
       @if (auth.error()) { <p class="form-message error" role="alert">{{ auth.error() }}</p> }
       @if (session.error()) { <p class="form-message error" role="alert">{{ session.error() }}</p> }
-      @if (auth.loading()) { <p class="helper" role="status">A validar os seus dados.</p> }
+      @if (auth.loading() || submitting()) { <p class="helper" role="status">A validar os seus dados.</p> }
 
       <nav class="auth-links" aria-label="Outras opções de autenticação">
         <a routerLink="/recuperar-password">Esqueci-me da palavra-passe</a>
@@ -53,6 +53,7 @@ import { AuthPageComponent } from './auth-page.component';
 export class LoginComponent {
   readonly auth = inject(AuthService);
   readonly session = inject(UserSessionService);
+  readonly submitting = signal(false);
   private readonly formBuilder = inject(FormBuilder);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
@@ -73,12 +74,14 @@ export class LoginComponent {
   }
 
   async submit(): Promise<void> {
+    if (this.submitting()) return;
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
 
     const { email, password } = this.form.getRawValue();
+    this.submitting.set(true);
     try {
       const destination = await this.session.login(email, password);
       if (destination === 'verification-required') {
@@ -92,6 +95,8 @@ export class LoginComponent {
       await this.router.navigateByUrl(this.safeReturnUrl());
     } catch {
       // AuthService/UserSessionService expose the translated error to the template.
+    } finally {
+      this.submitting.set(false);
     }
   }
 
