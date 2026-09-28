@@ -84,7 +84,7 @@ abstract class PocketBaseRepositoryBase {
     });
   }
 
-  protected async list<TRecord, TDomain>(
+  protected async list<TRecord extends object, TDomain>(
     collection: string,
     sort: string | undefined,
     mapper: (record: TRecord) => TDomain,
@@ -99,7 +99,7 @@ abstract class PocketBaseRepositoryBase {
         try {
           return mapper(record);
         } catch (error: unknown) {
-          const recordId = typeof record.id === 'string' ? record.id : 'desconhecido';
+          const recordId = 'id' in record && typeof record.id === 'string' ? record.id : 'desconhecido';
           const detail = error instanceof Error ? error.message : 'formato inesperado';
           throw new Error(`Registo inválido na coleção ${collection} (${recordId}): ${detail}`, { cause: error });
         }
