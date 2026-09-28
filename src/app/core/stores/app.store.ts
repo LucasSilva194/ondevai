@@ -97,14 +97,6 @@ export class AppStore {
   readonly monthlyBudgets = this._monthlyBudgets.asReadonly();
   readonly recurrenceExceptions = this._recurrenceExceptions.asReadonly();
   readonly settings = this._settings.asReadonly();
-  readonly shouldRemindBackup = computed(() => {
-    const settings = this._settings();
-    if (!settings.onboardingCompleted) return false;
-    if (!settings.lastExportAt) return true;
-    const elapsedDays = (Date.now() - Date.parse(settings.lastExportAt)) / 86_400_000;
-    return elapsedDays >= 30 || settings.changesSinceExport >= 25;
-  });
-
   async initialize(): Promise<void> {
     await this.loadAuthenticatedUser();
   }

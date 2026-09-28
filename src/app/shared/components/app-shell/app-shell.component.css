@@ -42,26 +42,25 @@
   font-weight: 820;
 }
 
-.nav-list { display: grid; gap: 7px; margin-top: 58px; counter-reset: nav; }
+.nav-list { display: grid; gap: 5px; margin-top: 44px; }
 .nav-list a {
   min-height: 45px;
   display: flex;
   align-items: center;
   gap: 11px;
-  padding: 10px 13px;
+  padding: 9px 12px;
   border: 1px solid transparent;
-  border-radius: 999px;
+  border-radius: 14px;
   color: var(--text-soft);
   text-decoration: none;
   font-size: 0.9rem;
   font-weight: 680;
   transition: transform var(--motion), background-color var(--motion), color var(--motion), border-color var(--motion);
-  counter-increment: nav;
 }
-.nav-list a::before { width: 19px; color: var(--text-muted); content: "0" counter(nav); font-size: 0.61rem; font-weight: 800; letter-spacing: 0.04em; }
-.nav-list a:hover { transform: translateX(3px); color: var(--text); background: var(--surface-subtle); }
-.nav-list a.active { color: var(--accent-strong); background: var(--accent-soft); border-color: var(--accent-border); box-shadow: inset 0 1px 0 var(--inner-stroke); }
-.nav-list a.active::before { color: currentColor; }
+.nav-list a app-icon { width: 18px; height: 18px; flex: none; color: var(--text-muted); transition: color var(--motion), transform var(--motion); }
+.nav-list a:hover { transform: translateX(2px); color: var(--text); background: var(--surface-subtle); }
+.nav-list a.active { color: var(--accent-strong); background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent-border) 68%, transparent); }
+.nav-list a.active app-icon { color: var(--accent-strong); transform: scale(1.06); }
 
 .add-expense { width: 100%; margin-top: 32px; justify-content: space-between; padding-left: 17px; }
 .action-symbol { width: 28px; height: 28px; display: grid; place-items: center; flex: none; border-radius: 50%; background: color-mix(in srgb, var(--on-accent) 18%, transparent); font-size: 1.15rem; line-height: 1; }
@@ -75,24 +74,6 @@
 .app-content { min-height: 100dvh; margin-left: 290px; }
 .mobile-header, .mobile-nav { display: none; }
 
-.backup-banner {
-  margin: 18px clamp(24px, 5vw, 72px) 0;
-  padding: 18px 20px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 24px;
-  border: 5px solid var(--bezel);
-  border-radius: 24px;
-  background: var(--accent-soft);
-  box-shadow: inset 0 0 0 1px var(--accent-border), var(--shadow-soft);
-}
-.backup-symbol { width: 42px; height: 42px; display: grid; place-items: center; flex: none; border-radius: 14px; background: var(--accent); color: var(--on-accent); }
-.backup-copy { min-width: 0; margin-right: auto; }
-.mobile-backup-copy { display: none; }
-.backup-banner p { margin: 5px 0 0; color: var(--text-soft); font-size: 0.88rem; }
-.backup-banner .button-row { flex-wrap: nowrap; }
-.backup-banner .btn app-icon { display: none; }
 .global-error {
   margin: 18px clamp(24px, 5vw, 72px) 0;
   padding: 15px 18px;
@@ -170,19 +151,7 @@
   .mobile-nav a:active { transform: scale(.95); }
   .mobile-nav app-icon { width: 20px; height: 20px; }
   .mobile-nav a span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .mobile-nav a.active { color: var(--accent-strong); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent-border); }
-  .backup-banner { min-height: 58px; margin: 8px 12px 0; padding: 8px 9px; align-items: center; gap: 10px; border-width: 1px; border-radius: 18px; box-shadow: inset 0 1px 0 var(--inner-stroke); }
-  .backup-symbol { width: 38px; height: 38px; border-radius: 12px; }
-  .backup-symbol app-icon { width: 19px; height: 19px; }
-  .backup-copy strong { display: block; overflow: hidden; color: var(--accent-strong); font-size: .76rem; line-height: 1.25; text-overflow: ellipsis; white-space: nowrap; }
-  .desktop-backup-copy { display: none; }
-  .mobile-backup-copy { display: inline; }
-  .backup-copy p { display: none; }
-  .backup-banner .button-row { margin-left: auto; gap: 3px; flex-wrap: nowrap; }
-  .backup-banner .btn { width: 38px; height: 38px; min-height: 38px; padding: 0; border: 0; border-radius: 12px; box-shadow: none; }
-  .backup-banner .btn app-icon { width: 18px; height: 18px; display: inline-grid; }
-  .backup-banner .btn span { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
-  .backup-dismiss { color: var(--text-muted); }
+.mobile-nav a.active { color: var(--accent-strong); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent-border); }
   .global-error { margin: 14px 14px 0; }
   .offline-banner, .update-banner, .connection-error { margin: 10px 14px 0; }
 }
@@ -197,8 +166,6 @@
   .mobile-add-expense .action-symbol { width: auto; height: auto; background: transparent; }
   .mobile-add-expense app-icon { width: 20px; height: 20px; }
   .mobile-more-menu { top: 74px; right: 8px; width: min(340px, calc(100% - 16px)); }
-  .backup-banner { margin-inline: 10px; }
-  .backup-copy strong { max-width: 16rem; }
   .mobile-nav { inset: auto 8px 8px; }
 }
 

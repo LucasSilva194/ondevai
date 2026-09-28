@@ -31,14 +31,12 @@ describe('AppShellComponent', () => {
         {
           provide: AppStore,
           useValue: {
-            shouldRemindBackup: () => false,
             operationPending: () => false,
             error: () => null,
             clearError: vi.fn(),
             syncing: syncing.asReadonly(),
             lastSyncedAt: lastSyncedAt.asReadonly(),
             connectionError: connectionError.asReadonly(),
-            exportBackup: vi.fn(),
           },
         },
         { provide: PwaService, useValue: { offline: offline.asReadonly(), updateReady: () => false, activateUpdate: vi.fn() } },
