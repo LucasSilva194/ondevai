@@ -44,8 +44,10 @@ import {
         <article class="metric"><div class="metric-core"><div class="metric-label"><span class="metric-icon" aria-hidden="true"><app-icon name="expenses" /></span><span>Saídas</span></div><strong>{{ formatCurrency(monthExpenseTotal()) }}</strong><small>{{ monthExpenses().length }} {{ monthExpenses().length === 1 ? 'despesa' : 'despesas' }}</small></div></article>
       </section>
 
+      <div class="dashboard-widgets" aria-label="Widgets da visão geral">
       @if (!isFuturePeriod()) {
-        <section class="comparison-section" aria-labelledby="comparison-title">
+        <section class="dashboard-widget comparison-section" [style.--mobile-order]="widgetOrder('comparison')" aria-labelledby="comparison-title">
+          <div class="widget-reorder"><button type="button" class="widget-move" (click)="moveWidget('comparison', -1)" aria-label="Mover comparação para cima">↑</button><button type="button" class="widget-move" (click)="moveWidget('comparison', 1)" aria-label="Mover comparação para baixo">↓</button></div>
           <div class="section-title-row"><div><h2 id="comparison-title">Comparação com o mês anterior</h2><p>{{ isPartialPeriod() ? 'Comparação parcial, com os dados disponíveis.' : 'Diferença absoluta e percentual.' }}</p></div></div>
           <div class="comparison-grid">
             <article class="card-flat"><div class="comparison-label"><app-icon name="expenses" /><span>Despesas</span></div><strong>{{ signedCurrency(comparisons().expenses.differenceCents) }}</strong><small [class]="directionClass(comparisons().expenses)">{{ comparisonLabel(comparisons().expenses) }}</small></article>
@@ -58,14 +60,16 @@ import {
         </section>
       }
 
-      <section class="dashboard-budget card card-padding" aria-labelledby="budget-title">
+      <section class="dashboard-widget dashboard-budget card card-padding" [style.--mobile-order]="widgetOrder('budget')" aria-labelledby="budget-title">
+        <div class="widget-reorder"><button type="button" class="widget-move" (click)="moveWidget('budget', -1)" aria-label="Mover orçamento para cima">↑</button><button type="button" class="widget-move" (click)="moveWidget('budget', 1)" aria-label="Mover orçamento para baixo">↓</button></div>
         <div><h2 id="budget-title">Orçamento do mês</h2>@if (budgetSummary().totalBudgetedCents > 0) { <p>{{ budgetSummary().usedPercentage }}% utilizado · {{ formatCurrency(budgetSummary().remainingCents) }} restantes</p> } @else { <p>Ainda não definiu limites para este mês.</p> }</div>
         <div class="budget-mini-stats"><span><strong>{{ formatCurrency(budgetSummary().totalBudgetedCents) }}</strong> planeados</span><span><strong>{{ budgetSummary().nearLimit.length }}</strong> perto do limite</span><span><strong>{{ budgetSummary().exceeded.length }}</strong> excedidos</span></div>
         <a class="btn btn-secondary budget-link" routerLink="/orcamentos"><span>Gerir orçamentos</span><app-icon name="arrow-right" /></a>
       </section>
 
       @if (insights().length > 0 && !isFuturePeriod()) {
-        <section class="insights-section" aria-labelledby="insights-title">
+        <section class="dashboard-widget insights-section" [style.--mobile-order]="widgetOrder('insights')" aria-labelledby="insights-title">
+          <div class="widget-reorder"><button type="button" class="widget-move" (click)="moveWidget('insights', -1)" aria-label="Mover insights para cima">↑</button><button type="button" class="widget-move" (click)="moveWidget('insights', 1)" aria-label="Mover insights para baixo">↓</button></div>
           <div class="section-title-row"><div><p class="eyebrow">Insights</p><h2 id="insights-title">O que merece atenção</h2></div></div>
           <div class="insight-grid">@for (insight of insights(); track insight.id) { <article class="insight-card" [class]="'insight-card ' + insight.tone"><span>{{ insight.tone === 'positive' ? 'Evolução' : insight.tone === 'critical' ? 'Prioridade' : 'Contexto' }}</span><h3>{{ insight.title }}</h3><p>{{ insight.explanation }}</p></article> }</div>
         </section>
@@ -75,11 +79,12 @@ import {
         <section class="empty-state dashboard-empty"><h2>A visão geral começa com o primeiro movimento</h2><p>Adicione um rendimento ou uma despesa para começar a acompanhar o saldo mensal.</p><div class="button-row empty-actions"><a class="btn btn-primary" routerLink="/poupancas">Adicionar rendimento</a><a class="btn btn-secondary" routerLink="/despesas" [queryParams]="{ nova: 1 }">Adicionar despesa</a></div></section>
       } @else {
         <section class="chart-layout">
-          <article class="card card-padding yearly-chart"><div class="section-heading"><div><h2>Saldo mensal</h2><p>{{ seriesPeriodLabel() }}</p></div></div>@if (visiblePeriodHasData()) { <app-chart type="bar" [labels]="seriesLabels()" [values]="seriesValues()" [accessibleLabel]="'Saldo mensal em ' + selectedYear()" /><details class="data-alternative"><summary>Ver dados em tabela</summary><table><thead><tr><th>Mês</th><th>Saldo</th></tr></thead><tbody>@for (point of series(); track point.month) { <tr><td>{{ months[point.month - 1] }}</td><td>{{ formatCurrency(point.amountCents) }}</td></tr> }</tbody></table></details> } @else { <p class="chart-empty">Ainda não existem movimentos neste ano.</p> }</article>
-          <article class="card card-padding distribution-chart"><div class="section-heading"><div><h2>Por categoria</h2><p>{{ monthName() }} de {{ selectedYear() }}</p></div></div>@if (categoryGroups().length > 0) { <app-chart type="doughnut" [labels]="categoryLabels()" [values]="categoryValues()" [colors]="categoryColors()" accessibleLabel="Distribuição das despesas por categoria" /><details class="data-alternative"><summary>Ver dados em tabela</summary><table><thead><tr><th>Categoria</th><th>Total</th></tr></thead><tbody>@for (group of categoryGroups(); track group.id) { <tr><td>{{ group.name }}</td><td>{{ formatCurrency(group.amountCents) }}</td></tr> }</tbody></table></details> } @else { <p class="chart-empty">Sem despesas no mês selecionado.</p> }</article>
+          <article class="dashboard-widget card card-padding distribution-chart" [style.--mobile-order]="widgetOrder('categories')"><div class="widget-reorder"><button type="button" class="widget-move" (click)="moveWidget('categories', -1)" aria-label="Mover Por categoria para cima">↑</button><button type="button" class="widget-move" (click)="moveWidget('categories', 1)" aria-label="Mover Por categoria para baixo">↓</button></div><div class="section-heading"><div><h2>Por categoria</h2><p>{{ monthName() }} de {{ selectedYear() }}</p></div></div>@if (categoryGroups().length > 0) { <app-chart type="doughnut" [labels]="categoryLabels()" [values]="categoryValues()" [colors]="categoryColors()" accessibleLabel="Distribuição das despesas por categoria" /><details class="data-alternative"><summary>Ver dados em tabela</summary><table><thead><tr><th>Categoria</th><th>Total</th></tr></thead><tbody>@for (group of categoryGroups(); track group.id) { <tr><td>{{ group.name }}</td><td>{{ formatCurrency(group.amountCents) }}</td></tr> }</tbody></table></details> } @else { <p class="chart-empty">Sem despesas no mês selecionado.</p> }</article>
+          <article class="dashboard-widget card card-padding yearly-chart" [style.--mobile-order]="widgetOrder('yearly')"><div class="widget-reorder"><button type="button" class="widget-move" (click)="moveWidget('yearly', -1)" aria-label="Mover Saldo mensal para cima">↑</button><button type="button" class="widget-move" (click)="moveWidget('yearly', 1)" aria-label="Mover Saldo mensal para baixo">↓</button></div><div class="section-heading"><div><h2>Saldo mensal</h2><p>{{ seriesPeriodLabel() }}</p></div></div>@if (visiblePeriodHasData()) { <app-chart type="bar" [labels]="seriesLabels()" [values]="seriesValues()" [accessibleLabel]="'Saldo mensal em ' + selectedYear()" /><details class="data-alternative"><summary>Ver dados em tabela</summary><table><thead><tr><th>Mês</th><th>Saldo</th></tr></thead><tbody>@for (point of series(); track point.month) { <tr><td>{{ months[point.month - 1] }}</td><td>{{ formatCurrency(point.amountCents) }}</td></tr> }</tbody></table></details> } @else { <p class="chart-empty">Ainda não existem movimentos neste ano.</p> }</article>
         </section>
-        <section class="rankings"><article class="card-flat ranking-block"><h2>Categorias com maior despesa</h2>@if (categoryGroups().length > 0) { <ol>@for (group of categoryGroups().slice(0, 5); track group.id) { <li><span><i [style.background]="group.color"></i>{{ group.name }}</span><strong>{{ formatCurrency(group.amountCents) }}</strong></li> }</ol> } @else { <p class="muted">Sem informação para este mês.</p> }</article><article class="card-flat ranking-block"><h2>Subcategorias com maior despesa</h2>@if (subcategoryGroups().length > 0) { <ol>@for (group of subcategoryGroups().slice(0, 5); track group.id) { <li><span>{{ group.name }}</span><strong>{{ formatCurrency(group.amountCents) }}</strong></li> }</ol> } @else { <p class="muted">Sem informação para este mês.</p> }</article></section>
+        <section class="dashboard-widget rankings" [style.--mobile-order]="widgetOrder('rankings')"><div class="widget-reorder"><button type="button" class="widget-move" (click)="moveWidget('rankings', -1)" aria-label="Mover rankings para cima">↑</button><button type="button" class="widget-move" (click)="moveWidget('rankings', 1)" aria-label="Mover rankings para baixo">↓</button></div><article class="card-flat ranking-block"><h2>Categorias com maior despesa</h2>@if (categoryGroups().length > 0) { <ol>@for (group of categoryGroups().slice(0, 5); track group.id) { <li><span><i [style.background]="group.color"></i>{{ group.name }}</span><strong>{{ formatCurrency(group.amountCents) }}</strong></li> }</ol> } @else { <p class="muted">Sem informação para este mês.</p> }</article><article class="card-flat ranking-block"><h2>Subcategorias com maior despesa</h2>@if (subcategoryGroups().length > 0) { <ol>@for (group of subcategoryGroups().slice(0, 5); track group.id) { <li><span>{{ group.name }}</span><strong>{{ formatCurrency(group.amountCents) }}</strong></li> }</ol> } @else { <p class="muted">Sem informação para este mês.</p> }</article></section>
       }
+      </div>
     </div>
   `,
   styleUrl: './dashboard.component.css',
@@ -89,6 +94,8 @@ export class DashboardComponent {
   readonly store = inject(AppStore);
   readonly formatCurrency = formatCurrency;
   readonly months = MONTH_NAMES;
+  private readonly widgetStorageKey = 'ondevai.dashboard.widget-order';
+  readonly widgetOrderIds = signal<string[]>(this.readWidgetOrder());
   readonly selectedMonth = signal(new Date().getMonth() + 1);
   readonly selectedYear = signal(new Date().getFullYear());
   readonly availableYears = computed(() => {
@@ -123,6 +130,24 @@ export class DashboardComponent {
   readonly categoryLabels = computed(() => this.categoryGroups().map((group) => group.name));
   readonly categoryValues = computed(() => this.categoryGroups().map((group) => group.amountCents));
   readonly categoryColors = computed(() => this.categoryGroups().map((group) => group.color ?? '#68727d'));
+  widgetOrder(id: string): number { return this.widgetOrderIds().indexOf(id); }
+  moveWidget(id: string, direction: -1 | 1): void {
+    const order = [...this.widgetOrderIds()];
+    const index = order.indexOf(id);
+    const target = index + direction;
+    if (index < 0 || target < 0 || target >= order.length) return;
+    [order[index], order[target]] = [order[target], order[index]];
+    this.widgetOrderIds.set(order);
+    try { localStorage.setItem(this.widgetStorageKey, JSON.stringify(order)); } catch { /* Preference remains available for this session. */ }
+  }
+  private readWidgetOrder(): string[] {
+    const defaults = ['categories', 'yearly', 'comparison', 'budget', 'insights', 'rankings'];
+    try {
+      const stored = JSON.parse(localStorage.getItem('ondevai.dashboard.widget-order') ?? 'null');
+      if (Array.isArray(stored) && defaults.every((id) => stored.includes(id)) && stored.length === defaults.length) return stored;
+    } catch { /* Use the default order when storage is unavailable. */ }
+    return defaults;
+  }
   setMonth(event: Event): void { this.selectedMonth.set(Number((event.target as HTMLSelectElement).value)); }
   setYear(event: Event): void { this.selectedYear.set(Number((event.target as HTMLSelectElement).value)); }
   signedCurrency(cents: number): string { return `${cents > 0 ? '+' : cents < 0 ? '−' : ''}${formatCurrency(Math.abs(cents))}`; }

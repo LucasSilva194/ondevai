@@ -41,7 +41,14 @@ import { Category } from '../../models/domain.models';
                 </header>
 
                 @if (category.subcategories.length > 0) {
-                  <div class="subcategory-list">
+                  <button class="subcategory-toggle" type="button" (click)="toggleExpanded(category.id)" [attr.aria-expanded]="isExpanded(category.id)" [attr.aria-controls]="'subcategories-' + category.id">
+                    <span>{{ isExpanded(category.id) ? 'Fechar subcategorias' : 'Abrir para ver ' + activeSubcategoryCount(category) + ' subcategorias' }}</span><span class="toggle-chevron" aria-hidden="true">{{ isExpanded(category.id) ? '⌃' : '⌄' }}</span>
+                  </button>
+                }
+
+                @if (isExpanded(category.id)) {
+                  @if (category.subcategories.length > 0) {
+                  <div class="subcategory-list" [id]="'subcategories-' + category.id">
                     @for (subcategory of category.subcategories; track subcategory.id; let subFirst = $first; let subLast = $last) {
                       <div [class.archived-item]="subcategory.archived">
                         @if (isEditingSubcategory(category.id, subcategory.id)) {
@@ -53,19 +60,21 @@ import { Category } from '../../models/domain.models';
                           </form>
                         } @else {
                           <span>{{ subcategory.name }} @if (subcategory.archived) { <small>Arquivada</small> }</span>
-                          <div class="subcategory-actions">
-                            <button class="mini-button" type="button" (click)="moveSubcategory(category.id, subcategory.id, -1)" [disabled]="subFirst" [attr.aria-label]="'Mover ' + subcategory.name + ' para cima'">↑</button>
-                            <button class="mini-button" type="button" (click)="moveSubcategory(category.id, subcategory.id, 1)" [disabled]="subLast" [attr.aria-label]="'Mover ' + subcategory.name + ' para baixo'">↓</button>
-                            <button class="text-button" type="button" (click)="startEditSubcategory(category.id, subcategory.id, subcategory.name)">Editar</button>
-                            <button class="text-button" type="button" (click)="toggleSubcategory(category.id, subcategory.id)">{{ subcategory.archived ? 'Restaurar' : 'Arquivar' }}</button>
-                          </div>
+                          @if (editingSubcategoriesFor() === category.id) {
+                            <div class="subcategory-actions">
+                              <button class="mini-button" type="button" (click)="moveSubcategory(category.id, subcategory.id, -1)" [disabled]="subFirst" [attr.aria-label]="'Mover ' + subcategory.name + ' para cima'">↑</button>
+                              <button class="mini-button" type="button" (click)="moveSubcategory(category.id, subcategory.id, 1)" [disabled]="subLast" [attr.aria-label]="'Mover ' + subcategory.name + ' para baixo'">↓</button>
+                              <button class="text-button" type="button" (click)="startEditSubcategory(category.id, subcategory.id, subcategory.name)">Editar</button>
+                              <button class="text-button" type="button" (click)="toggleSubcategory(category.id, subcategory.id)">{{ subcategory.archived ? 'Restaurar' : 'Arquivar' }}</button>
+                            </div>
+                          }
                         }
                       </div>
                     }
                   </div>
-                } @else {
+                  } @else {
                   <p class="no-subcategories">Sem subcategorias.</p>
-                }
+                  }
 
                 @if (addingSubcategoryFor() === category.id) {
                   <form class="subcategory-form" (ngSubmit)="saveSubcategory(category.id)">
@@ -74,7 +83,10 @@ import { Category } from '../../models/domain.models';
                   </form>
                 }
 
+                }
+
                 <footer class="category-actions">
+                  <button class="text-button" type="button" (click)="toggleSubcategoryEdit(category.id)">{{ editingSubcategoriesFor() === category.id ? 'Concluir edição' : 'Editar subcategorias' }}</button>
                   <button class="text-button" type="button" (click)="startSubcategory(category.id)">Adicionar subcategoria</button>
                   <div><button class="btn btn-ghost btn-compact" type="button" (click)="openEdit(category)">Editar</button><button class="btn btn-ghost btn-compact danger-text" type="button" (click)="archive(category)">Arquivar</button></div>
                 </footer>
@@ -138,6 +150,8 @@ export class CategoriesComponent {
   readonly categoryFormOpen = signal(false);
   readonly editingCategory = signal<Category | null>(null);
   readonly addingSubcategoryFor = signal<string | null>(null);
+  readonly editingSubcategoriesFor = signal<string | null>(null);
+  readonly expandedCategories = signal<string[]>([]);
   readonly newSubcategoryName = signal('');
   readonly editingSubcategory = signal<{ categoryId: string; subcategoryId: string } | null>(null);
   readonly editingSubcategoryName = signal('');
@@ -199,6 +213,7 @@ export class CategoriesComponent {
   }
 
   startSubcategory(categoryId: string): void {
+    if (!this.isExpanded(categoryId)) this.toggleExpanded(categoryId);
     this.addingSubcategoryFor.set(categoryId);
     this.newSubcategoryName.set('');
   }
@@ -258,6 +273,22 @@ export class CategoriesComponent {
 
   activeSubcategoryCount(category: Category): number {
     return category.subcategories.filter((subcategory) => !subcategory.archived).length;
+  }
+
+  isExpanded(categoryId: string): boolean { return this.expandedCategories().includes(categoryId); }
+
+  toggleExpanded(categoryId: string): void {
+    this.expandedCategories.update((ids) => ids.includes(categoryId) ? ids.filter((id) => id !== categoryId) : [...ids, categoryId]);
+  }
+
+  toggleSubcategoryEdit(categoryId: string): void {
+    if (this.editingSubcategoriesFor() === categoryId) {
+      this.editingSubcategoriesFor.set(null);
+      this.cancelEditSubcategory();
+      return;
+    }
+    this.editingSubcategoriesFor.set(categoryId);
+    if (!this.isExpanded(categoryId)) this.toggleExpanded(categoryId);
   }
 
 }

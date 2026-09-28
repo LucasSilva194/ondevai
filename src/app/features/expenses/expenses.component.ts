@@ -26,42 +26,47 @@ import { expensesForMonth, MONTH_NAMES, sumExpenses } from '../../shared/utils/s
 
       <section class="filters card-flat" aria-label="Filtros de despesas">
         <form [formGroup]="filterForm" class="filter-grid">
-          <div class="field search-field">
-            <label for="expense-search">Pesquisar descrição</label>
-            <input id="expense-search" type="search" formControlName="search" placeholder="Ex.: supermercado">
-          </div>
-          <div class="field">
-            <label for="expense-month">Mês</label>
-            <select id="expense-month" formControlName="month">
-              <option value="">Todos</option>
-              @for (month of months; track $index) { <option [value]="$index + 1">{{ month }}</option> }
-            </select>
-          </div>
-          <div class="field">
-            <label for="expense-year">Ano</label>
-            <select id="expense-year" formControlName="year">
-              <option value="">Todos</option>
-              @for (year of availableYears(); track year) { <option [value]="year">{{ year }}</option> }
-            </select>
-          </div>
-          <div class="field">
-            <label for="filter-category">Categoria</label>
+          <div class="field category-filter">
+            <label for="filter-category">Filtrar por categoria</label>
             <select id="filter-category" formControlName="categoryId">
-              <option value="">Todas</option>
+              <option value="">Todas as categorias</option>
               @for (category of store.categories(); track category.id) {
                 <option [value]="category.id">{{ category.name }}{{ category.archived ? ' (arquivada)' : '' }}</option>
               }
             </select>
           </div>
-          <div class="field">
-            <label for="filter-subcategory">Subcategoria</label>
-            <select id="filter-subcategory" formControlName="subcategoryId">
-              <option value="">Todas</option>
-              @for (subcategory of filterSubcategories(); track subcategory.id) {
-                <option [value]="subcategory.id">{{ subcategory.name }}</option>
-              }
-            </select>
-          </div>
+          <details class="advanced-filters">
+            <summary>Mais filtros</summary>
+            <div class="advanced-filter-grid">
+              <div class="field search-field">
+                <label for="expense-search">Descrição</label>
+                <input id="expense-search" type="search" formControlName="search" placeholder="Ex.: supermercado">
+              </div>
+              <div class="field">
+                <label for="expense-month">Mês</label>
+                <select id="expense-month" formControlName="month">
+                  <option value="">Todos</option>
+                  @for (month of months; track $index) { <option [value]="$index + 1">{{ month }}</option> }
+                </select>
+              </div>
+              <div class="field">
+                <label for="expense-year">Ano</label>
+                <select id="expense-year" formControlName="year">
+                  <option value="">Todos</option>
+                  @for (year of availableYears(); track year) { <option [value]="year">{{ year }}</option> }
+                </select>
+              </div>
+              <div class="field">
+                <label for="filter-subcategory">Subcategoria</label>
+                <select id="filter-subcategory" formControlName="subcategoryId">
+                  <option value="">Todas</option>
+                  @for (subcategory of filterSubcategories(); track subcategory.id) {
+                    <option [value]="subcategory.id">{{ subcategory.name }}</option>
+                  }
+                </select>
+              </div>
+            </div>
+          </details>
         </form>
         <div class="filter-footer">
           <button class="text-button" type="button" (click)="clearFilters()">Limpar filtros</button>
