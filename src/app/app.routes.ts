@@ -71,7 +71,7 @@ export const appRoutes: Routes = [
       {
         path: 'visao-geral',
         title: 'Visão geral | OndeVai',
-        loadComponent: () => import('./features/dashboard/dashboard.component').then((module) => module.DashboardComponent),
+        loadComponent: () => import('./features/dashboard/pages/dashboard.component').then((module) => module.DashboardComponent),
       },
       {
         path: 'despesas',

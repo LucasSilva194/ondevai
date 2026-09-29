@@ -1,10 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { AppStore } from '../../core/stores/app.store';
-import { ChartComponent } from '../../shared/components/chart/chart.component';
-import { IconComponent } from '../../shared/components/common/icon/icon.component';
-import { generateInsights } from '../../shared/utils/insights.utils';
-import { formatCurrency } from '../../shared/utils/money.utils';
+import { AppStore } from '../../../core/stores/app.store';
+import { ChartComponent } from '../../../shared/components/chart/chart.component';
+import { IconComponent } from '../../../shared/components/common/icon/icon.component';
+import { generateInsights } from '../../../shared/utils/insights.utils';
+import { formatCurrency } from '../../../shared/utils/money.utils';
 import {
   averagePreviousThreeMonths,
   calculateBudgetSummary,
@@ -19,7 +19,7 @@ import {
   MONTH_NAMES,
   sumExpenses,
   sumIncomes,
-} from '../../shared/utils/statistics.utils';
+} from '../../../shared/utils/statistics.utils';
 
 @Component({
   selector: 'app-dashboard',
