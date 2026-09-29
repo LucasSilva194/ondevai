@@ -170,3 +170,9 @@
 }
 
 @keyframes mobile-menu-in { from { opacity: 0; transform: translateY(-8px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+.app-work-status { display: flex; align-items: center; gap: 9px; width: max-content; max-width: calc(100% - 32px); margin: 12px 24px 0 auto; padding: 8px 12px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface-raised); color: var(--text-soft); box-shadow: var(--shadow-soft); font-size: .76rem; }
+.loading-indicator { width: 14px; height: 14px; flex: none; border: 2px solid var(--accent-border); border-top-color: var(--accent); border-radius: 50%; animation: app-loading-turn 800ms linear infinite; }
+@keyframes app-loading-turn { to { transform: rotate(360deg); } }
+
+@media (max-width: 760px) { .app-work-status { margin: 8px 14px 0 auto; } }
+@media (prefers-reduced-motion: reduce) { .loading-indicator { animation: none; opacity: .7; } }

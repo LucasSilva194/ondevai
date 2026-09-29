@@ -20,7 +20,7 @@ import { AuthPageComponent } from '../components/auth-page.component';
           <span class="notice-symbol" aria-hidden="true">@</span>
           <p class="eyebrow">A confirmar</p>
           <h1>Confirmação de email</h1>
-          @if (auth.loading()) { <p class="status-copy" role="status">Estamos a validar o link de confirmação.</p> }
+          @if (auth.loading()) { <p class="auth-pending" role="status" aria-live="polite"><span class="loading-indicator" aria-hidden="true"></span>Estamos a validar o link de confirmação…</p> }
           @if (auth.error()) {
             <p class="form-message error" role="alert">{{ auth.error() }}</p>
             <div class="notice-actions"><a class="btn btn-secondary" routerLink="/entrar">Voltar ao início de sessão</a></div>
@@ -33,6 +33,7 @@ import { AuthPageComponent } from '../components/auth-page.component';
         <p class="status-copy">Enviámos uma mensagem com o link de confirmação. Consulte também a pasta de correio não solicitado.</p>
         @if (resent()) { <p class="form-message success" role="status">Foi enviado um novo email de confirmação.</p> }
         @if (auth.error()) { <p class="form-message error" role="alert">{{ auth.error() }}</p> }
+        @if (auth.loading()) { <p class="auth-pending" role="status" aria-live="polite"><span class="loading-indicator" aria-hidden="true"></span>A enviar o email…</p> }
         <div class="notice-actions">
           <button class="btn btn-secondary" type="button" (click)="resend()" [disabled]="auth.loading()">
             {{ auth.loading() ? 'A enviar...' : 'Reenviar email' }}

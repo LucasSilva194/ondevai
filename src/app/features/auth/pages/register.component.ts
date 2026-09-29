@@ -51,7 +51,7 @@ export const passwordsMatchValidator: ValidatorFn = (control: AbstractControl): 
       </form>
 
       @if (auth.error()) { <p class="form-message error" role="alert">{{ auth.error() }}</p> }
-      @if (auth.loading()) { <p class="helper" role="status">A criar a sua conta.</p> }
+      @if (auth.loading()) { <p class="auth-pending" role="status" aria-live="polite"><span class="loading-indicator" aria-hidden="true"></span>A criar a sua conta…</p> }
       <nav class="auth-links single" aria-label="Outras opções de autenticação"><a routerLink="/entrar">Já tenho conta</a></nav>
     </app-auth-page>
   `,

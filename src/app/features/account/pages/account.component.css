@@ -26,3 +26,6 @@ form > .btn { margin-top: 22px; }
   .account-summary, .session-section, .danger-zone { align-items: flex-start; flex-direction: column; }
   .account-summary, .session-section { padding: 22px; }
 }
+.loading-indicator { width: 14px; height: 14px; display: inline-block; vertical-align: -2px; margin-right: 8px; border: 2px solid var(--accent-border); border-top-color: var(--accent); border-radius: 50%; animation: account-loading-turn 800ms linear infinite; }
+@keyframes account-loading-turn { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .loading-indicator { animation: none; opacity: .7; } }

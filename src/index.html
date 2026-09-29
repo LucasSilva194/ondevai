@@ -13,6 +13,20 @@
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
   </head>
   <body>
+    <div id="boot-splash" role="status" aria-live="polite">
+      <span class="boot-mark" aria-hidden="true">O</span>
+      <span class="boot-copy">A preparar a sua área financeira…</span>
+      <span class="boot-spinner" aria-hidden="true"></span>
+    </div>
+    <style>
+      #boot-splash { min-height: 100dvh; display: grid; place-content: center; justify-items: center; gap: 16px; padding: 24px; background: #f0eee6; color: #20281f; font: 500 15px/1.5 system-ui, sans-serif; text-align: center; }
+      .boot-mark { width: 50px; height: 50px; display: grid; place-items: center; border: 1px solid #b8cbb7; border-radius: 17px; background: #e3ebdf; color: #2f503b; font: 600 27px/1 Georgia, serif; }
+      .boot-copy { color: #50594e; }
+      .boot-spinner { width: 20px; height: 20px; border: 2px solid #b8cbb7; border-top-color: #41644d; border-radius: 50%; animation: boot-spin 800ms linear infinite; }
+      @keyframes boot-spin { to { transform: rotate(360deg); } }
+      @media (prefers-color-scheme: dark) { #boot-splash { background: #171a15; color: #f0eee4; } .boot-mark { background: #303b2e; color: #aac4a4; border-color: #53694e; } .boot-copy { color: #c4c3b7; } .boot-spinner { border-color: #53694e; border-top-color: #aac4a4; } }
+      @media (prefers-reduced-motion: reduce) { .boot-spinner { animation: none; opacity: .7; } }
+    </style>
     <app-root></app-root>
     <noscript>O OndeVai precisa de JavaScript para guardar e analisar as suas despesas neste dispositivo.</noscript>
   </body>

@@ -4,6 +4,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
 import { UserSessionService } from '../../../core/auth/user-session.service';
 import { AuthPageComponent } from '../components/auth-page.component';
+import { AppStore } from '../../../core/stores/app.store';
 
 @Component({
   selector: 'app-login',
@@ -39,7 +40,12 @@ import { AuthPageComponent } from '../components/auth-page.component';
 
       @if (auth.error()) { <p class="form-message error" role="alert">{{ auth.error() }}</p> }
       @if (session.error()) { <p class="form-message error" role="alert">{{ session.error() }}</p> }
-      @if (auth.loading() || submitting()) { <p class="helper" role="status">A validar os seus dados.</p> }
+      @if (auth.loading() || submitting()) {
+        <p class="auth-pending" role="status" aria-live="polite" [attr.aria-busy]="true">
+          <span class="loading-indicator" aria-hidden="true"></span>
+          {{ store.loading() ? 'A carregar os seus dados financeiros…' : 'A validar os seus dados…' }}
+        </p>
+      }
 
       <nav class="auth-links" aria-label="Outras opções de autenticação">
         <a routerLink="/recuperar-password">Esqueci-me da palavra-passe</a>
@@ -53,6 +59,7 @@ import { AuthPageComponent } from '../components/auth-page.component';
 export class LoginComponent {
   readonly auth = inject(AuthService);
   readonly session = inject(UserSessionService);
+  readonly store = inject(AppStore);
   readonly submitting = signal(false);
   private readonly formBuilder = inject(FormBuilder);
   private readonly router = inject(Router);

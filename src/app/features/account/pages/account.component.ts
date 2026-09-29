@@ -27,6 +27,9 @@ import { ModalShellComponent } from '../../../shared/components/common/modal-she
       @if (pwa.offline()) {
         <div class="feedback warning" role="status">Estas operações precisam de ligação ao servidor.</div>
       }
+      @if (pending()) {
+        <p class="feedback" role="status" aria-live="polite" aria-busy="true"><span class="loading-indicator" aria-hidden="true"></span>A atualizar a segurança da conta…</p>
+      }
 
       <section class="account-summary card card-padding" aria-labelledby="account-summary-title">
         <div>
