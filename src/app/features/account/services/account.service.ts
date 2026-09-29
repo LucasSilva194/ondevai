@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
-import { POCKETBASE_ENDPOINTS } from '../../core/pocketbase/pocketbase.endpoints';
-import { PocketBaseClientService } from '../../core/pocketbase/pocketbase.client';
+import { POCKETBASE_ENDPOINTS } from '../../../core/pocketbase/pocketbase.endpoints';
+import { PocketBaseClientService } from '../../../core/pocketbase/pocketbase.client';
 
 interface PocketBaseErrorLike {
   readonly status: number;

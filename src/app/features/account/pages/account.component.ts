@@ -1,10 +1,10 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { AuthService } from '../../core/auth/auth.service';
-import { UserSessionService } from '../../core/auth/user-session.service';
-import { PwaService } from '../../core/services/pwa.service';
-import { AccountService } from './account.service';
-import { ModalShellComponent } from '../../shared/components/common/modal-shell.component';
+import { AuthService } from '../../../core/auth/auth.service';
+import { UserSessionService } from '../../../core/auth/user-session.service';
+import { PwaService } from '../../../core/services/pwa.service';
+import { AccountService } from '../services/account.service';
+import { ModalShellComponent } from '../../../shared/components/common/modal-shell.component';
 
 @Component({
   selector: 'app-account',

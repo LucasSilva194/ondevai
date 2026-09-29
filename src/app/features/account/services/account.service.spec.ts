@@ -1,8 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import PocketBase from 'pocketbase';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { PocketBaseClientService } from '../../core/pocketbase/pocketbase.client';
-import { POCKETBASE_ENDPOINTS } from '../../core/pocketbase/pocketbase.endpoints';
+import { PocketBaseClientService } from '../../../core/pocketbase/pocketbase.client';
+import { POCKETBASE_ENDPOINTS } from '../../../core/pocketbase/pocketbase.endpoints';
 import { AccountService } from './account.service';
 
 describe('AccountService', () => {

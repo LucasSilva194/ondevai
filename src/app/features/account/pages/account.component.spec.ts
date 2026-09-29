@@ -1,11 +1,11 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { AuthService, AuthUser } from '../../core/auth/auth.service';
-import { UserSessionService } from '../../core/auth/user-session.service';
-import { PwaService } from '../../core/services/pwa.service';
+import { AuthService, AuthUser } from '../../../core/auth/auth.service';
+import { UserSessionService } from '../../../core/auth/user-session.service';
+import { PwaService } from '../../../core/services/pwa.service';
 import { AccountComponent } from './account.component';
-import { AccountService } from './account.service';
+import { AccountService } from '../services/account.service';
 
 describe('AccountComponent', () => {
   const user = signal<AuthUser | null>({ id: 'user12345678901', email: 'pessoa@example.com', verified: true });

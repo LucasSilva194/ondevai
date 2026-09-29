@@ -102,7 +102,7 @@ export const appRoutes: Routes = [
         path: 'conta',
         canActivate: [authGuard, verifiedGuard],
         title: 'Conta | OndeVai',
-        loadComponent: () => import('./features/account/account.component').then((module) => module.AccountComponent),
+        loadComponent: () => import('./features/account/pages/account.component').then((module) => module.AccountComponent),
       },
     ],
   },
