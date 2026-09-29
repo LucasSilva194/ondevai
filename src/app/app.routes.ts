@@ -81,7 +81,7 @@ export const appRoutes: Routes = [
       {
         path: 'orcamentos',
         title: 'Orçamentos | OndeVai',
-        loadComponent: () => import('./features/budgets/budgets.component').then((module) => module.BudgetsComponent),
+        loadComponent: () => import('./features/budgets/pages/budgets.component').then((module) => module.BudgetsComponent),
       },
       {
         path: 'poupancas',

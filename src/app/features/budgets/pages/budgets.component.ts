@@ -1,10 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { AppStore } from '../../core/stores/app.store';
-import { ModalShellComponent } from '../../shared/components/common/modal-shell.component';
-import { Category, MonthlyBudget } from '../../models/domain.models';
-import { centsToInputValue, formatCurrency, parseMoneyToCents } from '../../shared/utils/money.utils';
-import { calculateBudgetSummary, expensesForMonth, MONTH_NAMES } from '../../shared/utils/statistics.utils';
+import { AppStore } from '../../../core/stores/app.store';
+import { ModalShellComponent } from '../../../shared/components/common/modal-shell.component';
+import { Category, MonthlyBudget } from '../../../models/domain.models';
+import { centsToInputValue, formatCurrency, parseMoneyToCents } from '../../../shared/utils/money.utils';
+import { calculateBudgetSummary, expensesForMonth, MONTH_NAMES } from '../../../shared/utils/statistics.utils';
 
 @Component({
   selector: 'app-budgets',

@@ -23,7 +23,7 @@ import {
   RECURRENCE_EXCEPTION_REPOSITORY,
   SAVINGS_GOAL_REPOSITORY,
 } from '../repositories/repository.tokens';
-import { BudgetService } from '../services/budget.service';
+import { BudgetService } from '../../features/budgets/services/budget.service';
 import { CategoryService } from '../../features/categories/services/category.service';
 import { ExpenseService } from '../services/expense.service';
 import { SavingsService } from '../services/savings.service';

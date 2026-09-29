@@ -24,7 +24,7 @@ import {
   RECURRENCE_EXCEPTION_REPOSITORY,
   SAVINGS_GOAL_REPOSITORY,
 } from '../repositories/repository.tokens';
-import { BudgetInput, BudgetService } from '../services/budget.service';
+import { BudgetInput, BudgetService } from '../../features/budgets/services/budget.service';
 import { CategoryService } from '../../features/categories/services/category.service';
 import { ExpenseInput, ExpenseService } from '../services/expense.service';
 import { SettingsService } from '../services/settings.service';
