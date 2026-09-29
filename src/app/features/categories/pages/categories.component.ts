@@ -14,7 +14,7 @@ import { IconComponent } from '../../../shared/components/common/icon/icon.compo
         <div>
           <p class="eyebrow">Categorias</p>
           <h1>A sua forma de organizar</h1>
-          <p class="page-intro">Crie, ordene e arquive categorias. O histórico mantém sempre as referências originais.</p>
+          <p class="page-intro">Crie e arquive categorias. O histórico mantém sempre as referências originais.</p>
         </div>
         <button class="category-create-button" type="button" (click)="openCreate()"><app-icon name="plus" /><span>Nova categoria</span></button>
       </header>
@@ -32,13 +32,13 @@ import { IconComponent } from '../../../shared/components/common/icon/icon.compo
             <div class="empty-inline">Não existem categorias ativas.</div>
           }
           <div class="category-grid">
-            @for (category of activeCategories(); track category.id; let first = $first; let last = $last) {
+            @for (category of activeCategories(); track category.id) {
               <article class="category-card card-flat">
                 <header class="category-header">
                   <div class="category-name"><i [style.background]="category.color"></i><div><h3>{{ category.name }}</h3><span>{{ activeSubcategoryCount(category) }} subcategorias ativas</span></div></div>
-                  <div class="order-actions" aria-label="Ordenar categoria">
-                    <button type="button" class="order-button" (click)="move(category.id, -1)" [disabled]="first" [attr.aria-label]="'Mover ' + category.name + ' para cima'"><app-icon name="arrow-up" /><span>Subir</span></button>
-                    <button type="button" class="order-button" (click)="move(category.id, 1)" [disabled]="last" [attr.aria-label]="'Mover ' + category.name + ' para baixo'"><app-icon name="arrow-down" /><span>Descer</span></button>
+                  <div class="category-header-actions">
+                    <button type="button" class="category-icon-action" (click)="startSubcategory(category.id)" [attr.aria-label]="'Adicionar subcategoria a ' + category.name" title="Adicionar subcategoria"><app-icon name="plus" /></button>
+                    <button type="button" class="category-icon-action" (click)="toggleSubcategoryEdit(category.id)" [attr.aria-label]="(editingSubcategoriesFor() === category.id ? 'Concluir edição de subcategorias de ' : 'Editar subcategorias de ') + category.name" [title]="editingSubcategoriesFor() === category.id ? 'Concluir edição' : 'Editar subcategorias'"><app-icon [name]="editingSubcategoriesFor() === category.id ? 'close' : 'edit'" /></button>
                   </div>
                 </header>
 
@@ -51,7 +51,7 @@ import { IconComponent } from '../../../shared/components/common/icon/icon.compo
                 @if (isExpanded(category.id)) {
                   @if (category.subcategories.length > 0) {
                   <div class="subcategory-list" [id]="'subcategories-' + category.id">
-                    @for (subcategory of category.subcategories; track subcategory.id; let subFirst = $first; let subLast = $last) {
+                    @for (subcategory of category.subcategories; track subcategory.id) {
                       <div [class.archived-item]="subcategory.archived">
                         @if (isEditingSubcategory(category.id, subcategory.id)) {
                           <form class="rename-subcategory" (ngSubmit)="saveSubcategoryName()">
@@ -64,8 +64,6 @@ import { IconComponent } from '../../../shared/components/common/icon/icon.compo
                           <span>{{ subcategory.name }} @if (subcategory.archived) { <small>Arquivada</small> }</span>
                           @if (editingSubcategoriesFor() === category.id) {
                             <div class="subcategory-actions">
-                              <button class="order-button compact-order" type="button" (click)="moveSubcategory(category.id, subcategory.id, -1)" [disabled]="subFirst" [attr.aria-label]="'Mover ' + subcategory.name + ' para cima'"><app-icon name="arrow-up" /><span>Subir</span></button>
-                              <button class="order-button compact-order" type="button" (click)="moveSubcategory(category.id, subcategory.id, 1)" [disabled]="subLast" [attr.aria-label]="'Mover ' + subcategory.name + ' para baixo'"><app-icon name="arrow-down" /><span>Descer</span></button>
                               <button class="text-button" type="button" (click)="startEditSubcategory(category.id, subcategory.id, subcategory.name)">Editar</button>
                               <button class="text-button" type="button" (click)="toggleSubcategory(category.id, subcategory.id)">{{ subcategory.archived ? 'Restaurar' : 'Arquivar' }}</button>
                             </div>
@@ -88,8 +86,6 @@ import { IconComponent } from '../../../shared/components/common/icon/icon.compo
                 }
 
                 <footer class="category-actions">
-                  <button class="category-link-action" type="button" (click)="toggleSubcategoryEdit(category.id)">{{ editingSubcategoriesFor() === category.id ? 'Concluir edição' : 'Editar subcategorias' }}</button>
-                  <button class="category-link-action" type="button" (click)="startSubcategory(category.id)"><app-icon name="plus" />Adicionar subcategoria</button>
                   <div class="category-primary-actions"><button class="category-icon-action" type="button" (click)="openEdit(category)" [attr.aria-label]="'Editar categoria ' + category.name" title="Editar"><app-icon name="edit" /><span>Editar</span></button><button class="category-icon-action archive-action" type="button" (click)="archive(category)" [attr.aria-label]="'Arquivar categoria ' + category.name" title="Arquivar"><app-icon name="archive" /><span>Arquivar</span></button></div>
                 </footer>
               </article>
@@ -208,10 +204,6 @@ export class CategoriesComponent {
     try { await this.store.restoreCategory(id); } catch { /* Global error is visible. */ }
   }
 
-  async move(id: string, direction: -1 | 1): Promise<void> {
-    try { await this.store.moveCategory(id, direction); } catch { /* Global error is visible. */ }
-  }
-
   startSubcategory(categoryId: string): void {
     if (!this.isExpanded(categoryId)) this.toggleExpanded(categoryId);
     this.addingSubcategoryFor.set(categoryId);
@@ -265,10 +257,6 @@ export class CategoriesComponent {
       await this.store.renameSubcategory(editing.categoryId, editing.subcategoryId, this.editingSubcategoryName());
       this.cancelEditSubcategory();
     } catch { /* Global error is visible. */ }
-  }
-
-  async moveSubcategory(categoryId: string, subcategoryId: string, direction: -1 | 1): Promise<void> {
-    try { await this.store.moveSubcategory(categoryId, subcategoryId, direction); } catch { /* Global error is visible. */ }
   }
 
   activeSubcategoryCount(category: Category): number {
