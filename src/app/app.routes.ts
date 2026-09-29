@@ -59,7 +59,7 @@ export const appRoutes: Routes = [
     path: 'onboarding',
     canActivate: [authGuard, verifiedGuard],
     canMatch: [onboardingGuard],
-    loadComponent: () => import('./features/onboarding/onboarding.component').then((module) => module.OnboardingComponent),
+    loadComponent: () => import('./features/onboarding/pages/onboarding.component').then((module) => module.OnboardingComponent),
   },
   {
     path: '',

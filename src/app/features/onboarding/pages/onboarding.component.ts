@@ -1,9 +1,9 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { LocalDataMigrationService } from '../../core/migration/local-data-migration.service';
-import { PwaService } from '../../core/services/pwa.service';
-import { AppStore } from '../../core/stores/app.store';
-import { SUGGESTED_CATEGORIES } from '../categories/models/suggested-categories';
+import { LocalDataMigrationService } from '../../../core/migration/local-data-migration.service';
+import { PwaService } from '../../../core/services/pwa.service';
+import { AppStore } from '../../../core/stores/app.store';
+import { SUGGESTED_CATEGORIES } from '../../categories/models/suggested-categories';
 
 @Component({
   selector: 'app-onboarding',
