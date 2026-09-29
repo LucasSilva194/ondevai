@@ -5,6 +5,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { startWith } from 'rxjs';
 import { AppStore } from '../../../core/stores/app.store';
 import { ModalShellComponent } from '../../../shared/components/common/modal-shell.component';
+import { IconComponent } from '../../../shared/components/common/icon/icon.component';
 import { Category, Expense, ExpenseOccurrence, RecurrenceFrequency, RecurrenceRule } from '../../../models/domain.models';
 import { formatDate, todayDateString } from '../../../shared/utils/date.utils';
 import { centsToInputValue, formatCurrency, parseMoneyToCents } from '../../../shared/utils/money.utils';
@@ -13,7 +14,7 @@ import { expensesForMonth, MONTH_NAMES, sumExpenses } from '../../../shared/util
 
 @Component({
   selector: 'app-expenses',
-  imports: [ReactiveFormsModule, ModalShellComponent],
+  imports: [ReactiveFormsModule, ModalShellComponent, IconComponent],
   template: `
     <div class="page">
       <header class="page-header-row">
@@ -107,8 +108,8 @@ import { expensesForMonth, MONTH_NAMES, sumExpenses } from '../../../shared/util
               <div class="expense-main">
                 <div class="expense-title-row">
                   <strong>{{ expense.merchant || expense.description || categoryName(expense.categoryId) }}</strong>
-                  <span class="expense-amount">{{ formatCurrency(expense.amountCents) }}</span>
                 </div>
+                <span class="expense-amount">{{ formatCurrency(expense.amountCents) }}</span>
                 <div class="expense-meta">
                   <span><i [style.background]="categoryColor(expense.categoryId)"></i>{{ categoryName(expense.categoryId) }}</span>
                   @if (expense.merchant && expense.description) { <span>{{ expense.description }}</span> }
@@ -123,11 +124,11 @@ import { expensesForMonth, MONTH_NAMES, sumExpenses } from '../../../shared/util
               </div>
               <div class="row-actions">
                 @if (expense.seriesId && exactPeriodSelected()) {
-                  <button class="btn btn-ghost btn-compact" type="button" (click)="openOccurrenceEdit(expense)">Editar ocorrência</button>
-                  <button class="btn btn-ghost btn-compact danger-text" type="button" (click)="omitOccurrence(expense)">Omitir</button>
+                  <button class="expense-icon-action" type="button" (click)="openOccurrenceEdit(expense)" [attr.aria-label]="'Editar ocorrência de ' + (expense.merchant || expense.description)" title="Editar ocorrência"><app-icon name="edit" /></button>
+                  <button class="expense-icon-action danger-text" type="button" (click)="omitOccurrence(expense)" [attr.aria-label]="'Omitir ocorrência de ' + (expense.merchant || expense.description)" title="Omitir ocorrência"><app-icon name="close" /></button>
                 }
-                <button class="btn btn-ghost btn-compact" type="button" (click)="openEdit(expense)">{{ expense.seriesId ? 'Editar série' : 'Editar' }}</button>
-                <button class="btn btn-ghost btn-compact danger-text" type="button" (click)="remove(expense)">{{ expense.seriesId ? 'Eliminar série' : 'Eliminar' }}</button>
+                <button class="expense-icon-action" type="button" (click)="openEdit(expense)" [attr.aria-label]="expense.seriesId ? 'Editar série de despesas' : 'Editar despesa'" [title]="expense.seriesId ? 'Editar série' : 'Editar despesa'"><app-icon name="edit" /></button>
+                <button class="expense-icon-action danger-text" type="button" (click)="remove(expense)" [attr.aria-label]="expense.seriesId ? 'Eliminar série de despesas' : 'Eliminar despesa'" [title]="expense.seriesId ? 'Eliminar série' : 'Eliminar despesa'"><app-icon name="close" /></button>
               </div>
             </article>
           }

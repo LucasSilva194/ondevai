@@ -1,12 +1,15 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { AuthService } from '../../../core/auth/auth.service';
+import { UserSessionService } from '../../../core/auth/user-session.service';
 import { LocalDataMigrationService } from '../../../core/migration/local-data-migration.service';
 import { PwaService } from '../../../core/services/pwa.service';
 import { AppStore } from '../../../core/stores/app.store';
 import { AppBackup, ImportPreview } from '../../../models/domain.models';
 import { formatDate } from '../../../shared/utils/date.utils';
 import { ModalShellComponent } from '../../../shared/components/common/modal-shell.component';
+import { AccountService } from '../../account/services/account.service';
 
 @Component({
   selector: 'app-data-management',
@@ -15,8 +18,8 @@ import { ModalShellComponent } from '../../../shared/components/common/modal-she
     <div class="page">
       <header class="page-header">
         <p class="eyebrow">Dados e privacidade</p>
-        <h1>Os seus dados são seus</h1>
-        <p class="page-intro">A informação financeira é guardada na sua conta cloud. Pode exportá-la, substituí-la ou apagá-la quando quiser.</p>
+        <h1>Dados, privacidade e acesso</h1>
+        <p class="page-intro">Gira a sua conta, a segurança e os dados financeiros num só lugar.</p>
       </header>
 
       @if (successMessage()) {
@@ -39,6 +42,40 @@ import { ModalShellComponent } from '../../../shared/components/common/modal-she
           </dl>
           @if (store.connectionError()) { <p class="sync-warning" role="alert">{{ store.connectionError() }}</p> }
         </article>
+      </section>
+
+      @if (accountError()) { <div class="validation-errors account-feedback" role="alert" aria-live="assertive">{{ accountError() }}</div> }
+      @if (accountPending()) { <p class="account-pending" role="status" aria-live="polite" aria-busy="true"><span class="loading-indicator" aria-hidden="true"></span>A atualizar a conta…</p> }
+
+      <section class="account-summary card card-padding" aria-labelledby="account-summary-title">
+        <div><p class="section-label">Sessão atual</p><h2 id="account-summary-title">{{ auth.user()?.email }}</h2></div>
+        <span class="verification-badge" [class.verified]="auth.user()?.verified">{{ auth.user()?.verified ? 'Email verificado' : 'Email por verificar' }}</span>
+      </section>
+
+      <div class="account-grid">
+        <section class="card-flat card-padding" aria-labelledby="email-title">
+          <h2 id="email-title">Alterar email</h2>
+          <p>Enviaremos um link de confirmação para o novo endereço. A alteração só fica concluída depois de abrir esse link.</p>
+          <form [formGroup]="emailForm" (ngSubmit)="submitEmailChange()" novalidate>
+            <div class="field"><label for="new-email">Novo email</label><input id="new-email" type="email" formControlName="email" autocomplete="email" [attr.aria-invalid]="emailInvalid()">@if (emailInvalid()) { <small class="field-error">Indique um endereço de email válido.</small> }</div>
+            <button class="btn btn-primary" type="submit" [disabled]="accountPending() || pwa.offline()">Pedir alteração</button>
+          </form>
+        </section>
+        <section class="card-flat card-padding" aria-labelledby="password-title">
+          <h2 id="password-title">Alterar palavra-passe</h2>
+          <p>A palavra-passe atual confirma a sua identidade. Depois da alteração, esta sessão é renovada automaticamente.</p>
+          <form [formGroup]="passwordForm" (ngSubmit)="submitPasswordChange()" novalidate>
+            <div class="field"><label for="current-password">Palavra-passe atual</label><input id="current-password" type="password" formControlName="currentPassword" autocomplete="current-password"></div>
+            <div class="field"><label for="new-password">Nova palavra-passe</label><input id="new-password" type="password" formControlName="password" autocomplete="new-password" aria-describedby="password-help"><small id="password-help">Use pelo menos 8 caracteres.</small></div>
+            <div class="field"><label for="confirm-password">Confirmar nova palavra-passe</label><input id="confirm-password" type="password" formControlName="passwordConfirm" autocomplete="new-password" [attr.aria-invalid]="passwordsMismatch()">@if (passwordsMismatch()) { <small class="field-error">As novas palavras-passe não coincidem.</small> }</div>
+            <button class="btn btn-primary" type="submit" [disabled]="accountPending() || pwa.offline()">Alterar palavra-passe</button>
+          </form>
+        </section>
+      </div>
+
+      <section class="secondary-actions card-flat card-padding account-session">
+        <div><h2>Terminar sessão</h2><p>Os dados antigos que possam existir no IndexedDB deste browser não são apagados.</p></div>
+        <button class="btn btn-secondary" type="button" (click)="logout()" [disabled]="accountPending()">Sair da conta</button>
       </section>
 
       <section class="legacy-section card-flat card-padding">
@@ -114,14 +151,14 @@ import { ModalShellComponent } from '../../../shared/components/common/modal-she
         <button class="btn btn-secondary" type="button" (click)="repeatOnboarding()">Repetir onboarding</button>
       </section>
 
-      <section class="secondary-actions card-flat card-padding">
-        <div><h2>Eliminar a conta</h2><p>A eliminação da conta é uma operação separada, exige a sua palavra-passe e está disponível na página Conta.</p></div>
-        <a class="btn btn-secondary" routerLink="/conta">Gerir conta</a>
-      </section>
-
       <section class="danger-zone">
         <div><h2>Apagar dados financeiros cloud</h2><p>Remove despesas, categorias, rendimentos, poupanças e preferências da conta, mas mantém a sessão e não apaga dados antigos do IndexedDB.</p></div>
         <button class="btn btn-danger" type="button" (click)="deleteDialogOpen.set(true)">Apagar dados</button>
+      </section>
+
+      <section class="danger-zone account-danger-zone" aria-labelledby="delete-account-title">
+        <div><h2 id="delete-account-title">Eliminar conta</h2><p>Elimina permanentemente a conta e os dados financeiros guardados na cloud. Dados legados no IndexedDB deste browser não são apagados automaticamente.</p></div>
+        <button class="btn btn-danger" type="button" (click)="accountDeleteDialogOpen.set(true)" [disabled]="accountPending() || pwa.offline()">Eliminar conta</button>
       </section>
     </div>
 
@@ -134,14 +171,28 @@ import { ModalShellComponent } from '../../../shared/components/common/modal-she
           </form>
       </app-modal-shell>
     }
+
+    @if (accountDeleteDialogOpen()) {
+      <app-modal-shell panelClass="modal delete-modal" labelledBy="account-delete-title">
+        <header class="modal-header"><div><h2 id="account-delete-title">Eliminar definitivamente a conta?</h2><p>Esta ação não pode ser anulada. O IndexedDB legado permanece neste browser.</p></div></header>
+        <form [formGroup]="accountDeleteForm" (ngSubmit)="deleteAccount()" novalidate>
+          <div class="field"><label for="account-delete-password">Palavra-passe atual</label><input id="account-delete-password" type="password" formControlName="password" autocomplete="current-password"></div>
+          <div class="field"><label for="account-delete-confirmation">Escreva APAGAR CONTA para confirmar</label><input id="account-delete-confirmation" formControlName="confirmation" autocomplete="off"></div>
+          <div class="button-row form-actions"><button class="btn btn-danger" type="submit" [disabled]="accountPending() || pwa.offline() || !accountDeleteConfirmationValid()">Eliminar permanentemente</button><button class="btn btn-secondary" type="button" (click)="closeAccountDeleteDialog()" [disabled]="accountPending()">Cancelar</button></div>
+        </form>
+      </app-modal-shell>
+    }
   `,
   styleUrl: './data-management.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DataManagementComponent implements OnInit {
   readonly store = inject(AppStore);
+  readonly auth = inject(AuthService);
   readonly migration = inject(LocalDataMigrationService);
   readonly pwa = inject(PwaService);
+  private readonly session = inject(UserSessionService);
+  private readonly account = inject(AccountService);
   private readonly router = inject(Router);
   private readonly formBuilder = inject(FormBuilder);
   readonly preview = signal<ImportPreview | null>(null);
@@ -150,12 +201,82 @@ export class DataManagementComponent implements OnInit {
   readonly operationError = signal<string | null>(null);
   readonly successMessage = signal<string | null>(null);
   readonly deleteDialogOpen = signal(false);
+  readonly accountDeleteDialogOpen = signal(false);
+  readonly accountPending = signal(false);
+  readonly accountError = signal<string | null>(null);
+  readonly emailForm = this.formBuilder.nonNullable.group({ email: ['', [Validators.required, Validators.email]] });
+  readonly passwordForm = this.formBuilder.nonNullable.group({ currentPassword: ['', Validators.required], password: ['', [Validators.required, Validators.minLength(8)]], passwordConfirm: ['', Validators.required] });
+  readonly accountDeleteForm = this.formBuilder.nonNullable.group({ password: ['', Validators.required], confirmation: ['', Validators.required] });
   readonly importForm = this.formBuilder.nonNullable.group({ confirmation: ['', Validators.required] });
   readonly deleteForm = this.formBuilder.nonNullable.group({ confirmation: ['', Validators.required] });
   readonly formatDate = formatDate;
 
   ngOnInit(): void {
     void this.migration.detectLocalData().catch(() => undefined);
+  }
+
+  emailInvalid(): boolean {
+    const control = this.emailForm.controls.email;
+    return control.invalid && (control.dirty || control.touched);
+  }
+
+  passwordsMismatch(): boolean {
+    const { password, passwordConfirm } = this.passwordForm.getRawValue();
+    return this.passwordForm.controls.passwordConfirm.touched && password !== passwordConfirm;
+  }
+
+  accountDeleteConfirmationValid(): boolean {
+    const value = this.accountDeleteForm.getRawValue();
+    return value.password.trim().length > 0 && value.confirmation === 'APAGAR CONTA';
+  }
+
+  async submitEmailChange(): Promise<void> {
+    if (this.emailForm.invalid || this.accountPending() || this.pwa.offline()) { this.emailForm.markAllAsTouched(); return; }
+    await this.runAccountAction(async () => {
+      await this.auth.requestEmailChange(this.emailForm.controls.email.value);
+      this.emailForm.reset({ email: '' });
+      this.successMessage.set('Pedido enviado. Confirme a alteração através do link recebido no novo email.');
+    });
+  }
+
+  async submitPasswordChange(): Promise<void> {
+    const values = this.passwordForm.getRawValue();
+    if (this.passwordForm.invalid || values.password !== values.passwordConfirm || this.accountPending() || this.pwa.offline()) { this.passwordForm.markAllAsTouched(); return; }
+    await this.runAccountAction(async () => {
+      await this.auth.changePassword(values.currentPassword, values.password, values.passwordConfirm);
+      this.passwordForm.reset({ currentPassword: '', password: '', passwordConfirm: '' });
+      this.successMessage.set('Palavra-passe alterada. A sessão foi renovada com segurança.');
+    });
+  }
+
+  async logout(): Promise<void> {
+    if (this.accountPending()) return;
+    await this.runAccountAction(() => this.session.logout());
+  }
+
+  closeAccountDeleteDialog(): void {
+    if (this.accountPending()) return;
+    this.accountDeleteDialogOpen.set(false);
+    this.accountDeleteForm.reset({ password: '', confirmation: '' });
+  }
+
+  async deleteAccount(): Promise<void> {
+    if (!this.accountDeleteConfirmationValid() || this.accountPending() || this.pwa.offline()) { this.accountDeleteForm.markAllAsTouched(); return; }
+    const values = this.accountDeleteForm.getRawValue();
+    await this.runAccountAction(async () => {
+      await this.account.deleteAccount(values.password, values.confirmation);
+      await this.session.logout();
+    });
+  }
+
+  private async runAccountAction(action: () => Promise<void>): Promise<void> {
+    this.accountPending.set(true);
+    this.accountError.set(null);
+    this.operationError.set(null);
+    this.successMessage.set(null);
+    try { await action(); }
+    catch (error: unknown) { this.accountError.set(error instanceof Error ? error.message : 'Não foi possível concluir a operação.'); }
+    finally { this.accountPending.set(false); }
   }
 
   async exportData(): Promise<void> {

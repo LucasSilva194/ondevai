@@ -33,8 +33,6 @@
 .income-copy strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .income-copy span { color: var(--text-muted); font-size: 0.76rem; }
 .income-value { display: block; margin: 18px 0 0 55px; font-size: 1.08rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.income-actions { display: flex; justify-content: flex-end; margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border); }
-.income-primary-actions { display: flex; align-items: center; gap: 2px; margin-left: auto; }
 .income-icon-action { min-height: 34px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 0 8px; border: 0; border-radius: 9px; background: transparent; color: var(--text-soft); font: inherit; font-size: .74rem; font-weight: 650; cursor: pointer; transition: color var(--motion), background-color var(--motion), transform var(--motion); }
 .income-icon-action app-icon { width: 15px; height: 15px; }
 .income-icon-action:hover { background: var(--surface-subtle); color: var(--accent-strong); }

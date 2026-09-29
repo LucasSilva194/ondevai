@@ -29,7 +29,7 @@ import { IconComponent } from '../../common/icon/icon.component';
           <span>Nova despesa</span><span class="action-symbol" aria-hidden="true">+</span>
         </a>
         <div class="account-panel">
-          <a routerLink="/conta" class="account-email">{{ auth.user()?.email }}</a>
+          <a routerLink="/dados-e-privacidade" class="account-email">{{ auth.user()?.email }}</a>
           <p class="sync-state" role="status">
             @if (store.syncing()) { A sincronizar… }
             @else if (store.lastSyncedAt()) { Sincronizado {{ lastSyncLabel() }} }
@@ -61,7 +61,7 @@ import { IconComponent } from '../../common/icon/icon.component';
             <span class="mobile-menu-kicker">Mais opções</span>
             <a routerLink="/dados-e-privacidade" routerLinkActive="active" (click)="mobileMenuOpen.set(false)">
               <span class="mobile-menu-icon" aria-hidden="true"><app-icon name="data" /></span>
-              <span><strong>Dados e privacidade</strong><small>Backup, importação e armazenamento</small></span>
+              <span><strong>Dados e privacidade</strong><small>Conta, segurança e cópias de segurança</small></span>
               <app-icon class="mobile-menu-arrow" name="arrow-right" />
             </a>
             <a routerLink="/a-caminho" routerLinkActive="active" (click)="mobileMenuOpen.set(false)">
@@ -77,11 +77,6 @@ import { IconComponent } from '../../common/icon/icon.component';
             <a routerLink="/categorias" routerLinkActive="active" (click)="mobileMenuOpen.set(false)">
               <span class="mobile-menu-icon"><app-icon name="categories" /></span>
               <span><strong>Categorias</strong><small>Gerir categorias e subcategorias</small></span>
-              <app-icon class="mobile-menu-arrow" name="arrow-right" />
-            </a>
-            <a routerLink="/conta" routerLinkActive="active" (click)="mobileMenuOpen.set(false)">
-              <span class="mobile-menu-icon account-glyph" aria-hidden="true">@</span>
-              <span><strong>Conta</strong><small>{{ auth.user()?.email }}</small></span>
               <app-icon class="mobile-menu-arrow" name="arrow-right" />
             </a>
             <button class="mobile-logout" type="button" (click)="logout()">
@@ -151,7 +146,6 @@ export class AppShellComponent {
     { path: '/poupancas', label: 'Poupanças', shortLabel: 'Poupar', icon: 'savings', primary: true },
     { path: '/categorias', label: 'Categorias', shortLabel: 'Categorias', icon: 'categories', primary: false },
     { path: '/dados-e-privacidade', label: 'Dados e privacidade', shortLabel: 'Dados', icon: 'data', primary: false },
-    { path: '/conta', label: 'Conta', shortLabel: 'Conta', icon: 'data', primary: false },
   ] as const;
 
   async logout(): Promise<void> {
