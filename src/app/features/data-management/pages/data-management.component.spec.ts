@@ -2,10 +2,10 @@ import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { LocalDataMigrationService } from '../../core/migration/local-data-migration.service';
-import { PwaService } from '../../core/services/pwa.service';
-import { AppStore } from '../../core/stores/app.store';
-import { AppBackup, DEFAULT_SETTINGS } from '../../models/domain.models';
+import { LocalDataMigrationService } from '../../../core/migration/local-data-migration.service';
+import { PwaService } from '../../../core/services/pwa.service';
+import { AppStore } from '../../../core/stores/app.store';
+import { AppBackup, DEFAULT_SETTINGS } from '../../../models/domain.models';
 import { DataManagementComponent } from './data-management.component';
 
 const backup: AppBackup = {

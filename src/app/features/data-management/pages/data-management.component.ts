@@ -1,12 +1,12 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { LocalDataMigrationService } from '../../core/migration/local-data-migration.service';
-import { PwaService } from '../../core/services/pwa.service';
-import { AppStore } from '../../core/stores/app.store';
-import { AppBackup, ImportPreview } from '../../models/domain.models';
-import { formatDate } from '../../shared/utils/date.utils';
-import { ModalShellComponent } from '../../shared/components/common/modal-shell.component';
+import { LocalDataMigrationService } from '../../../core/migration/local-data-migration.service';
+import { PwaService } from '../../../core/services/pwa.service';
+import { AppStore } from '../../../core/stores/app.store';
+import { AppBackup, ImportPreview } from '../../../models/domain.models';
+import { formatDate } from '../../../shared/utils/date.utils';
+import { ModalShellComponent } from '../../../shared/components/common/modal-shell.component';
 
 @Component({
   selector: 'app-data-management',

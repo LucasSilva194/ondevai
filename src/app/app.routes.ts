@@ -96,7 +96,7 @@ export const appRoutes: Routes = [
       {
         path: 'dados-e-privacidade',
         title: 'Dados e privacidade | OndeVai',
-        loadComponent: () => import('./features/data-management/data-management.component').then((module) => module.DataManagementComponent),
+        loadComponent: () => import('./features/data-management/pages/data-management.component').then((module) => module.DataManagementComponent),
       },
       {
         path: 'conta',
