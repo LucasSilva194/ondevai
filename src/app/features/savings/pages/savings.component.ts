@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AppStore } from '../../../core/stores/app.store';
+import { IconComponent } from '../../../shared/components/common/icon/icon.component';
 import { ModalShellComponent } from '../../../shared/components/common/modal-shell.component';
 import {
   IncomeKind,
@@ -20,7 +21,7 @@ import { expensesForMonth, incomesForMonth, MONTH_NAMES, sumExpenses, sumIncomes
 
 @Component({
   selector: 'app-savings',
-  imports: [ReactiveFormsModule, ModalShellComponent],
+  imports: [ReactiveFormsModule, IconComponent, ModalShellComponent],
   template: `
     <div class="page savings-page">
       <header class="page-header-row savings-header">
