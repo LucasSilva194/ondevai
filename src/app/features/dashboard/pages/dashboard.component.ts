@@ -41,8 +41,8 @@ import {
               <button type="button" (click)="shiftPeriod(1)" aria-label="Mês seguinte"><app-icon name="arrow-up" /></button>
             </div>
           </div>
-          <button class="btn btn-ghost btn-compact widget-edit-toggle" type="button" (click)="toggleWidgetEditing()" [attr.aria-pressed]="editingWidgetOrder()">
-            @if (editingWidgetOrder()) { <app-icon name="close" /><span>Concluir</span> } @else { <app-icon name="edit" /><span>Personalizar visão geral</span> }
+          <button class="btn btn-ghost btn-compact widget-edit-toggle" type="button" (click)="toggleWidgetEditing()" [attr.aria-pressed]="editingWidgetOrder()" [attr.aria-label]="editingWidgetOrder() ? 'Concluir personalização' : 'Personalizar visão geral'">
+            @if (editingWidgetOrder()) { <app-icon name="close" /><span>Concluir</span> } @else { <app-icon name="edit" /><span class="widget-edit-label-full">Personalizar visão geral</span><span class="widget-edit-label-short">Personalizar</span> }
           </button>
           @if (editingWidgetOrder()) { <p class="widget-edit-hint">Arraste os blocos ou foque um e use as setas do teclado.</p> }
         </div>

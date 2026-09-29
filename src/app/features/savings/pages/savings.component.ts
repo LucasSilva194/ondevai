@@ -42,17 +42,28 @@ import { expensesForMonth, incomesForMonth, MONTH_NAMES, sumExpenses, sumIncomes
         @if (store.monthlyIncomes().length === 0) {
           <div class="empty-inline">Ainda não existem fontes de rendimento configuradas.</div>
         } @else {
-          <div class="income-list card-flat">
+          <div class="income-list">
             @for (income of store.monthlyIncomes(); track income.id) {
-              <article class="income-row">
-                <div class="income-type" aria-hidden="true">{{ incomeInitial(income.kind) }}</div>
-                <div class="income-copy"><strong>{{ income.name }}</strong><span>{{ incomeKindLabel(income.kind) }} · {{ recurrenceLabel(income.recurrence) }} desde {{ formatDate(income.date) }}</span></div>
+              <article class="income-row card-flat">
+                <header class="income-header">
+                  <div class="income-identity">
+                    <div class="income-type" aria-hidden="true">{{ incomeInitial(income.kind) }}</div>
+                    <div class="income-copy"><strong>{{ income.name }}</strong><span>{{ incomeKindLabel(income.kind) }} · {{ recurrenceLabel(income.recurrence) }} desde {{ formatDate(income.date) }}</span></div>
+                  </div>
+                  @if (currentOccurrence(income); as occurrence) { @if (income.recurrence) {
+                    <div class="income-header-actions">
+                      <button type="button" class="income-icon-action" (click)="openIncomeOccurrenceEdit(occurrence)" [attr.aria-label]="'Editar este mês de ' + income.name" title="Editar este mês"><app-icon name="edit" /></button>
+                      <button type="button" class="income-icon-action danger-text" (click)="omitIncomeOccurrence(occurrence)" [attr.aria-label]="'Omitir este mês de ' + income.name" title="Omitir este mês"><app-icon name="close" /></button>
+                    </div>
+                  } }
+                </header>
                 <strong class="income-value">{{ formatCurrency(income.amountCents) }}</strong>
-                <div class="row-actions">
-                  @if (currentOccurrence(income); as occurrence) { @if (income.recurrence) { <button class="btn btn-ghost btn-compact" type="button" (click)="openIncomeOccurrenceEdit(occurrence)">Editar este mês</button><button class="btn btn-ghost btn-compact danger-text" type="button" (click)="omitIncomeOccurrence(occurrence)">Omitir este mês</button> } }
-                  <button class="btn btn-ghost btn-compact" type="button" (click)="openIncomeEdit(income)">Editar {{ income.recurrence ? 'série' : '' }}</button>
-                  <button class="btn btn-ghost btn-compact danger-text" type="button" (click)="removeIncome(income)">Eliminar</button>
-                </div>
+                <footer class="income-actions">
+                  <div class="income-primary-actions">
+                    <button type="button" class="income-icon-action" (click)="openIncomeEdit(income)" [attr.aria-label]="'Editar ' + (income.recurrence ? 'série de ' : '') + income.name" [title]="income.recurrence ? 'Editar série' : 'Editar rendimento'"><app-icon name="edit" /><span>Editar{{ income.recurrence ? ' série' : '' }}</span></button>
+                    <button type="button" class="income-icon-action danger-text" (click)="removeIncome(income)" [attr.aria-label]="'Eliminar rendimento ' + income.name" title="Eliminar"><app-icon name="close" /><span>Eliminar</span></button>
+                  </div>
+                </footer>
               </article>
             }
           </div>
