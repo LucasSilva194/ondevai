@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { AuthService } from '../../core/auth/auth.service';
-import { AuthPageComponent } from './auth-page.component';
+import { AuthService } from '../../../core/auth/auth.service';
+import { AuthPageComponent } from '../components/auth-page.component';
 import { passwordsMatchValidator } from './register.component';
 
 @Component({

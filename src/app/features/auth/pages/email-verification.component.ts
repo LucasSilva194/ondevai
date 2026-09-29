@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { AuthService } from '../../core/auth/auth.service';
-import { AuthPageComponent } from './auth-page.component';
+import { AuthService } from '../../../core/auth/auth.service';
+import { AuthPageComponent } from '../components/auth-page.component';
 
 @Component({
   selector: 'app-email-verification',
