@@ -28,6 +28,7 @@ src/app/
 │   ├── savings/{pages,components,models,services}/
 │   ├── budgets/{pages,components,models,services}/
 │   ├── dashboard/{pages,components}/
+│   ├── landing/{pages,components}/
 │   ├── onboarding/{pages,components}/
 │   ├── migration/{pages,components,services}/
 │   └── data-management/{pages,components,services}/
@@ -74,6 +75,7 @@ Use Angular standalone components and services; do not introduce Vue composables
 | `src/app/features/budgets/budgets.component.ts`, `budgets.component.css` | `features/budgets/pages/budgets.component.ts`, colocated CSS; extract budget-specific form/table pieces into `features/budgets/components/` |
 | `src/app/features/savings/savings.component.ts`, `savings.component.css` | `features/savings/pages/savings.component.*`; keep income UI within the combined savings screen because extracting it would change component ownership and behavior |
 | `src/app/features/dashboard/dashboard.component.ts`, `dashboard.component.css` | `features/dashboard/pages/dashboard.component.ts`; dashboard-specific summaries/widgets into `features/dashboard/components/` |
+| `src/app/features/landing/landing.component.ts`, `landing.component.css` | `features/landing/pages/landing.component.*` |
 | `src/app/features/onboarding/onboarding.component.ts`, `onboarding.component.css` | `features/onboarding/pages/onboarding.component.ts`, colocated CSS |
 | `src/app/features/migration/local-data-migration.component.ts`, `local-data-migration.component.css` | `features/migration/pages/local-data-migration.component.ts`, colocated CSS |
 | `src/app/features/data-management/data-management.component.ts`, `data-management.component.css` | `features/data-management/pages/data-management.component.ts`, colocated CSS; extract only data-management-specific subcomponents into its `components/` |
