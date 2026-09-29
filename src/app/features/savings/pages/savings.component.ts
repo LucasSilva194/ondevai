@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { AppStore } from '../../core/stores/app.store';
-import { ModalShellComponent } from '../../shared/components/common/modal-shell.component';
+import { AppStore } from '../../../core/stores/app.store';
+import { ModalShellComponent } from '../../../shared/components/common/modal-shell.component';
 import {
   IncomeKind,
   IncomeOccurrence,
@@ -12,11 +12,11 @@ import {
   SavingsGoalKind,
   SavingsTransaction,
   SavingsTransactionType,
-} from '../../models/domain.models';
-import { formatDate, todayDateString } from '../../shared/utils/date.utils';
-import { centsToInputValue, formatCurrency, parseMoneyToCents, parseNonNegativeMoneyToCents } from '../../shared/utils/money.utils';
-import { recurrenceLabel } from '../../shared/utils/recurrence.utils';
-import { expensesForMonth, incomesForMonth, MONTH_NAMES, sumExpenses, sumIncomes } from '../../shared/utils/statistics.utils';
+} from '../../../models/domain.models';
+import { formatDate, todayDateString } from '../../../shared/utils/date.utils';
+import { centsToInputValue, formatCurrency, parseMoneyToCents, parseNonNegativeMoneyToCents } from '../../../shared/utils/money.utils';
+import { recurrenceLabel } from '../../../shared/utils/recurrence.utils';
+import { expensesForMonth, incomesForMonth, MONTH_NAMES, sumExpenses, sumIncomes } from '../../../shared/utils/statistics.utils';
 
 @Component({
   selector: 'app-savings',

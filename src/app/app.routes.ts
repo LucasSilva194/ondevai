@@ -86,7 +86,7 @@ export const appRoutes: Routes = [
       {
         path: 'poupancas',
         title: 'Poupanças | OndeVai',
-        loadComponent: () => import('./features/savings/savings.component').then((module) => module.SavingsComponent),
+        loadComponent: () => import('./features/savings/pages/savings.component').then((module) => module.SavingsComponent),
       },
       {
         path: 'categorias',

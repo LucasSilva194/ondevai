@@ -28,7 +28,7 @@ import { BudgetInput, BudgetService } from '../../features/budgets/services/budg
 import { CategoryService } from '../../features/categories/services/category.service';
 import { ExpenseInput, ExpenseService } from '../../features/expenses/services/expense.service';
 import { SettingsService } from '../services/settings.service';
-import { IncomeInput, SavingsGoalInput, SavingsService, SavingsTransactionInput } from '../services/savings.service';
+import { IncomeInput, SavingsGoalInput, SavingsService, SavingsTransactionInput } from '../../features/savings/services/savings.service';
 
 interface AppSnapshot {
   readonly expenses: Expense[];

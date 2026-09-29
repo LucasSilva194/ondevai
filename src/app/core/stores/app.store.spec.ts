@@ -26,7 +26,7 @@ import {
 import { BudgetService } from '../../features/budgets/services/budget.service';
 import { CategoryService } from '../../features/categories/services/category.service';
 import { ExpenseService } from '../../features/expenses/services/expense.service';
-import { SavingsService } from '../services/savings.service';
+import { SavingsService } from '../../features/savings/services/savings.service';
 import { SettingsService } from '../services/settings.service';
 import { AppStore } from './app.store';
 

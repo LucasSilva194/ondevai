@@ -25,7 +25,6 @@ src/app/
 │   ├── account/{pages,components,services}/
 │   ├── categories/{pages,components,models,services}/
 │   ├── expenses/{pages,components,models,services}/
-│   ├── incomes/{components,models,services}/
 │   ├── savings/{pages,components,models,services}/
 │   ├── budgets/{pages,components,models,services}/
 │   ├── dashboard/{pages,components}/
@@ -61,7 +60,7 @@ Use Angular standalone components and services; do not introduce Vue composables
 | `src/app/core/services/category.service.ts` | `src/app/features/categories/services/category.service.ts` |
 | `src/app/core/services/expense.service.ts` | `src/app/features/expenses/services/expense.service.ts` |
 | `src/app/core/services/budget.service.ts` | `src/app/features/budgets/services/budget.service.ts` |
-| `src/app/core/services/savings.service.ts` | Split monthly income operations to `features/incomes/services/income.service.ts`; savings goal and transaction operations to `features/savings/services/savings.service.ts`, preserving existing contracts and shared repository dependencies |
+| `src/app/core/services/savings.service.ts` | `src/app/features/savings/services/savings.service.ts`; it currently owns monthly income and savings goal/transaction operations consumed together by the savings screen, so keep the service boundary intact during this structural-only pass |
 | `src/app/core/services/settings.service.ts` | Remain under `src/app/core/services/` as app-wide settings service |
 | `src/app/core/stores/app.store.ts` | Remain under `src/app/core/stores/`; it coordinates multi-domain snapshot/realtime state |
 | `src/app/core/realtime/pocketbase-realtime.service.ts` | Remain under `src/app/core/realtime/` |
@@ -73,7 +72,7 @@ Use Angular standalone components and services; do not introduce Vue composables
 | `src/app/features/categories/categories.component.ts`, `categories.component.css` | `features/categories/pages/categories.component.ts`, colocated CSS; extract category-only dialogs/forms into `features/categories/components/` when useful for reuse within the feature |
 | `src/app/features/expenses/expenses.component.ts`, `expenses.component.css` | `features/expenses/pages/expenses.component.ts`, colocated CSS; extract domain-only expense form/filter/dialog pieces into `features/expenses/components/` |
 | `src/app/features/budgets/budgets.component.ts`, `budgets.component.css` | `features/budgets/pages/budgets.component.ts`, colocated CSS; extract budget-specific form/table pieces into `features/budgets/components/` |
-| `src/app/features/savings/savings.component.ts`, `savings.component.css` | `features/savings/pages/` for the savings screen and `features/incomes/components/` for monthly income UI; extract shared form UI only where reuse is demonstrated |
+| `src/app/features/savings/savings.component.ts`, `savings.component.css` | `features/savings/pages/savings.component.*`; keep income UI within the combined savings screen because extracting it would change component ownership and behavior |
 | `src/app/features/dashboard/dashboard.component.ts`, `dashboard.component.css` | `features/dashboard/pages/dashboard.component.ts`; dashboard-specific summaries/widgets into `features/dashboard/components/` |
 | `src/app/features/onboarding/onboarding.component.ts`, `onboarding.component.css` | `features/onboarding/pages/onboarding.component.ts`, colocated CSS |
 | `src/app/features/migration/local-data-migration.component.ts`, `local-data-migration.component.css` | `features/migration/pages/local-data-migration.component.ts`, colocated CSS |
@@ -91,7 +90,7 @@ Use Angular standalone components and services; do not introduce Vue composables
 2. **Categories** (smallest domain): move suggested category data and category service/UI into the feature; update imports.
 3. **Budgets:** move its service and page/components.
 4. **Expenses:** move expense service and page/components; keep recurrence exception persistence in the existing cross-domain repository layer unless the ownership boundary is clear.
-5. **Incomes and savings:** split income UI/service from savings goal/transaction UI/service without changing the combined screen behavior.
+5. **Savings:** move the combined income/savings service and screen together; retain the current domain boundary because those operations and dialogs are managed by one screen today.
 6. **Dashboard:** organize dashboard page and dashboard-only widgets after domain locations stabilize.
 7. **Migration and data management:** organize local migration and backup workflows while retaining Dexie, backup validation, and transactional API semantics.
 8. **Auth, account, onboarding, shell, routes:** finish organization and verify all lazy imports and guards still resolve; preserve every route path and title.
@@ -103,7 +102,7 @@ After each domain, run lint and the TypeScript check and require both to be clea
 - **Import cycles:** feature services and repository tokens cross current feature boundaries. Keep shared persistence interfaces and adapters in `core/`; only move a service when consumers can follow without circular imports.
 - **AppStore state lifetime:** the singleton owns user-scoped data and realtime coordination. Do not change state ownership or replace it with feature-local/module-global caches as part of moving files.
 - **Route behavior:** route paths are Portuguese and used by links/guards. Keep all current URL strings, lazy loading, guard ordering, and titles unchanged.
-- **Service split:** monthly income operations currently live in `SavingsService` and the savings screen. Splitting files is structural only; method behavior and screen behavior must remain the same.
+- **Combined savings screen:** monthly incomes and savings goals/transactions currently share one feature screen and service. Keep that boundary intact to avoid a behavior or dependency-injection change.
 - **Audit flags:** no `any`, `v-html`, or `innerHTML` use was found in application source. No component calls axios or `fetch`; PocketBase operations live in auth/repository/account/realtime services. User-visible copy is hardcoded Portuguese; localization is out of scope. UI is Angular standalone/class components, not Vue Options API.
 - **Existing issues:** no bug-fixing is in scope. Record any unrelated bug found during migration here and leave it unchanged.
 
