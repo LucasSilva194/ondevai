@@ -76,7 +76,7 @@ export const appRoutes: Routes = [
       {
         path: 'despesas',
         title: 'Despesas | OndeVai',
-        loadComponent: () => import('./features/expenses/expenses.component').then((module) => module.ExpensesComponent),
+        loadComponent: () => import('./features/expenses/pages/expenses.component').then((module) => module.ExpensesComponent),
       },
       {
         path: 'orcamentos',

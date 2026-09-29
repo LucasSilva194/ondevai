@@ -3,13 +3,13 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { startWith } from 'rxjs';
-import { AppStore } from '../../core/stores/app.store';
-import { ModalShellComponent } from '../../shared/components/common/modal-shell.component';
-import { Category, Expense, ExpenseOccurrence, RecurrenceFrequency, RecurrenceRule } from '../../models/domain.models';
-import { formatDate, todayDateString } from '../../shared/utils/date.utils';
-import { centsToInputValue, formatCurrency, parseMoneyToCents } from '../../shared/utils/money.utils';
-import { recurrenceLabel } from '../../shared/utils/recurrence.utils';
-import { expensesForMonth, MONTH_NAMES, sumExpenses } from '../../shared/utils/statistics.utils';
+import { AppStore } from '../../../core/stores/app.store';
+import { ModalShellComponent } from '../../../shared/components/common/modal-shell.component';
+import { Category, Expense, ExpenseOccurrence, RecurrenceFrequency, RecurrenceRule } from '../../../models/domain.models';
+import { formatDate, todayDateString } from '../../../shared/utils/date.utils';
+import { centsToInputValue, formatCurrency, parseMoneyToCents } from '../../../shared/utils/money.utils';
+import { recurrenceLabel } from '../../../shared/utils/recurrence.utils';
+import { expensesForMonth, MONTH_NAMES, sumExpenses } from '../../../shared/utils/statistics.utils';
 
 @Component({
   selector: 'app-expenses',
