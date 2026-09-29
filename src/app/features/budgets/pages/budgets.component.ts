@@ -4,7 +4,7 @@ import { AppStore } from '../../../core/stores/app.store';
 import { ModalShellComponent } from '../../../shared/components/common/modal-shell.component';
 import { Category, MonthlyBudget } from '../../../models/domain.models';
 import { centsToInputValue, formatCurrency, parseMoneyToCents } from '../../../shared/utils/money.utils';
-import { calculateBudgetSummary, expensesForMonth, MONTH_NAMES } from '../../../shared/utils/statistics.utils';
+import { calculateBudgetSummary, expensesForMonth, MONTH_NAMES, previousMonth } from '../../../shared/utils/statistics.utils';
 
 @Component({
   selector: 'app-budgets',
@@ -19,24 +19,27 @@ import { calculateBudgetSummary, expensesForMonth, MONTH_NAMES } from '../../../
         </div>
         <div class="period-actions">
           <div class="field"><label for="budget-month">Mês</label><input id="budget-month" type="month" [value]="selectedMonth()" (change)="setMonth($event)"></div>
-          <button class="btn btn-secondary" type="button" (click)="copyPrevious()" [disabled]="store.operationPending()">Copiar mês anterior</button>
+          <button class="btn btn-secondary" type="button" (click)="beginCopyReview()" [disabled]="store.operationPending()">Copiar mês anterior</button>
           <button class="btn btn-primary" type="button" (click)="openCreate()"><span>Novo limite</span><span class="button-symbol" aria-hidden="true">+</span></button>
         </div>
       </header>
 
       @if (feedback()) { <p class="feedback" role="status">{{ feedback() }}</p> }
 
-      <section class="budget-metrics" aria-label="Resumo do orçamento">
-        <article class="card-flat"><span>Orçamentado</span><strong>{{ formatCurrency(summary().totalBudgetedCents) }}</strong></article>
-        <article class="card-flat"><span>Gasto</span><strong>{{ formatCurrency(summary().totalSpentCents) }}</strong></article>
-        <article class="card-flat" [class.negative]="summary().remainingCents < 0"><span>Restante</span><strong>{{ formatCurrency(summary().remainingCents) }}</strong></article>
-        <article class="card-flat"><span>Utilizado</span><strong>{{ summary().usedPercentage }}%</strong></article>
-      </section>
+      @if (copyReviewOpen()) {
+        <section class="copy-review card-flat" aria-labelledby="copy-review-title">
+          <div><h2 id="copy-review-title">Rever limites a copiar</h2><p>Serão adicionados apenas limites em falta. Os valores já definidos para {{ selectedMonthLabel() }} ficam iguais.</p></div>
+          @if (copyableBudgets().length) {
+            <ul>@for (budget of copyableBudgets(); track budget.id) { <li><span>{{ categoryName(budget.categoryId) }}</span><strong>{{ formatCurrency(budget.amountCents) }}</strong></li> }</ul>
+          } @else { <p class="copy-review-empty">Não há limites novos para copiar deste mês anterior.</p> }
+          <div class="button-row"><button class="btn btn-primary btn-compact" type="button" (click)="copyPrevious()" [disabled]="store.operationPending() || copyableBudgets().length === 0">{{ store.operationPending() ? 'A copiar…' : 'Adicionar limites' }}</button><button class="btn btn-ghost btn-compact" type="button" (click)="copyReviewOpen.set(false)">Cancelar</button></div>
+        </section>
+      }
 
-      <section class="status-grid" aria-label="Estado dos orçamentos">
-        <article><strong>{{ summary().categoriesWithoutBudget.length }}</strong><span>categorias ativas sem orçamento</span></article>
-        <article class="attention"><strong>{{ summary().nearLimit.length }}</strong><span>perto do limite</span></article>
-        <article class="exceeded"><strong>{{ summary().exceeded.length }}</strong><span>acima do limite</span></article>
+      <section class="budget-metrics" aria-label="Resumo do orçamento">
+        <article class="card-flat"><span>Planeado</span><strong>{{ formatCurrency(summary().totalBudgetedCents) }}</strong></article>
+        <article class="card-flat"><span>Gasto registado</span><strong>{{ formatCurrency(budgetedSpent()) }}</strong></article>
+        <article class="card-flat" [class.negative]="budgetedRemaining() < 0"><span>Restante nos limites</span><strong>{{ formatCurrency(budgetedRemaining()) }}</strong><small>Soma dos limites menos despesas nas categorias orçamentadas.</small></article>
       </section>
 
       @if (summary().rows.length === 0) {
@@ -99,13 +102,23 @@ export class BudgetsComponent {
   readonly amountError = signal<string | null>(null);
   readonly formError = signal<string | null>(null);
   readonly feedback = signal<string | null>(null);
+  readonly copyReviewOpen = signal(false);
   readonly budgetForm = this.formBuilder.nonNullable.group({ categoryId: ['', Validators.required], amount: ['', Validators.required] });
   readonly selectedBudgets = computed(() => this.store.monthlyBudgets().filter((budget) => budget.month === this.selectedMonth()));
+  readonly copyableBudgets = computed(() => {
+    const [year, month] = this.selectedMonth().split('-').map(Number);
+    const previous = previousMonth(year, month);
+    const key = `${previous.year}-${String(previous.month).padStart(2, '0')}`;
+    const existingIds = new Set(this.selectedBudgets().map((item) => item.categoryId));
+    return this.store.monthlyBudgets().filter((item) => item.month === key && !existingIds.has(item.categoryId));
+  });
   readonly selectedExpenses = computed(() => {
     const [year, month] = this.selectedMonth().split('-').map(Number);
     return expensesForMonth(this.store.expenses(), year, month, this.store.recurrenceExceptions());
   });
   readonly summary = computed(() => calculateBudgetSummary(this.selectedBudgets(), this.selectedExpenses(), this.store.categories()));
+  readonly budgetedSpent = computed(() => this.summary().rows.reduce((total, row) => total + row.spentCents, 0));
+  readonly budgetedRemaining = computed(() => this.summary().rows.reduce((total, row) => total + row.remainingCents, 0));
   readonly selectedMonthLabel = computed(() => {
     const [year, month] = this.selectedMonth().split('-').map(Number);
     return `${MONTH_NAMES[month - 1]} de ${year}`;
@@ -117,7 +130,8 @@ export class BudgetsComponent {
     return archived ? [...active, archived] : active;
   });
 
-  setMonth(event: Event): void { this.selectedMonth.set((event.target as HTMLInputElement).value); this.feedback.set(null); }
+  setMonth(event: Event): void { this.selectedMonth.set((event.target as HTMLInputElement).value); this.feedback.set(null); this.copyReviewOpen.set(false); }
+  beginCopyReview(): void { this.copyReviewOpen.set(true); this.feedback.set(null); }
   openCreate(): void { this.editingBudget.set(null); this.budgetForm.reset({ categoryId: '', amount: '' }); this.resetErrors(); this.formOpen.set(true); }
   openEdit(budget: MonthlyBudget): void { this.editingBudget.set(budget); this.budgetForm.reset({ categoryId: budget.categoryId, amount: centsToInputValue(budget.amountCents) }); this.resetErrors(); this.formOpen.set(true); }
   closeForm(): void { this.formOpen.set(false); this.editingBudget.set(null); }
@@ -142,6 +156,7 @@ export class BudgetsComponent {
     try {
       const copied = await this.store.copyPreviousBudget(this.selectedMonth());
       this.feedback.set(copied > 0 ? `${copied} ${copied === 1 ? 'limite copiado' : 'limites copiados'} do mês anterior.` : 'Não existem novos limites para copiar do mês anterior.');
+      this.copyReviewOpen.set(false);
     } catch { /* O erro global já está visível. */ }
   }
 
@@ -152,6 +167,6 @@ export class BudgetsComponent {
 
   statusLabel(status: 'normal' | 'attention' | 'exceeded'): string { return ({ normal: 'Dentro do limite', attention: 'Atenção: perto do limite', exceeded: 'Limite excedido' })[status]; }
   categoryList(categories: readonly Category[]): string { return categories.map((category) => category.name).join(', '); }
-  private categoryName(id: string): string { return this.store.categories().find((category) => category.id === id)?.name ?? 'categoria'; }
+  categoryName(id: string): string { return this.store.categories().find((category) => category.id === id)?.name ?? 'Categoria'; }
   private resetErrors(): void { this.amountError.set(null); this.formError.set(null); }
 }

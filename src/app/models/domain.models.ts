@@ -18,6 +18,8 @@ export interface Expense {
   categoryId: string;
   subcategoryId?: string;
   description?: string;
+  merchant?: string;
+  tags?: string[];
   recurrence?: RecurrenceRule;
   createdAt: string;
   updatedAt: string;
@@ -45,6 +47,8 @@ export interface RecurrenceExceptionChanges {
   categoryId?: string;
   subcategoryId?: string;
   description?: string;
+  merchant?: string;
+  tags?: string[];
   name?: string;
   kind?: IncomeKind;
 }
@@ -136,7 +140,7 @@ export interface Settings {
 }
 
 export interface AppBackup {
-  schemaVersion: 4;
+  schemaVersion: 4 | 5;
   exportedAt: string;
   settings: Settings;
   categories: Category[];

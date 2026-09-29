@@ -59,6 +59,12 @@ function optionalText(value: unknown, field: string): string | undefined {
   return requireText(value, field);
 }
 
+function optionalTextArray(value: unknown, field: string): string[] | undefined {
+  if (value === undefined || value === null || value === '') return undefined;
+  if (!Array.isArray(value) || value.length > 10 || value.some((item) => typeof item !== 'string' || !item.trim() || item.length > 32)) return invalid(field);
+  return [...new Set(value.map((item) => (item as string).trim()))];
+}
+
 function requireBoolean(value: unknown, field: string): boolean {
   if (typeof value !== 'boolean') return invalid(field);
   return value;
@@ -130,6 +136,8 @@ function exceptionChangesFromJson(value: unknown): RecurrenceExceptionChanges | 
   const categoryId = optionalText(value['categoryId'], 'changes.categoryId');
   const subcategoryId = optionalText(value['subcategoryId'], 'changes.subcategoryId');
   const description = optionalText(value['description'], 'changes.description');
+  const merchant = value['merchant'] === undefined ? undefined : typeof value['merchant'] === 'string' ? value['merchant'] : invalid('changes.merchant');
+  const tags = value['tags'] === undefined ? undefined : optionalTextArray(value['tags'], 'changes.tags') ?? [];
   const name = optionalText(value['name'], 'changes.name');
   const kind = optionalText(value['kind'], 'changes.kind');
 
@@ -141,6 +149,8 @@ function exceptionChangesFromJson(value: unknown): RecurrenceExceptionChanges | 
     ...(categoryId ? { categoryId } : {}),
     ...(subcategoryId ? { subcategoryId } : {}),
     ...(description ? { description } : {}),
+    ...(merchant !== undefined ? { merchant } : {}),
+    ...(tags !== undefined ? { tags } : {}),
     ...(name ? { name } : {}),
     ...(kind ? { kind: requireEnum(kind, incomeKinds, 'changes.kind') } : {}),
   };
@@ -149,6 +159,8 @@ function exceptionChangesFromJson(value: unknown): RecurrenceExceptionChanges | 
 export function expenseFromRecord(record: ExpenseRecord): Expense {
   const subcategoryId = optionalText(record.subcategoryId, 'subcategoryId');
   const description = optionalText(record.description, 'description');
+  const merchant = optionalText(record.merchant, 'merchant');
+  const tags = optionalTextArray(record.tags, 'tags');
   const recurrence = recurrenceFromJson(record.recurrence, 'recurrence');
   return {
     id: requireText(record.id, 'id'),
@@ -159,6 +171,8 @@ export function expenseFromRecord(record: ExpenseRecord): Expense {
     updatedAt: normalizeTimestamp(record.updated, 'updated'),
     ...(subcategoryId ? { subcategoryId } : {}),
     ...(description ? { description } : {}),
+    ...(merchant ? { merchant } : {}),
+    ...(tags?.length ? { tags } : {}),
     ...(recurrence ? { recurrence } : {}),
   };
 }
@@ -171,6 +185,8 @@ export function expenseToRecordData(expense: Expense, owner: string): ExpenseRec
     category: expense.categoryId,
     ...(expense.subcategoryId ? { subcategoryId: expense.subcategoryId } : {}),
     ...(expense.description ? { description: expense.description } : {}),
+    ...(expense.merchant ? { merchant: expense.merchant } : {}),
+    ...(expense.tags?.length ? { tags: expense.tags } : {}),
     ...(expense.recurrence ? { recurrence: { ...expense.recurrence } } : {}),
   };
 }

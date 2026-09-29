@@ -53,6 +53,8 @@ export interface ExpenseRecord extends PocketBaseRecordBase {
   category: string;
   subcategoryId?: string | null;
   description?: string | null;
+  merchant?: string | null;
+  tags?: unknown;
   recurrence?: unknown;
 }
 
@@ -121,6 +123,8 @@ export interface ExpenseRecordData {
   category: string;
   subcategoryId?: string;
   description?: string;
+  merchant?: string;
+  tags?: string[];
   recurrence?: RecurrenceRule;
 }
 

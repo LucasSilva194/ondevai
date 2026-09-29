@@ -52,9 +52,23 @@ function median(values: readonly number[]): number {
   return sorted.length % 2 === 0 ? (sorted[middle - 1] + sorted[middle]) / 2 : sorted[middle];
 }
 
+function expenseOccurrences(input: InsightInput, year: number, month: number, throughDay?: number) {
+  const items = expensesForMonth(input.expenses, year, month, input.exceptions);
+  const today = input.today ?? new Date().toISOString().slice(0, 10);
+  const limit = throughDay ?? (monthKey(year, month) === today.slice(0, 7) ? Number(today.slice(-2)) : undefined);
+  return limit === undefined ? items : items.filter((item) => Number(item.date.slice(-2)) <= limit);
+}
+
+function incomeOccurrences(input: InsightInput, year: number, month: number, throughDay?: number) {
+  const items = incomesForMonth(input.incomes, year, month, input.exceptions);
+  const today = input.today ?? new Date().toISOString().slice(0, 10);
+  const limit = throughDay ?? (monthKey(year, month) === today.slice(0, 7) ? Number(today.slice(-2)) : undefined);
+  return limit === undefined ? items : items.filter((item) => Number(item.date.slice(-2)) <= limit);
+}
+
 export function budgetInsights(input: InsightInput): Insight[] {
   const key = monthKey(input.year, input.month);
-  const monthExpenses = expensesForMonth(input.expenses, input.year, input.month, input.exceptions);
+  const monthExpenses = expenseOccurrences(input, input.year, input.month);
   const summary = calculateBudgetSummary(input.budgets.filter((budget) => budget.month === key), monthExpenses, input.categories);
   return summary.rows.filter((row) => row.status !== 'normal').map((row) => ({
     id: `budget-${row.status}-${row.budget.categoryId}`,
@@ -69,9 +83,10 @@ export function budgetInsights(input: InsightInput): Insight[] {
 
 export function categoryGrowthInsights(input: InsightInput): Insight[] {
   const previous = previousMonth(input.year, input.month);
-  const currentGroups = groupByCategory(expensesForMonth(input.expenses, input.year, input.month, input.exceptions), input.categories);
+  const partialDay = input.year === Number((input.today ?? new Date().toISOString()).slice(0, 4)) && input.month === Number((input.today ?? new Date().toISOString()).slice(5, 7)) ? Number((input.today ?? new Date().toISOString()).slice(-2)) : undefined;
+  const currentGroups = groupByCategory(expenseOccurrences(input, input.year, input.month), input.categories);
   const previousGroups = new Map(groupByCategory(
-    expensesForMonth(input.expenses, previous.year, previous.month, input.exceptions),
+    expenseOccurrences(input, previous.year, previous.month, partialDay),
     input.categories,
   ).map((group) => [group.id, group]));
   return currentGroups.flatMap((current): Insight[] => {
@@ -99,7 +114,7 @@ export function unusualExpenseInsights(input: InsightInput): Insight[] {
   const earliest = input.expenses.map((expense) => expense.date).sort()[0];
   if (!earliest || earliest > historicalTo) return [];
   const historical = materializeExpenses(input.expenses, input.exceptions, earliest, historicalTo);
-  const current = expensesForMonth(input.expenses, input.year, input.month, input.exceptions);
+  const current = expenseOccurrences(input, input.year, input.month);
   return current.flatMap((expense): Insight[] => {
     const comparable = historical.filter((item) => item.categoryId === expense.categoryId).map((item) => item.amountCents);
     if (comparable.length < 5) return [];
@@ -117,10 +132,10 @@ export function unusualExpenseInsights(input: InsightInput): Insight[] {
 }
 
 export function recurringCommitmentInsight(input: InsightInput): Insight[] {
-  const incomes = incomesForMonth(input.incomes, input.year, input.month, input.exceptions);
+  const incomes = incomeOccurrences(input, input.year, input.month);
   const totalIncome = sumIncomes(incomes);
   if (totalIncome === 0) return [];
-  const recurring = expensesForMonth(input.expenses, input.year, input.month, input.exceptions)
+  const recurring = expenseOccurrences(input, input.year, input.month)
     .filter((expense) => expense.source !== 'one-off');
   if (recurring.length === 0) return [];
   const totalRecurring = sumExpenses(recurring);
@@ -154,8 +169,8 @@ export function savingsPlanInsights(input: InsightInput): Insight[] {
 }
 
 export function balanceInsights(input: InsightInput): Insight[] {
-  const currentExpenses = sumExpenses(expensesForMonth(input.expenses, input.year, input.month, input.exceptions));
-  const currentIncomes = sumIncomes(incomesForMonth(input.incomes, input.year, input.month, input.exceptions));
+  const currentExpenses = sumExpenses(expenseOccurrences(input, input.year, input.month));
+  const currentIncomes = sumIncomes(incomeOccurrences(input, input.year, input.month));
   const balance = currentIncomes - currentExpenses;
   const insights: Insight[] = [];
   if (balance < 0) {
@@ -167,7 +182,9 @@ export function balanceInsights(input: InsightInput): Insight[] {
       priority: 96,
     });
   }
-  const comparison = comparePeriods(input.expenses, input.incomes, input.exceptions, input.year, input.month).balance;
+  const todayForComparison = input.today ?? new Date().toISOString();
+  const partialDay = input.year === Number(todayForComparison.slice(0, 4)) && input.month === Number(todayForComparison.slice(5, 7)) ? Number(todayForComparison.slice(8, 10)) : undefined;
+  const comparison = comparePeriods(input.expenses, input.incomes, input.exceptions, input.year, input.month, partialDay).balance;
   if (comparison.previousCents !== 0 && comparison.differenceCents >= 5_000
     && (comparison.differenceCents / Math.abs(comparison.previousCents)) * 100 >= 10) {
     insights.push({

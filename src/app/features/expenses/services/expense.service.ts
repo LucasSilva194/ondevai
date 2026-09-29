@@ -16,6 +16,8 @@ export interface ExpenseInput {
   categoryId: string;
   subcategoryId?: string;
   description?: string;
+  merchant?: string;
+  tags?: string[];
   recurrence?: RecurrenceRule;
 }
 
@@ -38,6 +40,8 @@ export class ExpenseService {
       updatedAt: now,
       ...(input.subcategoryId ? { subcategoryId: input.subcategoryId } : {}),
       ...(input.description?.trim() ? { description: input.description.trim() } : {}),
+      ...(input.merchant?.trim() ? { merchant: input.merchant.trim() } : {}),
+      ...(input.tags?.length ? { tags: normalizeTags(input.tags) } : {}),
       ...(input.recurrence ? { recurrence: input.recurrence } : {}),
     };
     await this.expenses.put(expense);
@@ -57,10 +61,14 @@ export class ExpenseService {
       updatedAt: new Date().toISOString(),
       ...(input.subcategoryId ? { subcategoryId: input.subcategoryId } : {}),
       ...(input.description?.trim() ? { description: input.description.trim() } : {}),
+      ...(input.merchant?.trim() ? { merchant: input.merchant.trim() } : {}),
+      ...(input.tags?.length ? { tags: normalizeTags(input.tags) } : {}),
       ...(input.recurrence ? { recurrence: input.recurrence } : {}),
     };
     if (!input.subcategoryId) delete expense.subcategoryId;
     if (!input.description?.trim()) delete expense.description;
+    if (!input.merchant?.trim()) delete expense.merchant;
+    if (!input.tags?.length) delete expense.tags;
     if (!input.recurrence) delete expense.recurrence;
     await this.expenses.put(expense);
     await this.registerChange();
@@ -76,6 +84,8 @@ export class ExpenseService {
       categoryId: changes.categoryId ?? series.categoryId,
       ...(changes.subcategoryId ? { subcategoryId: changes.subcategoryId } : {}),
       ...(changes.description ? { description: changes.description } : {}),
+      ...(changes.merchant !== undefined ? { merchant: changes.merchant } : {}),
+      ...(changes.tags !== undefined ? { tags: changes.tags } : {}),
     };
     await this.validate(input);
     const now = new Date().toISOString();
@@ -118,6 +128,8 @@ export class ExpenseService {
   private async validate(input: ExpenseInput): Promise<void> {
     if (!isDateString(input.date)) throw new Error('Indique uma data válida.');
     if (!Number.isSafeInteger(input.amountCents) || input.amountCents <= 0) throw new Error('O valor tem de ser superior a zero.');
+    if ((input.merchant?.trim().length ?? 0) > 100) throw new Error('O comerciante pode ter até 100 caracteres.');
+    if ((input.tags ?? []).some((tag) => !tag.trim() || tag.trim().length > 32) || (input.tags?.length ?? 0) > 10) throw new Error('Use até 10 etiquetas, com no máximo 32 caracteres cada.');
     if (input.recurrence && (!validateRecurrenceRule(input.recurrence) || input.recurrence.startDate !== input.date)) {
       throw new Error('A regra de recorrência não é válida.');
     }
@@ -134,4 +146,8 @@ export class ExpenseService {
     const next: Settings = { ...current, changesSinceExport: current.changesSinceExport + 1 };
     await this.settings.put(next);
   }
+}
+
+function normalizeTags(tags: readonly string[]): string[] {
+  return [...new Set(tags.map((tag) => tag.trim()).filter(Boolean))].slice(0, 10);
 }

@@ -79,6 +79,16 @@ export const appRoutes: Routes = [
         loadComponent: () => import('./features/expenses/pages/expenses.component').then((module) => module.ExpensesComponent),
       },
       {
+        path: 'a-caminho',
+        title: 'A caminho | OndeVai',
+        loadComponent: () => import('./features/upcoming/pages/upcoming.component').then((module) => module.UpcomingComponent),
+      },
+      {
+        path: 'relatorios',
+        title: 'Relatórios | OndeVai',
+        loadComponent: () => import('./features/reports/pages/reports.component').then((module) => module.ReportsComponent),
+      },
+      {
         path: 'orcamentos',
         title: 'Orçamentos | OndeVai',
         loadComponent: () => import('./features/budgets/pages/budgets.component').then((module) => module.BudgetsComponent),
