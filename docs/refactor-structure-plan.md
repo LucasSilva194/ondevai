@@ -40,6 +40,7 @@ src/app/
 │   │   └── chart/            # shared chart wrapper
 │   ├── models/               # types used across domains
 │   └── utils/                # pure helpers with multiple consumers
+├── models/                   # current cross-feature financial domain models
 ├── models/                   # shared persisted/domain models during migration
 ├── app.component.ts
 ├── app.config.ts
@@ -53,7 +54,7 @@ Use Angular standalone components and services; do not introduce Vue composables
 | Current file(s) | Target location |
 |---|---|
 | `src/app/app.component.ts`, `src/app/app.config.ts`, `src/app/app.routes.ts`, `src/main.ts` | Remain at the Angular application root; route definitions stay lazy-loaded and retain the same paths |
-| `src/app/models/domain.models.ts` | `src/app/shared/models/domain.models.ts` if used across features; otherwise split into each feature's `models/` during its migration |
+| `src/app/models/domain.models.ts` | Remains under `src/app/models/` as the existing cross-feature financial model set; split only when an actual domain boundary is established |
 | `src/app/models/suggested-categories.ts` | `src/app/features/categories/models/suggested-categories.ts` |
 | `src/app/core/auth/auth.service.ts`, `user-session.service.ts`, `auth.guards.ts` | Remain under `src/app/core/auth/` |
 | `src/app/core/pocketbase/pocketbase.client.ts`, `pocketbase.endpoints.ts`, `pocketbase.errors.ts`, `pocketbase.ids.ts`, `pocketbase.mappers.ts`, `pocketbase.types.ts` | Remain under `src/app/core/pocketbase/`; domain-specific record mappers/types may move with their owning feature only if doing so does not create cross-domain imports |
@@ -66,7 +67,7 @@ Use Angular standalone components and services; do not introduce Vue composables
 | `src/app/core/stores/app.store.ts` | Remain under `src/app/core/stores/`; it coordinates multi-domain snapshot/realtime state |
 | `src/app/core/realtime/pocketbase-realtime.service.ts` | Remain under `src/app/core/realtime/` |
 | `src/app/core/backup/backup.service.ts`, `backup-validation.ts`, `backup-fingerprint.ts` | Remain under `src/app/core/backup/`; data-management feature calls these services |
-| `src/app/core/migration/local-data-migration.service.ts` | `src/app/features/migration/services/local-data-migration.service.ts` |
+| `src/app/core/migration/local-data-migration.service.ts` | Remains under `src/app/core/migration/` because auth/session startup and multiple feature screens consume it |
 | `src/app/core/database/ondevai.database.ts` | Remain under `src/app/core/database/` |
 | `src/app/features/auth/{login,register,password-recovery,password-reset,email-verification,auth-page}.component.ts`, `auth-page.component.css`, `auth-form.css` | `features/auth/pages/` for routed screens and `features/auth/components/` for genuinely shared auth UI; retain styles alongside their component |
 | `src/app/features/account/account.component.ts`, `account.component.css`, `account.service.ts` | `features/account/pages/account.component.ts`, colocated CSS, `features/account/services/account.service.ts` |

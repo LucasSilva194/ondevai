@@ -2,9 +2,9 @@ import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { LocalDataMigrationService } from '../../core/migration/local-data-migration.service';
-import { PwaService } from '../../core/services/pwa.service';
-import { AppStore } from '../../core/stores/app.store';
+import { LocalDataMigrationService } from '../../../core/migration/local-data-migration.service';
+import { PwaService } from '../../../core/services/pwa.service';
+import { AppStore } from '../../../core/stores/app.store';
 import { OnboardingComponent } from './onboarding.component';
 
 describe('OnboardingComponent', () => {

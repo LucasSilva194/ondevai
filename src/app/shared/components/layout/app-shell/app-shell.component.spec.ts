@@ -2,10 +2,10 @@ import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { AuthService } from '../../../core/auth/auth.service';
-import { UserSessionService } from '../../../core/auth/user-session.service';
-import { PwaService } from '../../../core/services/pwa.service';
-import { AppStore } from '../../../core/stores/app.store';
+import { AuthService } from '../../../../core/auth/auth.service';
+import { UserSessionService } from '../../../../core/auth/user-session.service';
+import { PwaService } from '../../../../core/services/pwa.service';
+import { AppStore } from '../../../../core/stores/app.store';
 import { AppShellComponent } from './app-shell.component';
 
 describe('AppShellComponent', () => {
