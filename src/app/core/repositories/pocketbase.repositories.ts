@@ -156,6 +156,8 @@ export class PocketBaseExpenseRepository extends PocketBaseRepositoryBase implem
       ...data,
       subcategoryId: expense.subcategoryId ?? '',
       description: expense.description ?? '',
+      merchant: expense.merchant ?? '',
+      tags: expense.tags ?? [],
       recurrence: expense.recurrence ?? null,
     });
   }

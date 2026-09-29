@@ -64,6 +64,16 @@ import { IconComponent } from '../../common/icon/icon.component';
               <span><strong>Dados e privacidade</strong><small>Backup, importação e armazenamento</small></span>
               <app-icon class="mobile-menu-arrow" name="arrow-right" />
             </a>
+            <a routerLink="/a-caminho" routerLinkActive="active" (click)="mobileMenuOpen.set(false)">
+              <span class="mobile-menu-icon"><app-icon name="calendar" /></span>
+              <span><strong>A caminho</strong><small>Movimentos previstos nos próximos 30 dias</small></span>
+              <app-icon class="mobile-menu-arrow" name="arrow-right" />
+            </a>
+            <a routerLink="/relatorios" routerLinkActive="active" (click)="mobileMenuOpen.set(false)">
+              <span class="mobile-menu-icon"><app-icon name="chart" /></span>
+              <span><strong>Relatórios</strong><small>Tendências e exportação CSV</small></span>
+              <app-icon class="mobile-menu-arrow" name="arrow-right" />
+            </a>
             <a routerLink="/categorias" routerLinkActive="active" (click)="mobileMenuOpen.set(false)">
               <span class="mobile-menu-icon"><app-icon name="categories" /></span>
               <span><strong>Categorias</strong><small>Gerir categorias e subcategorias</small></span>
@@ -135,6 +145,8 @@ export class AppShellComponent {
   readonly navigation = [
     { path: '/visao-geral', label: 'Visão geral', shortLabel: 'Resumo', icon: 'overview', primary: true },
     { path: '/despesas', label: 'Despesas', shortLabel: 'Despesas', icon: 'expenses', primary: true },
+    { path: '/a-caminho', label: 'A caminho', shortLabel: 'A caminho', icon: 'calendar', primary: false },
+    { path: '/relatorios', label: 'Relatórios', shortLabel: 'Relatórios', icon: 'chart', primary: false },
     { path: '/orcamentos', label: 'Orçamentos', shortLabel: 'Limites', icon: 'budgets', primary: true },
     { path: '/poupancas', label: 'Poupanças', shortLabel: 'Poupar', icon: 'savings', primary: true },
     { path: '/categorias', label: 'Categorias', shortLabel: 'Categorias', icon: 'categories', primary: false },

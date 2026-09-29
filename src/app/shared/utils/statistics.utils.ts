@@ -195,12 +195,16 @@ export function comparePeriods(
   exceptions: readonly RecurrenceException[],
   year: number,
   month: number,
+  throughDay?: number,
 ): PeriodComparisons {
   const previous = previousMonth(year, month);
-  const currentExpenses = monthlyTotal(expenses, year, month, exceptions);
-  const previousExpenses = monthlyTotal(expenses, previous.year, previous.month, exceptions);
-  const currentIncomes = incomeTotalForMonth(incomes, year, month, exceptions);
-  const previousIncomes = incomeTotalForMonth(incomes, previous.year, previous.month, exceptions);
+  const inPartialWindow = <T extends { date: string }>(items: readonly T[]): T[] => throughDay === undefined
+    ? [...items]
+    : items.filter((item) => Number(item.date.slice(8, 10)) <= throughDay);
+  const currentExpenses = sumExpenses(inPartialWindow(expensesForMonth(expenses, year, month, exceptions)));
+  const previousExpenses = sumExpenses(inPartialWindow(expensesForMonth(expenses, previous.year, previous.month, exceptions)));
+  const currentIncomes = sumIncomes(inPartialWindow(incomesForMonth(incomes, year, month, exceptions)));
+  const previousIncomes = sumIncomes(inPartialWindow(incomesForMonth(incomes, previous.year, previous.month, exceptions)));
   return {
     expenses: compareAmounts(currentExpenses, previousExpenses),
     incomes: compareAmounts(currentIncomes, previousIncomes),
@@ -247,14 +251,16 @@ export function monthlyBalanceSeries(
   year: number,
   throughMonth = 12,
   exceptions: readonly RecurrenceException[] = [],
+  asOfDate?: string,
 ): MonthPoint[] {
   const visibleMonths = Math.max(0, Math.min(12, throughMonth));
-  return MONTH_NAMES.slice(0, visibleMonths).map((label, index) => ({
-    month: index + 1,
-    label: label.slice(0, 3),
-    amountCents: incomeTotalForMonth(incomes, year, index + 1, exceptions)
-      - monthlyTotal(expenses, year, index + 1, exceptions),
-  }));
+  return MONTH_NAMES.slice(0, visibleMonths).map((label, index) => {
+    const month = index + 1;
+    const partial = asOfDate?.startsWith(`${year}-${String(month).padStart(2, '0')}`) ?? false;
+    const monthExpenses = expensesForMonth(expenses, year, month, exceptions).filter((item) => !partial || item.date <= asOfDate!);
+    const monthIncomes = incomesForMonth(incomes, year, month, exceptions).filter((item) => !partial || item.date <= asOfDate!);
+    return { month, label: label.slice(0, 3), amountCents: sumIncomes(monthIncomes) - sumExpenses(monthExpenses) };
+  });
 }
 
 export function groupByCategory(

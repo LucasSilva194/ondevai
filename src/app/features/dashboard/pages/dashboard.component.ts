@@ -5,6 +5,8 @@ import { ChartComponent } from '../../../shared/components/chart/chart.component
 import { IconComponent } from '../../../shared/components/common/icon/icon.component';
 import { generateInsights } from '../../../shared/utils/insights.utils';
 import { formatCurrency } from '../../../shared/utils/money.utils';
+import { todayDateString } from '../../../shared/utils/date.utils';
+import { materializeExpenses, materializeIncomes } from '../../../shared/utils/recurrence.utils';
 import {
   averagePreviousThreeMonths,
   calculateBudgetSummary,
@@ -33,9 +35,14 @@ import {
             <span class="period-symbol" aria-hidden="true"><app-icon name="calendar" /></span>
             <div class="field"><label for="dashboard-month">Mês</label><select id="dashboard-month" [value]="selectedMonth()" (change)="setMonth($event)">@for (month of months; track $index) { <option [value]="$index + 1" [selected]="$index + 1 === selectedMonth()">{{ month }}</option> }</select></div>
             <div class="field"><label for="dashboard-year">Ano</label><select id="dashboard-year" [value]="selectedYear()" (change)="setYear($event)">@for (year of availableYears(); track year) { <option [value]="year" [selected]="year === selectedYear()">{{ year }}</option> }</select></div>
+            <div class="period-stepper" aria-label="Navegar entre meses">
+              <button type="button" (click)="shiftPeriod(-1)" aria-label="Mês anterior"><app-icon name="arrow-up" /></button>
+              <button type="button" (click)="goToCurrentMonth()">Este mês</button>
+              <button type="button" (click)="shiftPeriod(1)" aria-label="Mês seguinte"><app-icon name="arrow-up" /></button>
+            </div>
           </div>
-          <button class="btn btn-secondary btn-compact widget-edit-toggle" type="button" (click)="toggleWidgetEditing()" [attr.aria-pressed]="editingWidgetOrder()">
-            @if (editingWidgetOrder()) { <app-icon name="close" /><span>Concluir</span> } @else { <app-icon name="edit" /><span>Reorganizar</span> }
+          <button class="btn btn-ghost btn-compact widget-edit-toggle" type="button" (click)="toggleWidgetEditing()" [attr.aria-pressed]="editingWidgetOrder()">
+            @if (editingWidgetOrder()) { <app-icon name="close" /><span>Concluir</span> } @else { <app-icon name="edit" /><span>Personalizar visão geral</span> }
           </button>
           @if (editingWidgetOrder()) { <p class="widget-edit-hint">Arraste os blocos ou foque um e use as setas do teclado.</p> }
         </div>
@@ -48,6 +55,20 @@ import {
         <article class="metric-primary" [class.negative]="monthBalance() < 0"><div class="metric-core"><div class="metric-label"><span class="metric-icon" aria-hidden="true"><app-icon name="balance" /></span><span>Saldo em {{ monthName() }}</span></div><strong>{{ formatCurrency(monthBalance()) }}</strong><small>Rendimentos menos despesas</small></div></article>
         <article class="metric"><div class="metric-core"><div class="metric-label"><span class="metric-icon" aria-hidden="true"><app-icon name="income" /></span><span>Entradas</span></div><strong>{{ formatCurrency(monthIncomeTotal()) }}</strong><small>{{ monthIncomes().length }} {{ monthIncomes().length === 1 ? 'rendimento' : 'rendimentos' }}</small></div></article>
         <article class="metric"><div class="metric-core"><div class="metric-label"><span class="metric-icon" aria-hidden="true"><app-icon name="expenses" /></span><span>Saídas</span></div><strong>{{ formatCurrency(monthExpenseTotal()) }}</strong><small>{{ monthExpenses().length }} {{ monthExpenses().length === 1 ? 'despesa' : 'despesas' }}</small></div></article>
+      </section>
+
+      <section class="dashboard-next card-flat" aria-label="Plano do mês e próximos movimentos">
+        <div class="dashboard-allowance">
+          <div><p class="eyebrow">Plano do mês</p><h2>Restante nos limites definidos</h2><p>Orçamentos por categoria menos despesas registadas nessas categorias. Não representa saldo bancário e exclui categorias sem limite.</p></div>
+          @if (budgetSummary().totalBudgetedCents > 0) { <strong [class.negative-allowance]="plannedBudgetRemaining() < 0">{{ formatCurrency(plannedBudgetRemaining()) }}</strong> }
+          @else { <a class="btn btn-secondary btn-compact" routerLink="/orcamentos">Definir limites</a> }
+        </div>
+        <div class="dashboard-coming">
+          <div class="coming-heading"><div><h2>A caminho</h2><p>Previsões para os próximos 30 dias</p></div><a routerLink="/a-caminho">Ver agenda <app-icon name="arrow-right" /></a></div>
+          @if (nextItems().length) {
+            <ul>@for (item of nextItems(); track item.occurrenceKey) { <li><span class="coming-date">{{ shortDate(item.date) }}</span><span class="coming-name">{{ item.itemType === 'income' ? item.name : (item.description || categoryName(item.categoryId)) }}<small>{{ item.itemType === 'income' ? 'Entrada prevista' : 'Saída prevista' }}</small></span><strong [class.income-amount]="item.itemType === 'income'">{{ item.itemType === 'income' ? '+' : '−' }}{{ formatCurrency(item.amountCents) }}</strong></li> }</ul>
+          } @else { <p class="coming-empty">Sem movimentos previstos nos próximos 30 dias.</p> }
+        </div>
       </section>
 
       <div class="dashboard-widgets" [class.is-editing]="editingWidgetOrder()" aria-label="Widgets da visão geral" (dragstart)="startWidgetDrag($event)" (dragover)="allowWidgetDrop($event)" (drop)="dropWidget($event)" (dragend)="endWidgetDrag()" (keydown)="reorderWidgetWithKeyboard($event)">
@@ -109,25 +130,38 @@ export class DashboardComponent {
     const years = new Set(this.store.expenses().map((expense) => Number(expense.date.slice(0, 4))));
     this.store.monthlyIncomes().forEach((income) => years.add(Number(income.date.slice(0, 4))));
     years.add(new Date().getFullYear());
+    years.add(this.selectedYear());
+    years.add(this.selectedYear() - 1);
+    years.add(this.selectedYear() + 1);
     return [...years].sort((a, b) => b - a);
   });
   readonly selectedKey = computed(() => monthKey(this.selectedYear(), this.selectedMonth()));
-  readonly todayKey = new Date().toISOString().slice(0, 7);
+  readonly todayKey = todayDateString().slice(0, 7);
   readonly isFuturePeriod = computed(() => this.selectedKey() > this.todayKey);
   readonly isPartialPeriod = computed(() => this.selectedKey() === this.todayKey);
   readonly monthName = computed(() => this.months[this.selectedMonth() - 1]);
-  readonly monthExpenses = computed(() => expensesForMonth(this.store.expenses(), this.selectedYear(), this.selectedMonth(), this.store.recurrenceExceptions()));
-  readonly monthIncomes = computed(() => incomesForMonth(this.store.monthlyIncomes(), this.selectedYear(), this.selectedMonth(), this.store.recurrenceExceptions()));
+  readonly monthExpenses = computed(() => expensesForMonth(this.store.expenses(), this.selectedYear(), this.selectedMonth(), this.store.recurrenceExceptions()).filter((item) => !this.isPartialPeriod() || item.date <= todayDateString()));
+  readonly monthIncomes = computed(() => incomesForMonth(this.store.monthlyIncomes(), this.selectedYear(), this.selectedMonth(), this.store.recurrenceExceptions()).filter((item) => !this.isPartialPeriod() || item.date <= todayDateString()));
   readonly monthExpenseTotal = computed(() => sumExpenses(this.monthExpenses()));
   readonly monthIncomeTotal = computed(() => sumIncomes(this.monthIncomes()));
   readonly monthBalance = computed(() => this.monthIncomeTotal() - this.monthExpenseTotal());
-  readonly comparisons = computed(() => comparePeriods(this.store.expenses(), this.store.monthlyIncomes(), this.store.recurrenceExceptions(), this.selectedYear(), this.selectedMonth()));
+  readonly comparisons = computed(() => comparePeriods(this.store.expenses(), this.store.monthlyIncomes(), this.store.recurrenceExceptions(), this.selectedYear(), this.selectedMonth(), this.isPartialPeriod() ? Number(todayDateString().slice(-2)) : undefined));
   readonly threeMonthAverage = computed(() => averagePreviousThreeMonths(this.store.expenses(), this.store.monthlyIncomes(), this.store.recurrenceExceptions(), this.selectedYear(), this.selectedMonth()));
   readonly selectedBudgets = computed(() => this.store.monthlyBudgets().filter((budget) => budget.month === this.selectedKey()));
   readonly budgetSummary = computed(() => calculateBudgetSummary(this.selectedBudgets(), this.monthExpenses(), this.store.categories()));
+  readonly plannedBudgetRemaining = computed(() => this.budgetSummary().rows.reduce((total, row) => total + row.remainingCents, 0));
+  readonly nextItems = computed(() => {
+    const today = todayDateString();
+    const [year, month, day] = today.split('-').map(Number);
+    const endDate = new Date(Date.UTC(year, month - 1, day + 29)).toISOString().slice(0, 10);
+    return [
+      ...materializeExpenses(this.store.expenses(), this.store.recurrenceExceptions(), today, endDate).map((item) => ({ ...item, itemType: 'expense' as const })),
+      ...materializeIncomes(this.store.monthlyIncomes(), this.store.recurrenceExceptions(), today, endDate).map((item) => ({ ...item, itemType: 'income' as const })),
+    ].sort((a, b) => a.date.localeCompare(b.date)).slice(0, 3);
+  });
   readonly insights = computed(() => generateInsights({ year: this.selectedYear(), month: this.selectedMonth(), expenses: this.store.expenses(), incomes: this.store.monthlyIncomes(), categories: this.store.categories(), budgets: this.store.monthlyBudgets(), exceptions: this.store.recurrenceExceptions(), savingsGoals: this.store.savingsGoals() }));
   readonly visibleMonthLimit = computed(() => { const now = new Date(); if (this.selectedYear() < now.getFullYear()) return 12; if (this.selectedYear() > now.getFullYear()) return 0; return now.getMonth() + 1; });
-  readonly series = computed(() => monthlyBalanceSeries(this.store.expenses(), this.store.monthlyIncomes(), this.selectedYear(), this.visibleMonthLimit(), this.store.recurrenceExceptions()));
+  readonly series = computed(() => monthlyBalanceSeries(this.store.expenses(), this.store.monthlyIncomes(), this.selectedYear(), this.visibleMonthLimit(), this.store.recurrenceExceptions(), this.selectedYear() === new Date().getFullYear() ? todayDateString() : undefined));
   readonly visiblePeriodHasData = computed(() => { const limit = this.visibleMonthLimit(); return Array.from({ length: limit }, (_, index) => index + 1).some((month) => expensesForMonth(this.store.expenses(), this.selectedYear(), month, this.store.recurrenceExceptions()).length > 0 || incomesForMonth(this.store.monthlyIncomes(), this.selectedYear(), month, this.store.recurrenceExceptions()).length > 0); });
   readonly seriesPeriodLabel = computed(() => { const limit = this.visibleMonthLimit(); if (limit === 0) return `Ainda não existem meses decorridos em ${this.selectedYear()}`; if (limit === 12) return `Rendimentos menos despesas ao longo de ${this.selectedYear()}`; return `Rendimentos menos despesas até ${this.months[limit - 1]} de ${this.selectedYear()}`; });
   readonly seriesLabels = computed(() => this.series().map((point) => point.label));
@@ -207,6 +241,14 @@ export class DashboardComponent {
   }
   setMonth(event: Event): void { this.selectedMonth.set(Number((event.target as HTMLSelectElement).value)); }
   setYear(event: Event): void { this.selectedYear.set(Number((event.target as HTMLSelectElement).value)); }
+  shiftPeriod(delta: -1 | 1): void {
+    const date = new Date(Date.UTC(this.selectedYear(), this.selectedMonth() - 1 + delta, 1));
+    this.selectedYear.set(date.getUTCFullYear());
+    this.selectedMonth.set(date.getUTCMonth() + 1);
+  }
+  goToCurrentMonth(): void { const now = new Date(); this.selectedYear.set(now.getFullYear()); this.selectedMonth.set(now.getMonth() + 1); }
+  shortDate(date: string): string { return new Intl.DateTimeFormat('pt-PT', { day: 'numeric', month: 'short' }).format(new Date(`${date}T12:00:00`)); }
+  categoryName(id: string): string { return this.store.categories().find((category) => category.id === id)?.name ?? 'Despesa'; }
   signedCurrency(cents: number): string { return `${cents > 0 ? '+' : cents < 0 ? '−' : ''}${formatCurrency(Math.abs(cents))}`; }
   comparisonLabel(comparison: MonthComparison): string { if (comparison.percentage === null) return 'Sem base de comparação'; if (comparison.direction === 'same') return 'Sem alteração'; return `${comparison.direction === 'up' ? 'Aumento' : 'Redução'} de ${Math.abs(comparison.percentage)}%`; }
   directionClass(comparison: MonthComparison): string { return `comparison-${comparison.direction}`; }

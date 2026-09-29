@@ -39,7 +39,7 @@ export class BackupService {
     const exportedAt = new Date().toISOString();
     const nextSettings = { ...currentSettings, lastExportAt: exportedAt, changesSinceExport: 0 };
     const backup: AppBackup = {
-      schemaVersion: 4,
+      schemaVersion: 5,
       exportedAt,
       settings: nextSettings,
       categories,

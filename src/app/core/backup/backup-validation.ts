@@ -90,20 +90,24 @@ function parseExpenses(values: unknown[], version: number, errors: string[]): Ex
       || !isPositiveCents(value['amountCents']) || !isNonEmptyString(value['categoryId'])
       || (value['subcategoryId'] !== undefined && !isNonEmptyString(value['subcategoryId']))
       || (value['description'] !== undefined && typeof value['description'] !== 'string')
+      || (value['merchant'] !== undefined && (typeof value['merchant'] !== 'string' || value['merchant'].length > 100))
+      || (value['tags'] !== undefined && (!Array.isArray(value['tags']) || value['tags'].length > 10 || value['tags'].some((tag) => typeof tag !== 'string' || !tag.trim() || tag.length > 32)))
       || !isIsoDate(value['createdAt']) || !isIsoDate(value['updatedAt'])) {
       errors.push(`A despesa ${index + 1} tem campos inválidos.`);
       return [];
     }
     const legacyFixed = value['fixed'] === true;
-    const recurrence = version === 4
+    const recurrence = version >= 4
       ? parseRule(value['recurrence'], `A despesa ${index + 1}`, errors)
       : legacyFixed ? { frequency: 'monthly', interval: 1, startDate: value['date'], status: 'active' } satisfies RecurrenceRule : undefined;
-    if (version === 4 && value['recurrence'] !== undefined && !recurrence) return [];
+    if (version >= 4 && value['recurrence'] !== undefined && !recurrence) return [];
     return [{
       id: value['id'], date: value['date'], amountCents: value['amountCents'], categoryId: value['categoryId'],
       createdAt: value['createdAt'], updatedAt: value['updatedAt'],
       ...(value['subcategoryId'] ? { subcategoryId: value['subcategoryId'] as string } : {}),
       ...(typeof value['description'] === 'string' && value['description'].trim() ? { description: value['description'] } : {}),
+      ...(typeof value['merchant'] === 'string' && value['merchant'].trim() ? { merchant: value['merchant'].trim() } : {}),
+      ...(Array.isArray(value['tags']) ? { tags: [...new Set(value['tags'].map((tag) => (tag as string).trim()))] } : {}),
       ...(recurrence ? { recurrence } : {}),
     }];
   });
@@ -117,18 +121,18 @@ function parseIncomes(values: unknown[], version: number, errors: string[]): Mon
       errors.push(`O rendimento ${index + 1} tem campos inválidos.`);
       return [];
     }
-    const date = version === 4 ? value['date'] : `${String(value['receivedMonth'] ?? value['createdAt'].slice(0, 7))}-01`;
+    const date = version >= 4 ? value['date'] : `${String(value['receivedMonth'] ?? value['createdAt'].slice(0, 7))}-01`;
     if (!isDateString(date)) {
       errors.push(`O rendimento ${index + 1} tem uma data inválida.`);
       return [];
     }
     let recurrence: RecurrenceRule | undefined;
-    if (version === 4) recurrence = parseRule(value['recurrence'], `O rendimento ${index + 1}`, errors);
+    if (version >= 4) recurrence = parseRule(value['recurrence'], `O rendimento ${index + 1}`, errors);
     else if (value['fixed'] ?? true) {
       const active = value['active'] !== false;
       recurrence = { frequency: 'monthly', interval: 1, startDate: date, status: active ? 'active' : 'paused', ...(!active ? { pausedFrom: date } : {}) };
     }
-    if (version === 4 && value['recurrence'] !== undefined && !recurrence) return [];
+    if (version >= 4 && value['recurrence'] !== undefined && !recurrence) return [];
     return [{
       id: value['id'], name: value['name'], kind: value['kind'] as MonthlyIncome['kind'],
       amountCents: value['amountCents'], date, createdAt: value['createdAt'], updatedAt: value['updatedAt'],
@@ -201,6 +205,8 @@ function parseExceptions(values: unknown[], errors: string[]): RecurrenceExcepti
       && (changes?.['categoryId'] === undefined || isNonEmptyString(changes['categoryId']))
       && (changes?.['subcategoryId'] === undefined || isNonEmptyString(changes['subcategoryId']))
       && (changes?.['description'] === undefined || typeof changes['description'] === 'string')
+      && (changes?.['merchant'] === undefined || (typeof changes['merchant'] === 'string' && changes['merchant'].length <= 100))
+      && (changes?.['tags'] === undefined || (Array.isArray(changes['tags']) && changes['tags'].length <= 10 && changes['tags'].every((tag) => typeof tag === 'string' && tag.trim() && tag.length <= 32)))
       && (changes?.['name'] === undefined || isNonEmptyString(changes['name']))
       && (changes?.['kind'] === undefined || ['salary', 'subsidy', 'freelance', 'other'].includes(changes['kind'] as string));
     if (!isRecord(value) || !isNonEmptyString(value['id']) || !['expense', 'income'].includes(value['seriesType'] as string)
@@ -228,7 +234,7 @@ export function validateBackup(value: unknown): BackupValidationResult {
   const errors: string[] = [];
   if (!isRecord(value)) return { valid: false, errors: ['O ficheiro não contém um objeto JSON válido.'] };
   const version = value['schemaVersion'];
-  if (![1, 2, 3, 4].includes(version as number)) errors.push('A versão do backup não é suportada.');
+  if (![1, 2, 3, 4, 5].includes(version as number)) errors.push('A versão do backup não é suportada.');
   if (!isIsoDate(value['exportedAt'])) errors.push('A data de exportação é inválida.');
   validSettings(value['settings'], errors);
   for (const field of ['categories', 'expenses']) if (!Array.isArray(value[field])) errors.push(`A lista de ${field} é inválida.`);
@@ -236,7 +242,7 @@ export function validateBackup(value: unknown): BackupValidationResult {
     if (!Array.isArray(value['monthlyIncomes'])) errors.push('A lista de rendimentos é inválida.');
     if (!Array.isArray(value['savingsGoals'])) errors.push('A lista de objetivos de poupança é inválida.');
   }
-  if (version === 4) {
+  if ((version as number) >= 4) {
     if (!Array.isArray(value['savingsTransactions'])) errors.push('A lista de movimentos de poupança é inválida.');
     if (!Array.isArray(value['monthlyBudgets'])) errors.push('A lista de orçamentos é inválida.');
     if (!Array.isArray(value['recurrenceExceptions'])) errors.push('A lista de exceções de recorrência é inválida.');
@@ -248,15 +254,15 @@ export function validateBackup(value: unknown): BackupValidationResult {
   const expenses = parseExpenses(value['expenses'] as unknown[], numericVersion, errors);
   const incomes = parseIncomes(numericVersion >= 2 ? value['monthlyIncomes'] as unknown[] : [], numericVersion, errors);
   const goals = parseGoals(numericVersion >= 2 ? value['savingsGoals'] as unknown[] : [], errors);
-  const transactions = numericVersion === 4
+  const transactions = numericVersion >= 4
     ? parseTransactions(value['savingsTransactions'] as unknown[], errors)
     : goals.filter((goal) => goal.currentAmountCents > 0).map((goal): SavingsTransaction => ({
       id: `opening-${goal.id}`, goalId: goal.id, type: 'opening', amountCents: goal.currentAmountCents,
       effectiveDate: goal.createdAt.slice(0, 10), note: 'Saldo migrado para o histórico',
       createdAt: goal.createdAt, updatedAt: goal.updatedAt,
     }));
-  const budgets = numericVersion === 4 ? parseBudgets(value['monthlyBudgets'] as unknown[], errors) : [];
-  const exceptions = numericVersion === 4 ? parseExceptions(value['recurrenceExceptions'] as unknown[], errors) : [];
+  const budgets = numericVersion >= 4 ? parseBudgets(value['monthlyBudgets'] as unknown[], errors) : [];
+  const exceptions = numericVersion >= 4 ? parseExceptions(value['recurrenceExceptions'] as unknown[], errors) : [];
   if (errors.length > 0) return { valid: false, errors };
 
   const categoryIds = new Set(categories.map((category) => category.id));
@@ -313,7 +319,7 @@ export function validateBackup(value: unknown): BackupValidationResult {
   if (errors.length > 0) return { valid: false, errors };
 
   const backup: AppBackup = {
-    schemaVersion: 4,
+    schemaVersion: 5,
     exportedAt: value['exportedAt'] as string,
     settings: value['settings'] as Settings,
     categories,

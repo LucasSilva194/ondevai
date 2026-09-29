@@ -9,6 +9,7 @@ export type IconName =
   | 'balance'
   | 'budgets'
   | 'calendar'
+  | 'chart'
   | 'categories'
   | 'close'
   | 'data'
@@ -63,6 +64,9 @@ export type IconName =
         }
         @case ('calendar') {
           <path d="M5.5 5h13A1.5 1.5 0 0 1 20 6.5v12a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5v-12A1.5 1.5 0 0 1 5.5 5ZM8 3v4m8-4v4M4 9h16" />
+        }
+        @case ('chart') {
+          <path d="M4 19.5h16M6.5 16V11m5 5V5m5 11V8" />
         }
         @case ('balance') {
           <path d="M4 18V9m5 9V5m6 13v-7m5 7V3" />
