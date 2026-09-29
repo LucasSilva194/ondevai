@@ -2,6 +2,9 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 export type IconName =
   | 'arrow-right'
+  | 'arrow-up'
+  | 'arrow-down'
+  | 'archive'
   | 'backup'
   | 'balance'
   | 'budgets'
@@ -10,6 +13,7 @@ export type IconName =
   | 'close'
   | 'data'
   | 'expenses'
+  | 'edit'
   | 'income'
   | 'menu'
   | 'overview'
@@ -68,6 +72,18 @@ export type IconName =
         }
         @case ('arrow-right') {
           <path d="M5 12h14m-5-5 5 5-5 5" />
+        }
+        @case ('arrow-up') {
+          <path d="M12 19V5m-6 6 6-6 6 6" />
+        }
+        @case ('arrow-down') {
+          <path d="M12 5v14m6-6-6 6-6-6" />
+        }
+        @case ('edit') {
+          <path d="m14 5 5 5M4 20l4.2-.9L19 8.3a2.1 2.1 0 0 0-3-3L5.2 16.1 4 20Z" />
+        }
+        @case ('archive') {
+          <path d="M4 7h16v13H4zM3 4h18v3H3zM9 11h6" />
         }
       }
     </svg>

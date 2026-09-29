@@ -1,8 +1,10 @@
 .dashboard-header { min-height: clamp(310px, 34vw, 390px); display: flex; align-items: flex-end; justify-content: space-between; gap: 40px; padding-bottom: 16px; }
 .dashboard-widgets { display: contents; }
 .widget-reorder { display: none; }
-.widget-move { width: 34px; height: 34px; border: 1px solid var(--border); border-radius: 11px; background: var(--surface-raised); color: var(--text-soft); font: inherit; font-weight: 750; cursor: pointer; }
-.widget-move:active { transform: scale(.94); }
+.widget-move { min-height: 32px; display: inline-flex; align-items: center; gap: 5px; padding: 0 9px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface-raised); color: var(--text-soft); font: inherit; font-size: .7rem; font-weight: 650; cursor: pointer; transition: transform var(--motion), background-color var(--motion), border-color var(--motion), color var(--motion); }
+.widget-move app-icon { width: 14px; height: 14px; }
+.widget-move:hover { border-color: var(--accent-border); background: var(--accent-soft); color: var(--accent-strong); }
+.widget-move:active { transform: scale(.96); }
 .mobile-heading, .mobile-note, .period-symbol { display: none; }
 .period-selectors { display: grid; grid-template-columns: 156px 116px; gap: 10px; padding: 10px; border: 1px solid color-mix(in srgb, var(--border) 72%, transparent); border-radius: 24px; background: var(--surface); box-shadow: inset 0 0 0 4px var(--bezel), inset 0 1px 0 var(--inner-stroke), var(--shadow-soft); }
 .period-selectors .field { gap: 6px; }
@@ -108,7 +110,7 @@ th:last-child, td:last-child { text-align: right; }
   .yearly-chart, .distribution-chart { order: var(--mobile-order, 0); padding-top: 52px !important; }
   .rankings { position: relative; padding-top: 48px; }
   .rankings > .widget-reorder { top: 8px; right: 8px; }
-  .dashboard-widget > .widget-reorder button { width: 30px; height: 30px; }
+  .dashboard-widget > .widget-reorder button { min-height: 30px; padding-inline: 8px; font-size: .66rem; }
   .dashboard-header { min-height: auto; gap: 16px; margin-bottom: 14px; padding-bottom: 0; }
   .dashboard-heading .eyebrow, .desktop-heading, .dashboard-heading .page-intro, .desktop-note { display: none; }
   .mobile-heading, .mobile-note { display: inline; }

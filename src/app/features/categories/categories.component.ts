@@ -2,10 +2,11 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AppStore } from '../../core/stores/app.store';
 import { Category } from '../../models/domain.models';
+import { IconComponent } from '../../shared/components/icon/icon.component';
 
 @Component({
   selector: 'app-categories',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, IconComponent],
   template: `
     <div class="page">
       <header class="page-header-row">
@@ -14,14 +15,14 @@ import { Category } from '../../models/domain.models';
           <h1>A sua forma de organizar</h1>
           <p class="page-intro">Crie, ordene e arquive categorias. O histórico mantém sempre as referências originais.</p>
         </div>
-        <button class="btn btn-primary" type="button" (click)="openCreate()"><span>Nova categoria</span><span class="button-symbol" aria-hidden="true">+</span></button>
+        <button class="category-create-button" type="button" (click)="openCreate()"><app-icon name="plus" /><span>Nova categoria</span></button>
       </header>
 
       @if (store.categories().length === 0) {
         <section class="empty-state">
           <h2>Crie a primeira categoria</h2>
           <p>Pode começar apenas com o essencial e acrescentar subcategorias quando precisar.</p>
-          <button class="btn btn-primary" type="button" (click)="openCreate()">Criar categoria</button>
+          <button class="category-create-button empty-create-button" type="button" (click)="openCreate()"><app-icon name="plus" /><span>Criar categoria</span></button>
         </section>
       } @else {
         <section class="category-section">
@@ -35,8 +36,8 @@ import { Category } from '../../models/domain.models';
                 <header class="category-header">
                   <div class="category-name"><i [style.background]="category.color"></i><div><h3>{{ category.name }}</h3><span>{{ activeSubcategoryCount(category) }} subcategorias ativas</span></div></div>
                   <div class="order-actions" aria-label="Ordenar categoria">
-                    <button type="button" class="mini-button" (click)="move(category.id, -1)" [disabled]="first" [attr.aria-label]="'Mover ' + category.name + ' para cima'">↑</button>
-                    <button type="button" class="mini-button" (click)="move(category.id, 1)" [disabled]="last" [attr.aria-label]="'Mover ' + category.name + ' para baixo'">↓</button>
+                    <button type="button" class="order-button" (click)="move(category.id, -1)" [disabled]="first" [attr.aria-label]="'Mover ' + category.name + ' para cima'"><app-icon name="arrow-up" /><span>Subir</span></button>
+                    <button type="button" class="order-button" (click)="move(category.id, 1)" [disabled]="last" [attr.aria-label]="'Mover ' + category.name + ' para baixo'"><app-icon name="arrow-down" /><span>Descer</span></button>
                   </div>
                 </header>
 
@@ -62,8 +63,8 @@ import { Category } from '../../models/domain.models';
                           <span>{{ subcategory.name }} @if (subcategory.archived) { <small>Arquivada</small> }</span>
                           @if (editingSubcategoriesFor() === category.id) {
                             <div class="subcategory-actions">
-                              <button class="mini-button" type="button" (click)="moveSubcategory(category.id, subcategory.id, -1)" [disabled]="subFirst" [attr.aria-label]="'Mover ' + subcategory.name + ' para cima'">↑</button>
-                              <button class="mini-button" type="button" (click)="moveSubcategory(category.id, subcategory.id, 1)" [disabled]="subLast" [attr.aria-label]="'Mover ' + subcategory.name + ' para baixo'">↓</button>
+                              <button class="order-button compact-order" type="button" (click)="moveSubcategory(category.id, subcategory.id, -1)" [disabled]="subFirst" [attr.aria-label]="'Mover ' + subcategory.name + ' para cima'"><app-icon name="arrow-up" /><span>Subir</span></button>
+                              <button class="order-button compact-order" type="button" (click)="moveSubcategory(category.id, subcategory.id, 1)" [disabled]="subLast" [attr.aria-label]="'Mover ' + subcategory.name + ' para baixo'"><app-icon name="arrow-down" /><span>Descer</span></button>
                               <button class="text-button" type="button" (click)="startEditSubcategory(category.id, subcategory.id, subcategory.name)">Editar</button>
                               <button class="text-button" type="button" (click)="toggleSubcategory(category.id, subcategory.id)">{{ subcategory.archived ? 'Restaurar' : 'Arquivar' }}</button>
                             </div>
@@ -86,9 +87,9 @@ import { Category } from '../../models/domain.models';
                 }
 
                 <footer class="category-actions">
-                  <button class="text-button" type="button" (click)="toggleSubcategoryEdit(category.id)">{{ editingSubcategoriesFor() === category.id ? 'Concluir edição' : 'Editar subcategorias' }}</button>
-                  <button class="text-button" type="button" (click)="startSubcategory(category.id)">Adicionar subcategoria</button>
-                  <div><button class="btn btn-ghost btn-compact" type="button" (click)="openEdit(category)">Editar</button><button class="btn btn-ghost btn-compact danger-text" type="button" (click)="archive(category)">Arquivar</button></div>
+                  <button class="category-link-action" type="button" (click)="toggleSubcategoryEdit(category.id)">{{ editingSubcategoriesFor() === category.id ? 'Concluir edição' : 'Editar subcategorias' }}</button>
+                  <button class="category-link-action" type="button" (click)="startSubcategory(category.id)"><app-icon name="plus" />Adicionar subcategoria</button>
+                  <div class="category-primary-actions"><button class="category-icon-action" type="button" (click)="openEdit(category)" [attr.aria-label]="'Editar categoria ' + category.name" title="Editar"><app-icon name="edit" /><span>Editar</span></button><button class="category-icon-action archive-action" type="button" (click)="archive(category)" [attr.aria-label]="'Arquivar categoria ' + category.name" title="Arquivar"><app-icon name="archive" /><span>Arquivar</span></button></div>
                 </footer>
               </article>
             }
@@ -113,7 +114,7 @@ import { Category } from '../../models/domain.models';
         <section class="modal category-modal" role="dialog" aria-modal="true" aria-labelledby="category-form-title">
           <header class="modal-header">
             <div><h2 id="category-form-title">{{ editingCategory() ? 'Editar categoria' : 'Nova categoria' }}</h2><p>Escolha um nome simples e uma cor distinta.</p></div>
-            <button class="btn btn-ghost btn-compact" type="button" (click)="closeCategoryForm()">Fechar</button>
+            <button class="category-modal-close" type="button" (click)="closeCategoryForm()" aria-label="Fechar"><span aria-hidden="true">×</span></button>
           </header>
           <form [formGroup]="categoryForm" (ngSubmit)="saveCategory()">
             <div class="form-grid">
@@ -135,7 +136,7 @@ import { Category } from '../../models/domain.models';
               }
             </div>
             @if (formError()) { <p class="form-message" role="alert">{{ formError() }}</p> }
-            <div class="button-row form-actions"><button class="btn btn-primary" type="submit" [disabled]="store.operationPending()">Guardar categoria</button><button class="btn btn-secondary" type="button" (click)="closeCategoryForm()">Cancelar</button></div>
+            <div class="button-row form-actions"><button class="category-save-button" type="submit" [disabled]="store.operationPending()">Guardar categoria</button><button class="btn btn-ghost btn-compact" type="button" (click)="closeCategoryForm()">Cancelar</button></div>
           </form>
         </section>
       </div>
