@@ -56,8 +56,8 @@ import { IconComponent } from '../../common/icon/icon.component';
         </header>
 
         @if (mobileMenuOpen()) {
-          <button class="mobile-menu-scrim" type="button" aria-label="Fechar menu" (click)="mobileMenuOpen.set(false)"></button>
-          <nav class="mobile-more-menu" id="mobile-more-menu" aria-label="Mais opções">
+          <button class="mobile-menu-scrim" type="button" aria-label="Fechar menu" (click)="mobileMenuOpen.set(false)" animate.leave="mobile-menu-scrim-leave"></button>
+          <nav class="mobile-more-menu" id="mobile-more-menu" aria-label="Mais opções" animate.leave="mobile-more-menu-leave">
             <span class="mobile-menu-kicker">Mais opções</span>
             <a routerLink="/dados-e-privacidade" routerLinkActive="active" (click)="mobileMenuOpen.set(false)">
               <span class="mobile-menu-icon" aria-hidden="true"><app-icon name="data" /></span>
