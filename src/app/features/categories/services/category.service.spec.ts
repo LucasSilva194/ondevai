@@ -1,8 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { Category, Expense, Settings } from '../../models/domain.models';
-import { CATEGORY_REPOSITORY, SETTINGS_REPOSITORY } from '../repositories/repository.tokens';
-import { isPocketBaseId } from '../pocketbase/pocketbase.ids';
+import { Category, Expense, Settings } from '../../../models/domain.models';
+import { CATEGORY_REPOSITORY, SETTINGS_REPOSITORY } from '../../../core/repositories/repository.tokens';
+import { isPocketBaseId } from '../../../core/pocketbase/pocketbase.ids';
 import { CategoryService } from './category.service';
 
 describe('CategoryService', () => {

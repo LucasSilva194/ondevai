@@ -4,11 +4,12 @@ import { AuthService } from '../../core/auth/auth.service';
 import { UserSessionService } from '../../core/auth/user-session.service';
 import { PwaService } from '../../core/services/pwa.service';
 import { AccountService } from './account.service';
+import { ModalShellComponent } from '../../shared/components/common/modal-shell.component';
 
 @Component({
   selector: 'app-account',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, ModalShellComponent],
   template: `
     <div class="page account-page">
       <header class="page-header">
@@ -89,8 +90,7 @@ import { AccountService } from './account.service';
     </div>
 
     @if (deleteDialogOpen()) {
-      <div class="modal-backdrop">
-        <section class="modal delete-modal" role="dialog" aria-modal="true" aria-labelledby="delete-dialog-title">
+      <app-modal-shell panelClass="modal delete-modal" labelledBy="delete-dialog-title">
           <header class="modal-header">
             <div>
               <h2 id="delete-dialog-title">Eliminar definitivamente a conta?</h2>
@@ -111,8 +111,7 @@ import { AccountService } from './account.service';
               <button class="btn btn-secondary" type="button" (click)="closeDeleteDialog()" [disabled]="pending()">Cancelar</button>
             </div>
           </form>
-        </section>
-      </div>
+      </app-modal-shell>
     }
   `,
   styleUrl: './account.component.css',

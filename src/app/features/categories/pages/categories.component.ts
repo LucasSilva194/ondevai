@@ -1,12 +1,13 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { AppStore } from '../../core/stores/app.store';
-import { Category } from '../../models/domain.models';
-import { IconComponent } from '../../shared/components/icon/icon.component';
+import { AppStore } from '../../../core/stores/app.store';
+import { Category } from '../../../models/domain.models';
+import { ModalShellComponent } from '../../../shared/components/common/modal-shell.component';
+import { IconComponent } from '../../../shared/components/common/icon/icon.component';
 
 @Component({
   selector: 'app-categories',
-  imports: [ReactiveFormsModule, IconComponent],
+  imports: [ReactiveFormsModule, IconComponent, ModalShellComponent],
   template: `
     <div class="page">
       <header class="page-header-row">
@@ -110,8 +111,7 @@ import { IconComponent } from '../../shared/components/icon/icon.component';
     </div>
 
     @if (categoryFormOpen()) {
-      <div class="modal-backdrop">
-        <section class="modal category-modal" role="dialog" aria-modal="true" aria-labelledby="category-form-title">
+      <app-modal-shell panelClass="modal category-modal" labelledBy="category-form-title">
           <header class="modal-header">
             <div><h2 id="category-form-title">{{ editingCategory() ? 'Editar categoria' : 'Nova categoria' }}</h2><p>Escolha um nome simples e uma cor distinta.</p></div>
             <button class="category-modal-close" type="button" (click)="closeCategoryForm()" aria-label="Fechar"><span aria-hidden="true">×</span></button>
@@ -138,8 +138,7 @@ import { IconComponent } from '../../shared/components/icon/icon.component';
             @if (formError()) { <p class="form-message" role="alert">{{ formError() }}</p> }
             <div class="button-row form-actions"><button class="category-save-button" type="submit" [disabled]="store.operationPending()">Guardar categoria</button><button class="btn btn-ghost btn-compact" type="button" (click)="closeCategoryForm()">Cancelar</button></div>
           </form>
-        </section>
-      </div>
+      </app-modal-shell>
     }
   `,
   styleUrl: './categories.component.css',

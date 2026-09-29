@@ -1,4 +1,4 @@
-import { Category, Subcategory } from './domain.models';
+import { Category, Subcategory } from '../../../models/domain.models';
 
 const subcategories = (categoryId: string, names: readonly string[]): Subcategory[] =>
   names.map((name, index) => ({

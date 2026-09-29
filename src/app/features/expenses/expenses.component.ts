@@ -4,6 +4,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { startWith } from 'rxjs';
 import { AppStore } from '../../core/stores/app.store';
+import { ModalShellComponent } from '../../shared/components/common/modal-shell.component';
 import { Category, Expense, ExpenseOccurrence, RecurrenceFrequency, RecurrenceRule } from '../../models/domain.models';
 import { formatDate, todayDateString } from '../../shared/utils/date.utils';
 import { centsToInputValue, formatCurrency, parseMoneyToCents } from '../../shared/utils/money.utils';
@@ -12,7 +13,7 @@ import { expensesForMonth, MONTH_NAMES, sumExpenses } from '../../shared/utils/s
 
 @Component({
   selector: 'app-expenses',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, ModalShellComponent],
   template: `
     <div class="page">
       <header class="page-header-row">
@@ -130,8 +131,7 @@ import { expensesForMonth, MONTH_NAMES, sumExpenses } from '../../shared/utils/s
     </div>
 
     @if (formOpen()) {
-      <div class="modal-backdrop">
-        <section class="modal" role="dialog" aria-modal="true" aria-labelledby="expense-form-title">
+      <app-modal-shell labelledBy="expense-form-title">
           <header class="modal-header">
             <div><h2 id="expense-form-title">{{ editingOccurrence() ? 'Editar ocorrência' : editingExpense() ? 'Editar despesa' : 'Nova despesa' }}</h2><p>{{ editingOccurrence() ? 'Esta alteração aplica-se apenas à data selecionada.' : 'Os campos assinalados são obrigatórios.' }}</p></div>
             <button class="btn btn-ghost btn-compact" type="button" (click)="closeForm()" aria-label="Fechar formulário">Fechar</button>
@@ -192,8 +192,7 @@ import { expensesForMonth, MONTH_NAMES, sumExpenses } from '../../shared/utils/s
               <button class="btn btn-secondary" type="button" (click)="closeForm()">Cancelar</button>
             </div>
           </form>
-        </section>
-      </div>
+      </app-modal-shell>
     }
   `,
   styleUrl: './expenses.component.css',

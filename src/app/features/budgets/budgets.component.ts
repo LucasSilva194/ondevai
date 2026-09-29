@@ -1,13 +1,14 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AppStore } from '../../core/stores/app.store';
+import { ModalShellComponent } from '../../shared/components/common/modal-shell.component';
 import { Category, MonthlyBudget } from '../../models/domain.models';
 import { centsToInputValue, formatCurrency, parseMoneyToCents } from '../../shared/utils/money.utils';
 import { calculateBudgetSummary, expensesForMonth, MONTH_NAMES } from '../../shared/utils/statistics.utils';
 
 @Component({
   selector: 'app-budgets',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, ModalShellComponent],
   template: `
     <div class="page">
       <header class="page-header-row">
@@ -71,8 +72,7 @@ import { calculateBudgetSummary, expensesForMonth, MONTH_NAMES } from '../../sha
     </div>
 
     @if (formOpen()) {
-      <div class="modal-backdrop">
-        <section class="modal" role="dialog" aria-modal="true" aria-labelledby="budget-form-title">
+      <app-modal-shell labelledBy="budget-form-title">
           <header class="modal-header"><div><h2 id="budget-form-title">{{ editingBudget() ? 'Editar orçamento' : 'Novo orçamento' }}</h2><p>O limite é válido apenas para {{ selectedMonthLabel() }}.</p></div><button class="btn btn-ghost btn-compact" type="button" (click)="closeForm()" aria-label="Fechar formulário">Fechar</button></header>
           <form [formGroup]="budgetForm" (ngSubmit)="submit()" novalidate>
             <div class="form-grid">
@@ -82,8 +82,7 @@ import { calculateBudgetSummary, expensesForMonth, MONTH_NAMES } from '../../sha
             @if (formError()) { <p class="form-message" role="alert">{{ formError() }}</p> }
             <div class="button-row form-actions"><button class="btn btn-primary" type="submit" [disabled]="store.operationPending()">{{ store.operationPending() ? 'A guardar...' : 'Guardar orçamento' }}</button><button class="btn btn-secondary" type="button" (click)="closeForm()">Cancelar</button></div>
           </form>
-        </section>
-      </div>
+      </app-modal-shell>
     }
   `,
   styleUrl: './budgets.component.css',

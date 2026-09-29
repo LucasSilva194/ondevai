@@ -1,8 +1,8 @@
 import { Injectable, inject } from '@angular/core';
-import { Category, Settings, Subcategory } from '../../models/domain.models';
-import { cloneSuggestedCategories } from '../../models/suggested-categories';
-import { createPocketBaseId } from '../pocketbase/pocketbase.ids';
-import { CATEGORY_REPOSITORY, SETTINGS_REPOSITORY } from '../repositories/repository.tokens';
+import { Category, Settings, Subcategory } from '../../../models/domain.models';
+import { cloneSuggestedCategories } from '../models/suggested-categories';
+import { createPocketBaseId } from '../../../core/pocketbase/pocketbase.ids';
+import { CATEGORY_REPOSITORY, SETTINGS_REPOSITORY } from '../../../core/repositories/repository.tokens';
 
 @Injectable({ providedIn: 'root' })
 export class CategoryService {

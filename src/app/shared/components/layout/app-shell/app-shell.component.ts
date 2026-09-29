@@ -1,10 +1,10 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { AuthService } from '../../../core/auth/auth.service';
-import { UserSessionService } from '../../../core/auth/user-session.service';
-import { AppStore } from '../../../core/stores/app.store';
-import { PwaService } from '../../../core/services/pwa.service';
-import { IconComponent } from '../icon/icon.component';
+import { AuthService } from '../../../../core/auth/auth.service';
+import { UserSessionService } from '../../../../core/auth/user-session.service';
+import { AppStore } from '../../../../core/stores/app.store';
+import { PwaService } from '../../../../core/services/pwa.service';
+import { IconComponent } from '../../common/icon/icon.component';
 
 @Component({
   selector: 'app-shell',

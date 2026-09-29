@@ -65,7 +65,7 @@ export const appRoutes: Routes = [
     path: '',
     canActivate: [authGuard, verifiedGuard],
     canMatch: [completedGuard],
-    loadComponent: () => import('./shared/components/app-shell/app-shell.component').then((module) => module.AppShellComponent),
+    loadComponent: () => import('./shared/components/layout/app-shell/app-shell.component').then((module) => module.AppShellComponent),
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'visao-geral' },
       {
@@ -91,7 +91,7 @@ export const appRoutes: Routes = [
       {
         path: 'categorias',
         title: 'Categorias | OndeVai',
-        loadComponent: () => import('./features/categories/categories.component').then((module) => module.CategoriesComponent),
+        loadComponent: () => import('./features/categories/pages/categories.component').then((module) => module.CategoriesComponent),
       },
       {
         path: 'dados-e-privacidade',

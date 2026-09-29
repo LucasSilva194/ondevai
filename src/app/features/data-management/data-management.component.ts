@@ -6,10 +6,11 @@ import { PwaService } from '../../core/services/pwa.service';
 import { AppStore } from '../../core/stores/app.store';
 import { AppBackup, ImportPreview } from '../../models/domain.models';
 import { formatDate } from '../../shared/utils/date.utils';
+import { ModalShellComponent } from '../../shared/components/common/modal-shell.component';
 
 @Component({
   selector: 'app-data-management',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, ModalShellComponent],
   template: `
     <div class="page">
       <header class="page-header">
@@ -125,15 +126,13 @@ import { formatDate } from '../../shared/utils/date.utils';
     </div>
 
     @if (deleteDialogOpen()) {
-      <div class="modal-backdrop">
-        <section class="modal delete-modal" role="dialog" aria-modal="true" aria-labelledby="delete-title">
+      <app-modal-shell panelClass="modal delete-modal" labelledBy="delete-title">
           <header class="modal-header"><div><h2 id="delete-title">Apagar os dados financeiros cloud?</h2><p>A conta e os dados locais legados permanecem.</p></div></header>
           <form [formGroup]="deleteForm" (ngSubmit)="deleteAll()">
             <div class="field"><label for="delete-confirmation">Escreva APAGAR DADOS para confirmar</label><input id="delete-confirmation" formControlName="confirmation" autocomplete="off"></div>
             <div class="button-row form-actions"><button class="btn btn-danger" type="submit" [disabled]="deleteForm.controls.confirmation.value !== 'APAGAR DADOS' || store.operationPending() || pwa.offline()">Apagar permanentemente</button><button class="btn btn-secondary" type="button" (click)="closeDeleteDialog()">Cancelar</button></div>
           </form>
-        </section>
-      </div>
+      </app-modal-shell>
     }
   `,
   styleUrl: './data-management.component.css',
