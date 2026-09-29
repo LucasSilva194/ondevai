@@ -59,12 +59,6 @@ import { expensesForMonth, incomesForMonth, MONTH_NAMES, sumExpenses, sumIncomes
                   } }
                 </header>
                 <strong class="income-value">{{ formatCurrency(income.amountCents) }}</strong>
-                <footer class="income-actions">
-                  <div class="income-primary-actions">
-                    <button type="button" class="income-icon-action" (click)="openIncomeEdit(income)" [attr.aria-label]="'Editar ' + (income.recurrence ? 'série de ' : '') + income.name" [title]="income.recurrence ? 'Editar série' : 'Editar rendimento'"><app-icon name="edit" /><span>Editar{{ income.recurrence ? ' série' : '' }}</span></button>
-                    <button type="button" class="income-icon-action danger-text" (click)="removeIncome(income)" [attr.aria-label]="'Eliminar rendimento ' + income.name" title="Eliminar"><app-icon name="close" /><span>Eliminar</span></button>
-                  </div>
-                </footer>
               </article>
             }
           </div>

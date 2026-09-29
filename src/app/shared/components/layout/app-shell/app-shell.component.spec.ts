@@ -46,12 +46,12 @@ describe('AppShellComponent', () => {
     fixture.detectChanges();
   });
 
-  it('mostra email, estado de sincronização e links de Conta em desktop e mobile', () => {
+  it('mostra email, estado de sincronização e acesso a Dados e privacidade', () => {
     fixture.componentInstance.mobileMenuOpen.set(true);
     fixture.detectChanges();
 
     const text = fixture.nativeElement.textContent as string;
-    const accountLinks = fixture.nativeElement.querySelectorAll('a[href="/conta"]');
+    const accountLinks = fixture.nativeElement.querySelectorAll('a[href="/dados-e-privacidade"]');
     expect(text).toContain('pessoa@example.com');
     expect(text).toContain('Sincronizado');
     expect(accountLinks.length).toBeGreaterThanOrEqual(2);

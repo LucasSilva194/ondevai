@@ -2,10 +2,13 @@ import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { AuthService } from '../../../core/auth/auth.service';
+import { UserSessionService } from '../../../core/auth/user-session.service';
 import { LocalDataMigrationService } from '../../../core/migration/local-data-migration.service';
 import { PwaService } from '../../../core/services/pwa.service';
 import { AppStore } from '../../../core/stores/app.store';
 import { AppBackup, DEFAULT_SETTINGS } from '../../../models/domain.models';
+import { AccountService } from '../../account/services/account.service';
 import { DataManagementComponent } from './data-management.component';
 
 const backup: AppBackup = {
@@ -33,6 +36,9 @@ describe('DataManagementComponent', () => {
       imports: [DataManagementComponent],
       providers: [
         provideRouter([]),
+        { provide: AuthService, useValue: { user: () => ({ email: 'pessoa@example.com', verified: true }), requestEmailChange: vi.fn(), changePassword: vi.fn() } },
+        { provide: UserSessionService, useValue: { logout: vi.fn().mockResolvedValue(undefined) } },
+        { provide: AccountService, useValue: { deleteAccount: vi.fn().mockResolvedValue(undefined) } },
         {
           provide: AppStore,
           useValue: {

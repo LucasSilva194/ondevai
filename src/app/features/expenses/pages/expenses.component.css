@@ -22,11 +22,16 @@
 .expense-main { min-width: 0; }
 .expense-title-row { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
 .expense-title-row > strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: -0.015em; }
-.expense-amount { font-size: 1.02rem; font-weight: 780; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.expense-amount { display: block; margin-top: 6px; font-size: 1.02rem; font-weight: 780; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .expense-meta { display: flex; align-items: center; gap: 8px 14px; flex-wrap: wrap; margin-top: 8px; color: var(--text-muted); font-size: 0.75rem; }
 .expense-meta > span { display: inline-flex; align-items: center; gap: 7px; }
 .expense-meta i { width: 8px; height: 8px; border-radius: 50%; box-shadow: 0 0 0 3px var(--surface-subtle); }
-.row-actions { display: flex; align-items: center; }
+.row-actions { display: flex; align-items: center; align-self: start; gap: 3px; }
+.expense-icon-action { width: 34px; height: 34px; display: inline-grid; place-items: center; padding: 0; border: 0; border-radius: 9px; background: transparent; color: var(--text-soft); cursor: pointer; transition: color var(--motion), background-color var(--motion), transform var(--motion); }
+.expense-icon-action app-icon { width: 15px; height: 15px; }
+.expense-icon-action:hover { background: var(--surface-subtle); color: var(--accent-strong); }
+.expense-icon-action:active { transform: scale(.97); }
+.expense-icon-action.danger-text:hover { background: var(--danger-soft); color: var(--danger); }
 .danger-text { color: var(--danger); }
 .status-badge.recurring { background: var(--accent-soft); color: var(--accent-strong); }
 .check-field { min-height: 66px; display: flex; align-items: flex-start; gap: 12px; padding: 14px; border: 1px solid var(--border); border-radius: var(--radius-control); background: var(--surface); cursor: pointer; }
@@ -60,7 +65,7 @@
   .category-filter, .advanced-filters { grid-column: 1; }
   .expense-row { grid-template-columns: 48px minmax(0, 1fr); gap: 13px; padding: 15px; }
   .date-block { width: 46px; height: 52px; }
-  .row-actions { grid-column: 2; flex-wrap: wrap; }
+  .row-actions { grid-column: 2; flex-wrap: wrap; justify-content: flex-end; }
   .expense-title-row { align-items: flex-start; flex-direction: column; gap: 6px; }
   .expense-title-row > strong { max-width: 100%; }
   .filter-footer { align-items: flex-start; flex-direction: column; }
