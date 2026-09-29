@@ -53,7 +53,7 @@ export const appRoutes: Routes = [
     path: 'migrar-dados',
     canActivate: [authGuard, verifiedGuard],
     title: 'Migrar dados locais | OndeVai',
-    loadComponent: () => import('./features/migration/local-data-migration.component').then((module) => module.LocalDataMigrationComponent),
+    loadComponent: () => import('./features/migration/pages/local-data-migration.component').then((module) => module.LocalDataMigrationComponent),
   },
   {
     path: 'onboarding',

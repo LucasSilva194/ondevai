@@ -1,9 +1,9 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { AuthService } from '../../core/auth/auth.service';
-import { LocalDataMigrationService } from '../../core/migration/local-data-migration.service';
-import { AppStore } from '../../core/stores/app.store';
-import { formatDate } from '../../shared/utils/date.utils';
+import { AuthService } from '../../../core/auth/auth.service';
+import { LocalDataMigrationService } from '../../../core/migration/local-data-migration.service';
+import { AppStore } from '../../../core/stores/app.store';
+import { formatDate } from '../../../shared/utils/date.utils';
 
 @Component({
   selector: 'app-local-data-migration',

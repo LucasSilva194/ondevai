@@ -2,13 +2,13 @@ import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { AuthService } from '../../core/auth/auth.service';
+import { AuthService } from '../../../core/auth/auth.service';
 import {
   LocalDataMigrationService,
   LocalDataMigrationState,
   LocalDataSummary,
-} from '../../core/migration/local-data-migration.service';
-import { AppStore } from '../../core/stores/app.store';
+} from '../../../core/migration/local-data-migration.service';
+import { AppStore } from '../../../core/stores/app.store';
 import { LocalDataMigrationComponent } from './local-data-migration.component';
 
 describe('LocalDataMigrationComponent', () => {
