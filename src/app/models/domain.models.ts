@@ -161,13 +161,6 @@ export interface ImportPreview {
   exportedAt: string;
 }
 
-export interface StorageStatus {
-  supported: boolean;
-  persisted?: boolean;
-  usageBytes?: number;
-  quotaBytes?: number;
-}
-
 export const DEFAULT_SETTINGS: Settings = {
   currency: 'EUR',
   locale: 'pt-PT',

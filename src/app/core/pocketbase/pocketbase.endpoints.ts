@@ -24,9 +24,3 @@ export const POCKETBASE_ENDPOINTS = {
     delete: '/api/ondevai/account/delete',
   },
 } as const;
-
-export class PocketBasePendingEndpointError extends Error {
-  constructor(operation: string, endpoint: string) {
-    super(`A operação ${operation} requer o endpoint transacional remoto ${endpoint}, ainda não disponível nesta versão.`);
-  }
-}
