@@ -100,7 +100,13 @@ import { IconComponent } from '../../common/icon/icon.component';
           <div class="update-banner" role="status"><span>Está disponível uma nova versão do OndeVai.</span><button class="btn btn-secondary btn-compact" type="button" (click)="applyUpdate()">Atualizar agora</button></div>
         }
 
-        <main id="main-content" tabindex="-1">
+        <main id="main-content" tabindex="-1" [attr.aria-busy]="store.loading() || store.operationPending()">
+          @if (store.loading() || store.operationPending()) {
+            <div class="app-work-status" role="status" aria-live="polite">
+              <span class="loading-indicator" aria-hidden="true"></span>
+              {{ store.loading() ? 'A carregar os seus dados…' : 'A processar alterações…' }}
+            </div>
+          }
           <router-outlet />
         </main>
 

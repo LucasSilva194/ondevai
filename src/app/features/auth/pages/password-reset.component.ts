@@ -45,7 +45,7 @@ import { passwordsMatchValidator } from './register.component';
           </fieldset>
         </form>
         @if (auth.error()) { <p class="form-message error" role="alert">{{ auth.error() }}</p> }
-        @if (auth.loading()) { <p class="helper" role="status">A confirmar a nova palavra-passe.</p> }
+        @if (auth.loading()) { <p class="auth-pending" role="status" aria-live="polite"><span class="loading-indicator" aria-hidden="true"></span>A confirmar a nova palavra-passe…</p> }
       }
     </app-auth-page>
   `,

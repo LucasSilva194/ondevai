@@ -33,7 +33,7 @@ import { AuthPageComponent } from '../components/auth-page.component';
       }
 
       @if (auth.error()) { <p class="form-message error" role="alert">{{ auth.error() }}</p> }
-      @if (auth.loading()) { <p class="helper" role="status">A processar o pedido.</p> }
+      @if (auth.loading()) { <p class="auth-pending" role="status" aria-live="polite"><span class="loading-indicator" aria-hidden="true"></span>A processar o pedido…</p> }
       <nav class="auth-links single" aria-label="Outras opções de autenticação"><a routerLink="/entrar">Voltar ao início de sessão</a></nav>
     </app-auth-page>
   `,

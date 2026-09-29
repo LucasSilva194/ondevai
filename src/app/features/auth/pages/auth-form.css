@@ -18,8 +18,13 @@ h1 { max-width: 12ch; margin: 0; font-size: clamp(2.25rem, 7vw, 3.7rem); line-he
 .notice-actions { display: grid; gap: 12px; margin-top: 28px; }
 .notice-actions .btn { width: 100%; }
 .status-copy { margin: 20px 0 0; color: var(--text-soft); line-height: 1.65; }
+.auth-pending { display: flex; align-items: center; gap: 10px; margin: 18px 0 0; color: var(--text-soft); font-size: .86rem; }
+.loading-indicator { width: 16px; height: 16px; flex: none; border: 2px solid var(--accent-border); border-top-color: var(--accent); border-radius: 50%; animation: loading-turn 800ms linear infinite; }
+@keyframes loading-turn { to { transform: rotate(360deg); } }
 
 @media (max-width: 480px) {
   .auth-links { align-items: flex-start; flex-direction: column; }
   .auth-links.single { align-items: center; }
 }
+
+@media (prefers-reduced-motion: reduce) { .loading-indicator { animation: none; opacity: .7; } }
