@@ -9,6 +9,11 @@ import { RouterOutlet } from '@angular/router';
 })
 export class AppComponent implements OnInit {
   ngOnInit(): void {
-    document.getElementById('boot-splash')?.remove();
+    const splash = document.getElementById('boot-splash');
+    if (!splash) return;
+
+    splash.classList.add('boot-splash-leaving');
+    splash.addEventListener('transitionend', () => splash.remove(), { once: true });
+    window.setTimeout(() => splash.remove(), 240);
   }
 }
