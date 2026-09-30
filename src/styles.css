@@ -137,9 +137,9 @@ a { color: var(--accent-strong); }
 .period-arrow app-icon { width: 15px; height: 15px; }
 .period-arrow:first-child app-icon { transform: rotate(-90deg); }
 .period-arrow.period-next app-icon { transform: rotate(90deg); }
-.period-current { min-height: 34px; flex: none; padding: 6px 10px; border: 0; border-radius: 999px; background: var(--accent-soft); color: var(--accent-strong); font-size: .74rem; font-weight: 720; white-space: nowrap; cursor: pointer; transition: background-color 160ms ease, color 160ms ease, transform 100ms ease-out; }
+.period-current { width: 34px; height: 34px; display: grid; flex: none; place-items: center; padding: 0; border: 0; border-radius: 50%; background: var(--accent-soft); color: var(--accent-strong); cursor: pointer; transition: background-color 160ms ease, color 160ms ease, transform 100ms ease-out; }
 .period-current:hover { background: var(--accent-border); }
-.period-current-short { display: none; }
+.period-current app-icon { width: 16px; height: 16px; }
 .text-button { padding: 3px 0; border: 0; background: transparent; color: currentColor; cursor: pointer; font-weight: 740; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
 
 .field { display: grid; gap: 8px; }

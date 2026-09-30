@@ -19,6 +19,7 @@ export type IconName =
   | 'menu'
   | 'overview'
   | 'plus'
+  | 'refresh'
   | 'savings';
 
 @Component({
@@ -52,6 +53,9 @@ export type IconName =
         }
         @case ('plus') {
           <path d="M12 5v14M5 12h14" />
+        }
+        @case ('refresh') {
+          <path d="M23 4v6h-6M1 20v-6h6M3.5 9A9 9 0 0 1 18 5l5 5M1 14l5 5a9 9 0 0 0 14.5-4" />
         }
         @case ('menu') {
           <path d="M5 7h14M5 12h14M5 17h14" />
