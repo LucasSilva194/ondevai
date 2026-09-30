@@ -4,15 +4,16 @@ import { LocalDataMigrationService } from '../../../core/migration/local-data-mi
 import { PwaService } from '../../../core/services/pwa.service';
 import { AppStore } from '../../../core/stores/app.store';
 import { SUGGESTED_CATEGORIES } from '../../categories/models/suggested-categories';
+import { BrandMarkComponent } from '../../../shared/components/common/brand-mark.component';
 
 @Component({
   selector: 'app-onboarding',
-  imports: [RouterLink],
+  imports: [RouterLink, BrandMarkComponent],
   template: `
     <main class="onboarding-shell">
       <header class="onboarding-header">
         <a class="onboarding-brand" href="/onboarding" aria-label="OndeVai">
-          <span class="onboarding-mark" aria-hidden="true">O</span>
+          <app-brand-mark class="onboarding-mark" />
           <span>OndeVai</span>
         </a>
         <p>Passo {{ step() }} de 4</p>

@@ -1,13 +1,13 @@
 {
   "name": "OndeVai — Finanças pessoais",
   "short_name": "OndeVai",
-  "description": "Despesas, rendimentos, orçamentos e poupanças guardados apenas no seu dispositivo.",
+  "description": "Organize despesas, rendimentos, orçamentos e objetivos de poupança com clareza.",
   "lang": "pt-PT",
   "start_url": "/visao-geral",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#e9eee8",
-  "theme_color": "#176b4d",
+  "background_color": "#f7f3ea",
+  "theme_color": "#1b3f33",
   "categories": ["finance", "productivity"],
   "icons": [
     { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },

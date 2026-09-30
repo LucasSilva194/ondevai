@@ -2,8 +2,8 @@
 
 .landing-shell { width: min(1320px, 100%); margin: 0 auto; padding: 22px clamp(20px, 5.4vw, 76px) 24px; }
 .landing-nav { min-height: 68px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
-.landing-brand { display: inline-flex; align-items: center; gap: 11px; color: var(--text); font-size: 1.1rem; font-weight: 790; letter-spacing: -0.045em; text-decoration: none; }
-.brand-mark { width: 36px; height: 36px; display: grid; place-items: center; border: 4px solid color-mix(in srgb, var(--accent) 82%, var(--surface-raised)); border-radius: 50%; background: var(--accent); color: var(--on-accent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--on-accent) 24%, transparent); font-size: .94rem; }
+.landing-brand { display: inline-flex; align-items: center; gap: 11px; color: var(--text); font-family: var(--display-font); font-size: 1.14rem; font-weight: 600; letter-spacing: -0.045em; text-decoration: none; }
+.brand-mark { width: 36px; height: 36px; }
 .landing-nav nav { display: flex; align-items: center; gap: 11px; }
 .nav-feature-link { margin-right: 12px; color: var(--text-soft); font-size: .83rem; font-weight: 670; text-decoration: none; }
 .landing-nav .btn { min-height: 42px; padding: 9px 16px; font-size: .8rem; }
@@ -82,7 +82,7 @@
 .privacy-divider { width: 1px; height: 39px; background: var(--border); }
 .privacy-band > a { flex: none; color: var(--accent-strong); font-size: .75rem; font-weight: 760; text-decoration: none; }
 .landing-footer { min-height: 83px; display: flex; align-items: center; justify-content: space-between; gap: 20px; padding-top: 19px; }
-.footer-brand { font-size: .91rem; }.footer-brand .brand-mark { width: 29px; height: 29px; border-width: 3px; font-size: .74rem; }
+.footer-brand { font-size: .91rem; }.footer-brand .brand-mark { width: 29px; height: 29px; }
 .landing-footer p, .landing-footer > a:last-child { margin: 0; color: var(--text-muted); font-size: .69rem; }
 .landing-footer > a:last-child { text-decoration: none; transition: color 160ms ease; }
 
