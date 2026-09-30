@@ -6,10 +6,11 @@ import { AppStore } from '../../../../core/stores/app.store';
 import { PwaService } from '../../../../core/services/pwa.service';
 import { IconComponent } from '../../common/icon/icon.component';
 import { BrandMarkComponent } from '../../common/brand-mark.component';
+import { ExpenseCreateModalComponent } from '../../../../features/expenses/components/expense-create-modal.component';
 
 @Component({
   selector: 'app-shell',
-  imports: [RouterLink, RouterLinkActive, RouterOutlet, IconComponent, BrandMarkComponent],
+  imports: [RouterLink, RouterLinkActive, RouterOutlet, IconComponent, BrandMarkComponent, ExpenseCreateModalComponent],
   template: `
     <a class="skip-link" href="#main-content">Saltar para o conteúdo</a>
     <div class="app-layout">
@@ -26,9 +27,9 @@ import { BrandMarkComponent } from '../../common/brand-mark.component';
             </a>
           }
         </nav>
-        <a class="btn btn-primary add-expense" routerLink="/despesas" [queryParams]="{ nova: 1 }">
+        <button class="btn btn-primary add-expense" type="button" (click)="quickExpenseOpen.set(true)">
           <span>Nova despesa</span><span class="action-symbol" aria-hidden="true">+</span>
-        </a>
+        </button>
         <div class="account-panel">
           <a routerLink="/dados-e-privacidade" class="account-email">{{ auth.user()?.email }}</a>
           <p class="sync-state" role="status">
@@ -47,9 +48,9 @@ import { BrandMarkComponent } from '../../common/brand-mark.component';
             <span>OndeVai</span>
           </a>
           <div class="mobile-header-actions">
-            <a class="btn btn-primary btn-compact mobile-add-expense" routerLink="/despesas" [queryParams]="{ nova: 1 }" aria-label="Adicionar despesa">
+            <button class="btn btn-primary btn-compact mobile-add-expense" type="button" (click)="quickExpenseOpen.set(true)" aria-label="Adicionar despesa">
               <span class="mobile-action-label">Despesa</span><span class="action-symbol" aria-hidden="true"><app-icon name="plus" /></span>
-            </a>
+            </button>
             <button class="mobile-menu-toggle" type="button" (click)="mobileMenuOpen.set(!mobileMenuOpen())" [attr.aria-expanded]="mobileMenuOpen()" aria-controls="mobile-more-menu" [attr.aria-label]="mobileMenuOpen() ? 'Fechar menu' : 'Abrir menu'">
               <app-icon [name]="mobileMenuOpen() ? 'close' : 'menu'" />
             </button>
@@ -131,6 +132,7 @@ import { BrandMarkComponent } from '../../common/brand-mark.component';
             }
           }
         </nav>
+        <app-expense-create-modal [open]="quickExpenseOpen()" (closed)="quickExpenseOpen.set(false)" />
       </div>
     </div>
   `,
@@ -144,6 +146,7 @@ export class AppShellComponent {
   readonly auth = inject(AuthService);
   private readonly session = inject(UserSessionService);
   readonly mobileMenuOpen = signal(false);
+  readonly quickExpenseOpen = signal(false);
   readonly navigation = [
     { path: '/visao-geral', label: 'Visão geral', shortLabel: 'Resumo', icon: 'overview', primary: true },
     { path: '/despesas', label: 'Despesas', shortLabel: 'Despesas', icon: 'expenses', primary: true },

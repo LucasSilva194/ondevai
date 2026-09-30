@@ -94,7 +94,7 @@ export type IconName =
     </svg>
   `,
   styles: `
-    :host { width: 1.25rem; height: 1.25rem; display: inline-grid; place-items: center; flex: none; }
+    :host { width: 1.25rem; height: 1.25rem; display: inline-grid; place-items: center; flex: none; vertical-align: middle; }
     svg { width: 100%; height: 100%; overflow: visible; stroke: currentColor; stroke-width: 1.55; stroke-linecap: round; stroke-linejoin: round; }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,

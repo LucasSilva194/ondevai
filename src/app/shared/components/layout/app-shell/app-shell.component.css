@@ -189,7 +189,7 @@
 }
 
 @media (max-width: 420px) {
-  .app-footer { flex-direction: column; gap: 5px; }
+  .app-footer { align-items: center; gap: 8px; font-size: .7rem; white-space: nowrap; }
 }
 
 @media (max-width: 460px) {
@@ -200,6 +200,7 @@
   .mobile-add-expense { width: 38px; min-height: 38px; padding: 0 !important; border-radius: 13px; }
   .mobile-action-label { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
   .mobile-add-expense .action-symbol { width: auto; height: auto; background: transparent; }
+  .mobile-add-expense .action-symbol, .mobile-add-expense app-icon { transform: none !important; }
   .mobile-add-expense app-icon { width: 20px; height: 20px; }
   .mobile-more-menu { top: 74px; right: 8px; width: min(340px, calc(100% - 16px)); }
   .mobile-nav { inset: auto 8px 8px; }

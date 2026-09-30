@@ -32,14 +32,11 @@ import {
         <div class="dashboard-heading"><p class="eyebrow">Visão geral</p><h1><span class="desktop-heading">O seu dinheiro, explicado.</span><span class="mobile-heading">Visão geral</span></h1><p class="page-intro">Veja quanto entrou, quanto saiu e o saldo real de cada mês.</p></div>
         <div class="dashboard-controls">
           <div class="period-selectors" aria-label="Período do dashboard">
-            <span class="period-symbol" aria-hidden="true"><app-icon name="calendar" /></span>
-            <div class="field"><label for="dashboard-month">Mês</label><select id="dashboard-month" [value]="selectedMonth()" (change)="setMonth($event)">@for (month of months; track $index) { <option [value]="$index + 1" [selected]="$index + 1 === selectedMonth()">{{ month }}</option> }</select></div>
-            <div class="field"><label for="dashboard-year">Ano</label><select id="dashboard-year" [value]="selectedYear()" (change)="setYear($event)">@for (year of availableYears(); track year) { <option [value]="year" [selected]="year === selectedYear()">{{ year }}</option> }</select></div>
-            <div class="period-stepper" aria-label="Navegar entre meses">
-              <button type="button" (click)="shiftPeriod(-1)" aria-label="Mês anterior"><app-icon name="arrow-up" /></button>
-              <button type="button" (click)="goToCurrentMonth()">Este mês</button>
-              <button type="button" (click)="shiftPeriod(1)" aria-label="Mês seguinte"><app-icon name="arrow-up" /></button>
-            </div>
+            <button class="period-arrow" type="button" (click)="shiftPeriod(-1)" aria-label="Mês anterior"><app-icon name="arrow-up" /></button>
+            <div class="field period-month-field"><label class="visually-hidden" for="dashboard-month">Mês</label><select id="dashboard-month" [value]="selectedMonth()" (change)="setMonth($event)">@for (month of months; track $index) { <option [value]="$index + 1" [selected]="$index + 1 === selectedMonth()">{{ month }}</option> }</select></div>
+            <div class="field period-year-field"><label class="visually-hidden" for="dashboard-year">Ano</label><select id="dashboard-year" [value]="selectedYear()" (change)="setYear($event)">@for (year of availableYears(); track year) { <option [value]="year" [selected]="year === selectedYear()">{{ year }}</option> }</select></div>
+            <button class="period-arrow period-next" type="button" (click)="shiftPeriod(1)" aria-label="Mês seguinte"><app-icon name="arrow-up" /></button>
+            <button class="period-current" type="button" (click)="goToCurrentMonth()" aria-label="Ir para este mês"><span class="period-current-full">Este mês</span><span class="period-current-short">Hoje</span></button>
           </div>
           <button class="btn btn-ghost btn-compact widget-edit-toggle" type="button" (click)="toggleWidgetEditing()" [attr.aria-pressed]="editingWidgetOrder()" [attr.aria-label]="editingWidgetOrder() ? 'Concluir personalização' : 'Personalizar visão geral'">
             @if (editingWidgetOrder()) { <app-icon name="close" /><span>Concluir</span> } @else { <app-icon name="edit" /><span class="widget-edit-label-full">Personalizar visão geral</span><span class="widget-edit-label-short">Personalizar</span> }
