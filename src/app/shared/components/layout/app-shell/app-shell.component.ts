@@ -5,16 +5,17 @@ import { UserSessionService } from '../../../../core/auth/user-session.service';
 import { AppStore } from '../../../../core/stores/app.store';
 import { PwaService } from '../../../../core/services/pwa.service';
 import { IconComponent } from '../../common/icon/icon.component';
+import { BrandMarkComponent } from '../../common/brand-mark.component';
 
 @Component({
   selector: 'app-shell',
-  imports: [RouterLink, RouterLinkActive, RouterOutlet, IconComponent],
+  imports: [RouterLink, RouterLinkActive, RouterOutlet, IconComponent, BrandMarkComponent],
   template: `
     <a class="skip-link" href="#main-content">Saltar para o conteúdo</a>
     <div class="app-layout">
       <aside class="sidebar" aria-label="Navegação principal">
         <a class="brand" routerLink="/visao-geral" aria-label="OndeVai, visão geral">
-          <span class="brand-mark" aria-hidden="true">O</span>
+          <app-brand-mark class="brand-mark" />
           <span>OndeVai</span>
         </a>
         <nav class="nav-list">
@@ -42,7 +43,7 @@ import { IconComponent } from '../../common/icon/icon.component';
       <div class="app-content">
         <header class="mobile-header">
           <a class="brand" routerLink="/visao-geral">
-            <span class="brand-mark" aria-hidden="true">O</span>
+            <app-brand-mark class="brand-mark" />
             <span>OndeVai</span>
           </a>
           <div class="mobile-header-actions">

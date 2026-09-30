@@ -1,15 +1,16 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { BrandMarkComponent } from '../../../shared/components/common/brand-mark.component';
 
 @Component({
   selector: 'app-landing',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, BrandMarkComponent],
   template: `
     <main class="landing-shell">
       <header class="landing-nav">
         <a class="landing-brand" routerLink="/" aria-label="OndeVai, página inicial">
-          <span class="brand-mark" aria-hidden="true">O</span><span>OndeVai</span>
+          <app-brand-mark class="brand-mark" /><span>OndeVai</span>
         </a>
         <nav aria-label="Navegação principal">
           <a class="nav-feature-link" href="#funcionalidades">Funcionalidades</a>
@@ -61,7 +62,7 @@ import { RouterLink } from '@angular/router';
         <a routerLink="/registar">Começar agora <span aria-hidden="true">→</span></a>
       </section>
 
-      <footer class="landing-footer"><a class="landing-brand footer-brand" routerLink="/" aria-label="OndeVai, página inicial"><span class="brand-mark" aria-hidden="true">O</span><span>OndeVai</span></a><p>O seu dinheiro, explicado.</p><a routerLink="/entrar">Já tem conta? Entrar</a></footer>
+      <footer class="landing-footer"><a class="landing-brand footer-brand" routerLink="/" aria-label="OndeVai, página inicial"><app-brand-mark class="brand-mark" /><span>OndeVai</span></a><p>O seu dinheiro, explicado.</p><a routerLink="/entrar">Já tem conta? Entrar</a></footer>
     </main>
   `,
   styleUrl: './landing.component.css',
