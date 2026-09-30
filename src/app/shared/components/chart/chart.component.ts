@@ -49,18 +49,21 @@ export class ChartComponent implements AfterViewInit, OnChanges, OnDestroy {
     const styles = getComputedStyle(document.documentElement);
     const textColor = styles.getPropertyValue('--text-soft').trim();
     const borderColor = styles.getPropertyValue('--border').trim();
-    const accent = styles.getPropertyValue('--accent').trim();
+    const accent = styles.getPropertyValue('--sage').trim() || '#a7b59f';
+    const ivory = styles.getPropertyValue('--surface-raised').trim();
+    const palette = ['#1b3f33', '#a7b59f', '#c46f56', '#7d927a', '#cfad8c', '#647a6a'];
     const config: ChartConfiguration<'bar' | 'doughnut'> = {
       type: this.type,
       data: {
         labels: this.labels,
         datasets: [{
           data: this.values.map((value) => value / 100),
-          backgroundColor: this.type === 'bar' ? accent : this.colors,
-          borderColor: this.type === 'bar' ? accent : styles.getPropertyValue('--surface-raised').trim(),
-          borderWidth: this.type === 'bar' ? 0 : 2,
-          borderRadius: this.type === 'bar' ? 6 : 0,
-          maxBarThickness: 34,
+          backgroundColor: this.type === 'bar' ? accent : (this.colors.length ? this.colors : this.values.map((_, index) => palette[index % palette.length])),
+          borderColor: this.type === 'bar' ? accent : ivory,
+          borderWidth: this.type === 'bar' ? 0 : 3,
+          borderRadius: this.type === 'bar' ? 8 : 0,
+          borderSkipped: false,
+          maxBarThickness: 38,
         }],
       },
       options: {
@@ -68,7 +71,7 @@ export class ChartComponent implements AfterViewInit, OnChanges, OnDestroy {
         maintainAspectRatio: false,
         animation: { duration: matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 260 },
         plugins: {
-          legend: { display: this.type === 'doughnut', position: 'bottom', labels: { color: textColor, usePointStyle: true, boxWidth: 8, generateLabels: (chart) => {
+          legend: { display: this.type === 'doughnut', position: 'bottom', labels: { color: textColor, usePointStyle: true, boxWidth: 8, boxHeight: 8, padding: 16, font: { family: getComputedStyle(document.documentElement).fontFamily, size: 11 }, generateLabels: (chart) => {
             const defaultLabels = Chart.defaults.plugins.legend.labels.generateLabels?.(chart) ?? [];
             if (this.type !== 'doughnut') return defaultLabels;
             return defaultLabels.map((item) => {
@@ -80,11 +83,12 @@ export class ChartComponent implements AfterViewInit, OnChanges, OnDestroy {
           tooltip: { callbacks: { label: (item) => new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(Number(item.raw)) } },
         },
         scales: this.type === 'bar' ? {
-          x: { grid: { display: false }, ticks: { color: textColor } },
+          x: { grid: { display: false }, border: { display: false }, ticks: { color: textColor, font: { family: getComputedStyle(document.documentElement).fontFamily, size: 11 } } },
           y: {
             beginAtZero: true,
-            grid: { color: borderColor },
-            ticks: { color: textColor, callback: (value) => `${value} €` },
+            grid: { color: `${borderColor}88`, drawTicks: false },
+            border: { display: false },
+            ticks: { color: textColor, padding: 9, font: { family: getComputedStyle(document.documentElement).fontFamily, size: 10 }, callback: (value) => `${value} €` },
           },
         } : undefined,
         cutout: this.type === 'doughnut' ? '68%' : undefined,

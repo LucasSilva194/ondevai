@@ -7,24 +7,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="Organize despesas, rendimentos, orçamentos e objetivos de poupança com uma visão clara das suas finanças pessoais.">
     <meta name="color-scheme" content="light dark">
-    <meta name="theme-color" content="#176b4d">
+    <meta name="theme-color" content="#1b3f33">
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="apple-touch-icon" href="icons/icon-192.png">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
   </head>
   <body>
     <div id="boot-splash" role="status" aria-live="polite">
-      <span class="boot-mark" aria-hidden="true">O</span>
+      <span class="boot-mark" aria-hidden="true"><svg viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20.25"/><path d="M9.1 32.1c7.2-2.4 16-7.3 29.6-8.2-8.2 2.2-15.1 6.7-21.5 14.5"/></svg></span>
       <span class="boot-copy">A preparar a sua área financeira…</span>
       <span class="boot-spinner" aria-hidden="true"></span>
     </div>
     <style>
-      #boot-splash { min-height: 100dvh; display: grid; place-content: center; justify-items: center; gap: 16px; padding: 24px; background: #f0eee6; color: #20281f; font: 500 15px/1.5 system-ui, sans-serif; text-align: center; }
-      .boot-mark { width: 50px; height: 50px; display: grid; place-items: center; border: 1px solid #b8cbb7; border-radius: 17px; background: #e3ebdf; color: #2f503b; font: 600 27px/1 Georgia, serif; }
-      .boot-copy { color: #50594e; }
-      .boot-spinner { width: 20px; height: 20px; border: 2px solid #b8cbb7; border-top-color: #41644d; border-radius: 50%; animation: boot-spin 800ms linear infinite; }
+      #boot-splash { min-height: 100dvh; display: grid; place-content: center; justify-items: center; gap: 16px; padding: 24px; background: #f7f3ea; color: #182d25; font: 500 15px/1.5 system-ui, sans-serif; text-align: center; }
+      .boot-mark { width: 50px; height: 50px; display: grid; place-items: center; border: 1px solid #a7b59f; border-radius: 17px; background: #1b3f33; color: #f7f3ea; }
+      .boot-mark svg { width: 36px; height: 36px; }
+      .boot-mark circle { stroke: currentColor; stroke-width: 3.6; }
+      .boot-mark path { fill: currentColor; }
+      .boot-copy { color: #4b5e53; }
+      .boot-spinner { width: 20px; height: 20px; border: 2px solid #a7b59f; border-top-color: #1b3f33; border-radius: 50%; animation: boot-spin 800ms cubic-bezier(.32,.72,0,1) infinite; }
       @keyframes boot-spin { to { transform: rotate(360deg); } }
-      @media (prefers-color-scheme: dark) { #boot-splash { background: #171a15; color: #f0eee4; } .boot-mark { background: #303b2e; color: #aac4a4; border-color: #53694e; } .boot-copy { color: #c4c3b7; } .boot-spinner { border-color: #53694e; border-top-color: #aac4a4; } }
       @media (prefers-reduced-motion: reduce) { .boot-spinner { animation: none; opacity: .7; } }
     </style>
     <app-root></app-root>
