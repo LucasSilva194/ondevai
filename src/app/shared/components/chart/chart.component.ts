@@ -71,7 +71,11 @@ export class ChartComponent implements AfterViewInit, OnChanges, OnDestroy {
           legend: { display: this.type === 'doughnut', position: 'bottom', labels: { color: textColor, usePointStyle: true, boxWidth: 8, generateLabels: (chart) => {
             const defaultLabels = Chart.defaults.plugins.legend.labels.generateLabels?.(chart) ?? [];
             if (this.type !== 'doughnut') return defaultLabels;
-            return defaultLabels.map((item) => ({ ...item, text: `${item.text} · ${new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(this.values[item.index ?? 0] / 100)}` }));
+            return defaultLabels.map((item) => {
+              const index = item.index ?? 0;
+              const label = this.labels[index]?.trim() || 'Categoria indisponível';
+              return { ...item, text: `${label} · ${new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(this.values[index] / 100)}` };
+            });
           } } },
           tooltip: { callbacks: { label: (item) => new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(Number(item.raw)) } },
         },

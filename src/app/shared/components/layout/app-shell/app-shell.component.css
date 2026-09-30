@@ -72,6 +72,9 @@
 .logout-button { margin-top: 9px; font-size: .72rem; }
 
 .app-content { min-height: 100dvh; margin-left: 290px; }
+.app-footer { display: flex; justify-content: space-between; gap: 16px; margin: 28px clamp(24px, 5vw, 72px) 0; padding: 17px 0 24px; border-top: 1px solid var(--border); color: var(--text-muted); font-size: .75rem; }
+.app-footer a { color: var(--text-soft); font-weight: 680; text-decoration-color: color-mix(in srgb, currentColor 38%, transparent); text-underline-offset: 3px; }
+.app-footer a:hover { color: var(--accent-strong); }
 .mobile-header, .mobile-nav { display: none; }
 
 .global-error {
@@ -190,6 +193,11 @@
   .mobile-nav a.active app-icon { transform: scale(1.06); }
   .global-error { margin: 14px 14px 0; }
   .offline-banner, .update-banner, .connection-error { margin: 10px 14px 0; }
+  .app-footer { margin: 18px 14px 0; padding-bottom: 18px; }
+}
+
+@media (max-width: 420px) {
+  .app-footer { flex-direction: column; gap: 5px; }
 }
 
 @media (max-width: 460px) {
