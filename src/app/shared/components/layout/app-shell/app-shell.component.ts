@@ -115,6 +115,11 @@ import { IconComponent } from '../../common/icon/icon.component';
           <router-outlet />
         </main>
 
+        <footer class="app-footer">
+          <span>© {{ currentYear }} OndeVai</span>
+          <span>Feito por <a href="https://lucas-silva.dev" target="_blank" rel="noopener noreferrer">Lucas Silva</a></span>
+        </footer>
+
         <nav class="mobile-nav" aria-label="Navegação principal móvel">
           @for (item of navigation; track item.path) {
             @if (item.primary) {
@@ -132,6 +137,7 @@ import { IconComponent } from '../../common/icon/icon.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppShellComponent {
+  readonly currentYear = new Date().getFullYear();
   readonly store = inject(AppStore);
   readonly pwa = inject(PwaService);
   readonly auth = inject(AuthService);
