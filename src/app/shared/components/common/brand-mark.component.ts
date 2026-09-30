@@ -5,7 +5,7 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
   standalone: true,
   template: `
     <svg viewBox="0 0 386 386" aria-hidden="true" focusable="false">
-      <g fill="currentColor">
+      <g transform="translate(0 17)" fill="currentColor">
         <path d="M76 253a144 144 0 1 1 120 67l8-44a99 99 0 1 0-85-36l-43 13Z" />
         <path d="M92 271c53-21 129-64 192-73-37 12-75 37-96 68l-19 49c-29-7-57-27-77-44Z" />
       </g>
