@@ -16,7 +16,7 @@
   </head>
   <body>
     <div id="boot-splash" role="status" aria-live="polite">
-      <span class="boot-mark" aria-hidden="true"><svg viewBox="0 0 512 512" fill="none"><circle cx="256" cy="256" r="174"/><path d="M67 364c83-28 184-84 341-94-94 25-174 77-248 167"/></svg></span>
+      <span class="boot-mark" aria-hidden="true"><svg viewBox="0 0 412 412"><g transform="translate(-9 29)" fill="currentColor"><path d="M94 250a144 144 0 1 1 119 69l3-47a100 100 0 1 0-81-33l-41 11Z"/><path d="M109 269c55-21 123-62 193-72-34 10-67 38-86 75l-3 47-35-7c-25-7-49-24-69-43Z"/></g></svg></span>
       <span class="boot-copy">A preparar a sua área financeira…</span>
     </div>
     <style>
@@ -24,11 +24,9 @@
       #boot-splash.boot-splash-leaving { opacity: 0; }
       .boot-mark { width: 50px; height: 50px; display: grid; place-items: center; border: 1px solid #a7b59f; border-radius: 17px; background: #1b3f33; color: #f7f3ea; }
       .boot-mark svg { width: 36px; height: 36px; }
-      .boot-mark circle { stroke: currentColor; stroke-width: 34; stroke-dasharray: 930 165; transform-origin: 256px 256px; animation: boot-orbit 1.6s linear infinite; }
       .boot-mark path { fill: currentColor; }
       .boot-copy { color: #4b5e53; }
-      @keyframes boot-orbit { to { transform: rotate(360deg); } }
-      @media (prefers-reduced-motion: reduce) { .boot-mark circle { animation-duration: 4s; } #boot-splash { transition-duration: 180ms; } }
+      @media (prefers-reduced-motion: reduce) { #boot-splash { transition-duration: 180ms; } }
     </style>
     <app-root></app-root>
     <noscript>O OndeVai precisa de JavaScript para guardar e analisar as suas despesas neste dispositivo.</noscript>

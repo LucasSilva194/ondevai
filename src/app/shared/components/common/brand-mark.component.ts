@@ -4,16 +4,16 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
   selector: 'app-brand-mark',
   standalone: true,
   template: `
-    <svg viewBox="0 0 512 512" fill="none" aria-hidden="true" focusable="false">
-      <circle cx="256" cy="256" r="174" />
-      <path d="M67 364c83-28 184-84 341-94-94 25-174 77-248 167" />
+    <svg viewBox="0 0 412 412" aria-hidden="true" focusable="false">
+      <g transform="translate(-9 29)" fill="currentColor">
+        <path d="M94 250a144 144 0 1 1 119 69l3-47a100 100 0 1 0-81-33l-41 11Z" />
+        <path d="M109 269c55-21 123-62 193-72-34 10-67 38-86 75l-3 47-35-7c-25-7-49-24-69-43Z" />
+      </g>
     </svg>
   `,
   styles: `
     :host { width: 38px; height: 38px; display: grid; place-items: center; flex: none; color: var(--forest, #1b3f33); }
     svg { width: 100%; height: 100%; overflow: visible; }
-    circle { stroke: currentColor; stroke-width: 34; }
-    path { fill: currentColor; }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
