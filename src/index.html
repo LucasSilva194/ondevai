@@ -10,11 +10,13 @@
     <meta name="theme-color" content="#1b3f33">
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="apple-touch-icon" href="icons/icon-192.png">
-    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" sizes="any">
+    <link rel="icon" type="image/png" href="favicon-32.png" sizes="32x32">
+    <link rel="icon" type="image/png" href="favicon-16.png" sizes="16x16">
   </head>
   <body>
     <div id="boot-splash" role="status" aria-live="polite">
-      <span class="boot-mark" aria-hidden="true"><svg viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="20.25"/><path d="M9.1 32.1c7.2-2.4 16-7.3 29.6-8.2-8.2 2.2-15.1 6.7-21.5 14.5"/></svg></span>
+      <span class="boot-mark" aria-hidden="true"><svg viewBox="0 0 512 512" fill="none"><circle cx="256" cy="256" r="174"/><path d="M67 364c83-28 184-84 341-94-94 25-174 77-248 167"/></svg></span>
       <span class="boot-copy">A preparar a sua área financeira…</span>
     </div>
     <style>
@@ -22,7 +24,7 @@
       #boot-splash.boot-splash-leaving { opacity: 0; }
       .boot-mark { width: 50px; height: 50px; display: grid; place-items: center; border: 1px solid #a7b59f; border-radius: 17px; background: #1b3f33; color: #f7f3ea; }
       .boot-mark svg { width: 36px; height: 36px; }
-      .boot-mark circle { stroke: currentColor; stroke-width: 3.6; stroke-dasharray: 86 42; transform-origin: 24px 24px; animation: boot-orbit 1.6s linear infinite; }
+      .boot-mark circle { stroke: currentColor; stroke-width: 34; stroke-dasharray: 930 165; transform-origin: 256px 256px; animation: boot-orbit 1.6s linear infinite; }
       .boot-mark path { fill: currentColor; }
       .boot-copy { color: #4b5e53; }
       @keyframes boot-orbit { to { transform: rotate(360deg); } }

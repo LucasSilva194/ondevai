@@ -27,23 +27,24 @@ export type IconName =
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
       @switch (name()) {
         @case ('overview') {
-          <path d="M4 13.2h6.8V20H4zM13.2 4H20v16h-6.8zM4 4h6.8v6.8H4z" />
+          <path d="M4 20h16M5.5 15v5h3v-5h-3Zm5-5v10h3V10h-3Zm5-5v15h3V5h-3Z" />
         }
         @case ('expenses') {
-          <path d="M5 7.5h14M7 4h10l2 3.5v11A1.5 1.5 0 0 1 17.5 20h-11A1.5 1.5 0 0 1 5 18.5v-11L7 4Z" />
-          <path d="M12 10v6m-2.5-2.2L12 16l2.5-2.2" />
+          <rect x="3.5" y="5.5" width="17" height="13" rx="2" />
+          <path d="M3.5 9.5h17m-13 5h3" />
         }
         @case ('budgets') {
-          <path d="M4 7.5A2.5 2.5 0 0 1 6.5 5h11A2.5 2.5 0 0 1 20 7.5v9a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5v-9Z" />
-          <path d="M15 11h5v4h-5a2 2 0 1 1 0-4Z" />
+          <path d="M12 3.5v8.5h8.5A8.5 8.5 0 1 1 12 3.5Z" />
+          <path d="M15 4.1a8.5 8.5 0 0 1 4.9 4.9H15V4.1Z" />
         }
         @case ('savings') {
-          <path d="M5 10.5A6.5 6.5 0 0 1 11.5 4H15a4 4 0 0 1 4 4v1.2l2 1.3v4l-2 1.3V19h-4v-2H9v2H5v-3.2a6.5 6.5 0 0 1 0-5.3Z" />
-          <path d="M11 7h4m-9 3H3" />
-          <circle cx="15.5" cy="10" r=".7" fill="currentColor" stroke="none" />
+          <circle cx="12" cy="12" r="8.5" />
+          <circle cx="12" cy="12" r="4.5" />
+          <circle cx="12" cy="12" r=".8" fill="currentColor" stroke="none" />
         }
         @case ('categories') {
-          <path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h4A1.5 1.5 0 0 1 11 5.5v4A1.5 1.5 0 0 1 9.5 11h-4A1.5 1.5 0 0 1 4 9.5v-4Zm9 0A1.5 1.5 0 0 1 14.5 4h4A1.5 1.5 0 0 1 20 5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4A1.5 1.5 0 0 1 13 9.5v-4Zm-9 9A1.5 1.5 0 0 1 5.5 13h4a1.5 1.5 0 0 1 1.5 1.5v4A1.5 1.5 0 0 1 9.5 20h-4A1.5 1.5 0 0 1 4 18.5v-4Zm9 2.5h7M16.5 13.5v7" />
+          <path d="M4 4.5h9l7 7-8.5 8.5-7-7v-8.5Z" />
+          <circle cx="9" cy="9" r="1" />
         }
         @case ('data') {
           <ellipse cx="12" cy="6" rx="7" ry="3" />
