@@ -152,7 +152,7 @@ export class OnboardingComponent implements OnInit {
   async finish(): Promise<void> {
     try {
       await this.store.completeOnboarding(this.useSuggested());
-      await this.router.navigate(['/visao-geral']);
+      await this.router.navigate(['/guia']);
     } catch {
       // The store provides a visible error after navigation is still blocked.
     }
