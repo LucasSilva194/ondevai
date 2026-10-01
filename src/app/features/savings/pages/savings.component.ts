@@ -1,4 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AppStore } from '../../../core/stores/app.store';
 import { IconComponent } from '../../../shared/components/common/icon/icon.component';
@@ -17,7 +19,7 @@ import {
 import { formatDate, todayDateString } from '../../../shared/utils/date.utils';
 import { centsToInputValue, formatCurrency, parseMoneyToCents, parseNonNegativeMoneyToCents } from '../../../shared/utils/money.utils';
 import { recurrenceLabel } from '../../../shared/utils/recurrence.utils';
-import { expensesForMonth, incomesForMonth, MONTH_NAMES, sumExpenses, sumIncomes } from '../../../shared/utils/statistics.utils';
+import { expensesForMonth, incomesForMonth, MONTH_NAMES, netSavingsContributionsForMonth, sumExpenses, sumIncomes } from '../../../shared/utils/statistics.utils';
 
 @Component({
   selector: 'app-savings',
@@ -34,7 +36,7 @@ import { expensesForMonth, incomesForMonth, MONTH_NAMES, sumExpenses, sumIncomes
         <div class="summary-details">
           <article><span>Total poupado</span><strong>{{ formatCurrency(totalSaved()) }}</strong></article>
           <article><span>Plano mensal</span><strong>{{ formatCurrency(monthlySavingsPlan()) }}</strong></article>
-          <article><span>Livre após despesas</span><strong [class.negative]="availableAfterExpenses() < 0">{{ formatCurrency(availableAfterExpenses()) }}</strong><small>{{ formatCurrency(currentMonthExpenses()) }} em despesas neste mês</small></article>
+          <article><span>Livre após despesas e reforços</span><strong [class.negative]="availableAfterExpenses() < 0">{{ formatCurrency(availableAfterExpenses()) }}</strong><small>{{ formatCurrency(currentMonthExpenses()) }} em despesas e {{ formatCurrency(currentMonthSavingsContributions()) }} de movimento líquido nos objetivos</small></article>
         </div>
       </section>
 
@@ -66,23 +68,21 @@ import { expensesForMonth, incomesForMonth, MONTH_NAMES, sumExpenses, sumIncomes
       </section>
 
       <section class="goals-section" aria-labelledby="goals-title">
-        <div class="section-header goals-heading"><div><h2 id="goals-title">Objetivos de poupança</h2><p>O saldo é mantido em cache e confirmado pelo histórico de movimentos.</p></div>@if (store.savingsGoals().length > 0) { <button class="btn btn-secondary btn-compact" type="button" (click)="openGoalCreate()">Novo objetivo</button> }</div>
+        <div class="section-header goals-heading"><div><h2 id="goals-title">Objetivos de poupança</h2><p>Acompanhe o progresso e registe reforços ou levantamentos.</p></div>@if (store.savingsGoals().length > 0) { <button class="btn btn-secondary btn-compact" type="button" (click)="openGoalCreate()">Novo objetivo</button> }</div>
         @if (store.savingsGoals().length === 0) {
           <div class="empty-state goals-empty"><div class="empty-symbol" aria-hidden="true">%</div><h3>Crie o primeiro objetivo</h3><p>O valor inicial ficará registado como movimento de abertura.</p><button class="btn btn-primary" type="button" (click)="openGoalCreate()">Criar objetivo</button></div>
         } @else {
           <div class="goal-grid">
             @for (goal of orderedGoals(); track goal.id) {
-              <article class="goal-card card" [class.completed]="progress(goal) >= 100">
-                <header class="goal-card-header"><div><span class="goal-kind">{{ goalKindLabel(goal.kind) }}</span><h3>{{ goal.name }}</h3></div><strong>{{ progress(goal) }}%</strong></header>
-                <div class="progress-track" role="progressbar" [attr.aria-label]="'Progresso de ' + goal.name" [attr.aria-valuenow]="progress(goal)" aria-valuemin="0" aria-valuemax="100"><span [style.width.%]="progress(goal)"></span></div>
-                <div class="goal-amounts"><div><span>Saldo atual</span><strong>{{ formatCurrency(goal.currentAmountCents) }}</strong></div><div><span>Objetivo</span><strong>{{ formatCurrency(goal.targetAmountCents) }}</strong></div></div>
+              <article class="goal-card card-flat" [class.completed]="progress(goal) >= 100">
+                <header class="goal-card-header">
+                  <div><span class="goal-kind">{{ goalKindLabel(goal.kind) }}</span><h3>{{ goal.name }}</h3></div>
+                  <div class="goal-header-actions"><strong>{{ progress(goal) }}%</strong><button type="button" class="income-icon-action" (click)="openGoalEdit(goal)" [attr.aria-label]="'Editar objetivo ' + goal.name" [title]="'Editar objetivo ' + goal.name"><app-icon name="edit" /></button><button type="button" class="income-icon-action danger-text" (click)="removeGoal(goal)" [attr.aria-label]="'Eliminar objetivo ' + goal.name" [title]="'Eliminar objetivo ' + goal.name"><app-icon name="close" /></button></div>
+                </header>
+                <div class="goal-progress-values"><div><span>Saldo atual</span><strong>{{ formatCurrency(goal.currentAmountCents) }}</strong></div><div><span>Objetivo</span><strong>{{ formatCurrency(goal.targetAmountCents) }}</strong></div></div>
+                <div class="progress-track" role="progressbar" [attr.aria-label]="'Progresso de ' + goal.name" [attr.aria-valuenow]="progress(goal)" aria-valuemin="0" aria-valuemax="100" [attr.aria-valuetext]="formatCurrency(goal.currentAmountCents) + ' de ' + formatCurrency(goal.targetAmountCents) + ', ' + progress(goal) + '%"><span [style.width.%]="progress(goal)"></span></div>
                 <dl class="goal-meta"><div><dt>Reforço mensal</dt><dd>{{ goal.monthlyContributionCents > 0 ? formatCurrency(goal.monthlyContributionCents) : 'Não definido' }}</dd></div><div><dt>Data objetivo</dt><dd>{{ goal.targetDate ? formatDate(goal.targetDate) : 'Sem data' }}</dd></div></dl>
-                <div class="recent-transactions">
-                  <h4>Últimos movimentos</h4>
-                  @for (transaction of transactionsForGoal(goal.id).slice(0, 3); track transaction.id) { <div><span>{{ transactionTypeLabel(transaction.type) }} · {{ formatDate(transaction.effectiveDate) }}</span><strong [class.withdrawal]="transaction.type === 'withdrawal'">{{ transaction.type === 'withdrawal' ? '−' : '+' }}{{ formatCurrency(transaction.amountCents) }}</strong></div> }
-                  @if (transactionsForGoal(goal.id).length === 0) { <p class="muted small">Ainda não existem movimentos.</p> }
-                </div>
-                <footer class="goal-actions"><button class="btn btn-primary btn-compact" type="button" (click)="openTransactionCreate(goal)">Movimentar</button><button class="btn btn-secondary btn-compact" type="button" (click)="openHistory(goal)">Ver histórico</button><button class="btn btn-ghost btn-compact" type="button" (click)="openGoalEdit(goal)">Editar</button><button class="btn btn-ghost btn-compact danger-text" type="button" (click)="removeGoal(goal)">Eliminar</button></footer>
+                <footer class="goal-actions"><button class="income-icon-action" type="button" (click)="openTransactionCreate(goal)"><app-icon name="plus" /><span>Movimentar</span></button><button class="income-icon-action" type="button" (click)="openHistory(goal)">Ver histórico</button></footer>
               </article>
             }
           </div>
@@ -94,19 +94,19 @@ import { expensesForMonth, incomesForMonth, MONTH_NAMES, sumExpenses, sumIncomes
       <app-modal-shell labelledBy="income-form-title">
         <header class="modal-header"><div><h2 id="income-form-title">{{ editingIncomeOccurrence() ? 'Editar ocorrência' : editingIncome() ? 'Editar rendimento' : 'Novo rendimento' }}</h2><p>{{ editingIncomeOccurrence() ? 'Apenas esta ocorrência será alterada.' : 'Configure uma entrada pontual ou recorrente.' }}</p></div><button class="btn btn-ghost btn-compact" type="button" (click)="closeIncomeForm()" aria-label="Fechar formulário">Fechar</button></header>
         <form [formGroup]="incomeForm" (ngSubmit)="submitIncome()" novalidate><div class="form-grid">
-          <div class="field wide"><label for="income-name">Nome *</label><input id="income-name" type="text" formControlName="name" maxlength="80" required></div>
+          <div class="field wide"><label for="income-name">Nome *</label><input id="income-name" name="name" autocomplete="off" type="text" formControlName="name" maxlength="80" required></div>
           <div class="field"><label for="income-kind">Tipo *</label><select id="income-kind" formControlName="kind"><option value="salary">Salário</option><option value="subsidy">Subsídio</option><option value="freelance">Trabalho independente</option><option value="other">Outro rendimento</option></select></div>
-          <div class="field"><label for="income-date">Data *</label><input id="income-date" type="date" formControlName="date" required></div>
-          <div class="field wide"><label for="income-amount">Valor em euros *</label><input id="income-amount" type="text" inputmode="decimal" formControlName="amount" placeholder="0,00" required>@if (incomeAmountError()) { <p class="field-error">{{ incomeAmountError() }}</p> }</div>
+          <div class="field"><label for="income-date">Data *</label><input id="income-date" name="date" autocomplete="off" type="date" formControlName="date" required></div>
+          <div class="field wide"><label for="income-amount">Valor em euros *</label><input id="income-amount" name="amount" autocomplete="off" type="text" inputmode="decimal" formControlName="amount" placeholder="0,00" required>@if (incomeAmountError()) { <p class="field-error">{{ incomeAmountError() }}</p> }</div>
           @if (!editingIncomeOccurrence()) {
             <div class="field"><label for="income-recurrence">Recorrência</label><select id="income-recurrence" formControlName="recurrenceType"><option value="none">Pontual</option><option value="weekly">Semanal</option><option value="monthly">Mensal</option><option value="yearly">Anual</option></select></div>
             @if (incomeForm.controls.recurrenceType.value !== 'none') {
-              <div class="field"><label for="income-interval">Intervalo</label><input id="income-interval" type="number" min="1" max="99" formControlName="interval"></div>
-              <div class="field"><label for="income-end">Data de fim</label><input id="income-end" type="date" formControlName="endDate" [min]="incomeForm.controls.date.value"></div>
+              <div class="field"><label for="income-interval">Intervalo</label><input id="income-interval" name="interval" autocomplete="off" type="number" min="1" max="99" formControlName="interval"></div>
+              <div class="field"><label for="income-end">Data de fim</label><input id="income-end" name="endDate" autocomplete="off" type="date" formControlName="endDate" [min]="incomeForm.controls.date.value"></div>
               <div class="field"><label for="income-status">Estado</label><select id="income-status" formControlName="recurrenceStatus"><option value="active">Ativa</option><option value="paused">Pausada</option></select></div>
             }
           }
-        </div>@if (formError()) { <p class="form-message" role="alert">{{ formError() }}</p> }<div class="button-row form-actions"><button class="btn btn-primary" type="submit" [disabled]="store.operationPending()">{{ store.operationPending() ? 'A guardar...' : 'Guardar rendimento' }}</button><button class="btn btn-secondary" type="button" (click)="closeIncomeForm()">Cancelar</button></div></form>
+        </div>@if (formError()) { <p class="form-message" role="alert">{{ formError() }}</p> }<div class="button-row form-actions"><button class="btn btn-primary" type="submit" [disabled]="store.operationPending()">{{ store.operationPending() ? 'A guardar…' : 'Guardar rendimento' }}</button><button class="btn btn-secondary" type="button" (click)="closeIncomeForm()">Cancelar</button></div></form>
       </app-modal-shell>
     }
 
@@ -114,12 +114,12 @@ import { expensesForMonth, incomesForMonth, MONTH_NAMES, sumExpenses, sumIncomes
       <app-modal-shell labelledBy="goal-form-title">
         <header class="modal-header"><div><h2 id="goal-form-title">{{ editingGoal() ? 'Editar objetivo' : 'Novo objetivo' }}</h2><p>Qualquer diferença no saldo cria um movimento explícito.</p></div><button class="btn btn-ghost btn-compact" type="button" (click)="closeGoalForm()">Fechar</button></header>
         <form [formGroup]="goalForm" (ngSubmit)="submitGoal()" novalidate><div class="form-grid">
-          <div class="field wide"><label for="goal-name">Nome *</label><input id="goal-name" type="text" formControlName="name" maxlength="80" required></div>
+          <div class="field wide"><label for="goal-name">Nome *</label><input id="goal-name" name="name" autocomplete="off" type="text" formControlName="name" maxlength="80" required></div>
           <div class="field"><label for="goal-kind">Tipo</label><select id="goal-kind" formControlName="kind"><option value="general">Poupança geral</option><option value="reserve">Fundo de reserva</option><option value="home">Casa</option><option value="car">Carro</option><option value="travel">Viagem</option><option value="education">Educação</option><option value="other">Outro</option></select></div>
-          <div class="field"><label for="goal-target">Valor objetivo *</label><input id="goal-target" type="text" inputmode="decimal" formControlName="targetAmount" required>@if (goalTargetError()) { <p class="field-error">{{ goalTargetError() }}</p> }</div>
-          <div class="field"><label for="goal-current">Valor já poupado</label><input id="goal-current" type="text" inputmode="decimal" formControlName="currentAmount">@if (goalCurrentError()) { <p class="field-error">{{ goalCurrentError() }}</p> }</div>
-          <div class="field"><label for="goal-monthly">Reforço mensal planeado</label><input id="goal-monthly" type="text" inputmode="decimal" formControlName="monthlyContribution">@if (goalMonthlyError()) { <p class="field-error">{{ goalMonthlyError() }}</p> }</div>
-          <div class="field wide"><label for="goal-date">Data objetivo</label><input id="goal-date" type="date" formControlName="targetDate"></div>
+          <div class="field"><label for="goal-target">Valor objetivo *</label><input id="goal-target" name="targetAmount" autocomplete="off" type="text" inputmode="decimal" formControlName="targetAmount" required>@if (goalTargetError()) { <p class="field-error">{{ goalTargetError() }}</p> }</div>
+          <div class="field"><label for="goal-current">Valor já poupado</label><input id="goal-current" name="currentAmount" autocomplete="off" type="text" inputmode="decimal" formControlName="currentAmount">@if (goalCurrentError()) { <p class="field-error">{{ goalCurrentError() }}</p> }</div>
+          <div class="field"><label for="goal-monthly">Reforço mensal planeado</label><input id="goal-monthly" name="monthlyContribution" autocomplete="off" type="text" inputmode="decimal" formControlName="monthlyContribution">@if (goalMonthlyError()) { <p class="field-error">{{ goalMonthlyError() }}</p> }</div>
+          <div class="field wide"><label for="goal-date">Data objetivo</label><input id="goal-date" name="targetDate" autocomplete="off" type="date" formControlName="targetDate"></div>
         </div>@if (formError()) { <p class="form-message" role="alert">{{ formError() }}</p> }<div class="button-row form-actions"><button class="btn btn-primary" type="submit" [disabled]="store.operationPending()">Guardar objetivo</button><button class="btn btn-secondary" type="button" (click)="closeGoalForm()">Cancelar</button></div></form>
       </app-modal-shell>
     }
@@ -129,9 +129,9 @@ import { expensesForMonth, incomesForMonth, MONTH_NAMES, sumExpenses, sumIncomes
         <header class="modal-header"><div><h2 id="transaction-title">{{ editingTransaction() ? 'Editar movimento' : 'Movimentar ' + goal.name }}</h2><p>Saldo atual: {{ formatCurrency(goal.currentAmountCents) }}</p></div><button class="btn btn-ghost btn-compact" type="button" (click)="closeTransactionForm()">Fechar</button></header>
         <form [formGroup]="transactionForm" (ngSubmit)="submitTransaction()" novalidate><div class="form-grid">
           <div class="field"><label for="transaction-type">Tipo</label><select id="transaction-type" formControlName="type">@if (editingTransaction()?.type === 'opening') { <option value="opening">Saldo inicial</option> }<option value="deposit">Reforço</option><option value="withdrawal">Levantamento</option></select></div>
-          <div class="field"><label for="transaction-amount">Valor em euros *</label><input id="transaction-amount" type="text" inputmode="decimal" formControlName="amount" required>@if (transactionError()) { <p class="field-error">{{ transactionError() }}</p> }</div>
-          <div class="field"><label for="transaction-date">Data efetiva *</label><input id="transaction-date" type="date" formControlName="effectiveDate" required></div>
-          <div class="field wide"><label for="transaction-note">Nota</label><textarea id="transaction-note" formControlName="note" maxlength="180"></textarea></div>
+          <div class="field"><label for="transaction-amount">Valor em euros *</label><input id="transaction-amount" name="amount" autocomplete="off" type="text" inputmode="decimal" formControlName="amount" required>@if (transactionError()) { <p class="field-error">{{ transactionError() }}</p> }</div>
+          <div class="field"><label for="transaction-date">Data efetiva *</label><input id="transaction-date" name="effectiveDate" autocomplete="off" type="date" formControlName="effectiveDate" required></div>
+          <div class="field wide"><label for="transaction-note">Nota</label><textarea id="transaction-note" name="note" autocomplete="off" formControlName="note" maxlength="180"></textarea></div>
         </div>@if (formError()) { <p class="form-message" role="alert">{{ formError() }}</p> }<div class="button-row form-actions"><button class="btn btn-primary" type="submit" [disabled]="store.operationPending()">Guardar movimento</button><button class="btn btn-secondary" type="button" (click)="closeTransactionForm()">Cancelar</button></div></form>
       </app-modal-shell>
     }
@@ -152,6 +152,14 @@ import { expensesForMonth, incomesForMonth, MONTH_NAMES, sumExpenses, sumIncomes
 export class SavingsComponent {
   readonly store = inject(AppStore);
   private readonly formBuilder = inject(FormBuilder);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+
+  constructor() {
+    this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((params) => {
+      if (params.get('nova') === '1' && !this.incomeFormOpen()) this.openIncomeCreate(false);
+    });
+  }
   readonly formatCurrency = formatCurrency;
   readonly formatDate = formatDate;
   readonly recurrenceLabel = recurrenceLabel;
@@ -184,17 +192,17 @@ export class SavingsComponent {
   readonly totalSaved = computed(() => this.store.savingsGoals().reduce((total, goal) => total + goal.currentAmountCents, 0));
   readonly monthlySavingsPlan = computed(() => this.store.savingsGoals().filter((goal) => this.progress(goal) < 100).reduce((total, goal) => total + goal.monthlyContributionCents, 0));
   readonly currentMonthExpenses = computed(() => { const now = new Date(); return sumExpenses(expensesForMonth(this.store.expenses(), now.getFullYear(), now.getMonth() + 1, this.store.recurrenceExceptions())); });
-  readonly availableAfterExpenses = computed(() => this.monthlyIncomeTotal() - this.currentMonthExpenses());
+  readonly currentMonthSavingsContributions = computed(() => { const now = new Date(); return netSavingsContributionsForMonth(this.store.savingsTransactions(), now.getFullYear(), now.getMonth() + 1); });
+  readonly availableAfterExpenses = computed(() => this.monthlyIncomeTotal() - this.currentMonthExpenses() - this.currentMonthSavingsContributions());
   readonly orderedGoals = computed(() => [...this.store.savingsGoals()].sort((a, b) => Number(this.progress(a) >= 100) - Number(this.progress(b) >= 100) || a.createdAt.localeCompare(b.createdAt)));
   readonly filteredTransactions = computed(() => this.store.savingsTransactions().filter((item) => !this.historyGoalFilter() || item.goalId === this.historyGoalFilter()).filter((item) => !this.historyTypeFilter() || item.type === this.historyTypeFilter()).sort((a, b) => b.effectiveDate.localeCompare(a.effectiveDate) || b.createdAt.localeCompare(a.createdAt)));
 
   currentOccurrence(income: MonthlyIncome): IncomeOccurrence | undefined { return this.currentMonthIncomes().find((item) => item.seriesId === income.id || item.id === income.id); }
-  transactionsForGoal(goalId: string): SavingsTransaction[] { return this.store.savingsTransactions().filter((item) => item.goalId === goalId).sort((a, b) => b.effectiveDate.localeCompare(a.effectiveDate) || b.createdAt.localeCompare(a.createdAt)); }
 
-  openIncomeCreate(): void { this.editingIncome.set(null); this.editingIncomeOccurrence.set(null); this.incomeForm.reset({ name: '', kind: 'salary', date: todayDateString(), amount: '', recurrenceType: 'monthly', interval: 1, endDate: '', recurrenceStatus: 'active' }); this.resetErrors(); this.incomeFormOpen.set(true); }
+  openIncomeCreate(updateUrl = true): void { this.editingIncome.set(null); this.editingIncomeOccurrence.set(null); this.incomeForm.reset({ name: '', kind: 'salary', date: todayDateString(), amount: '', recurrenceType: 'monthly', interval: 1, endDate: '', recurrenceStatus: 'active' }); this.resetErrors(); this.incomeFormOpen.set(true); if (updateUrl) void this.router.navigate([], { relativeTo: this.route, queryParams: { nova: 1 }, replaceUrl: true }); }
   openIncomeEdit(income: MonthlyIncome): void { this.editingIncome.set(income); this.editingIncomeOccurrence.set(null); this.incomeForm.reset({ name: income.name, kind: income.kind, date: income.date, amount: centsToInputValue(income.amountCents), recurrenceType: income.recurrence?.frequency ?? 'none', interval: income.recurrence?.interval ?? 1, endDate: income.recurrence?.endDate ?? '', recurrenceStatus: income.recurrence?.status ?? 'active' }); this.resetErrors(); this.incomeFormOpen.set(true); }
   openIncomeOccurrenceEdit(income: IncomeOccurrence): void { this.editingIncome.set(null); this.editingIncomeOccurrence.set(income); this.incomeForm.reset({ name: income.name, kind: income.kind, date: income.date, amount: centsToInputValue(income.amountCents), recurrenceType: 'none', interval: 1, endDate: '', recurrenceStatus: 'active' }); this.resetErrors(); this.incomeFormOpen.set(true); }
-  closeIncomeForm(): void { this.incomeFormOpen.set(false); this.editingIncome.set(null); this.editingIncomeOccurrence.set(null); }
+  closeIncomeForm(): void { this.incomeFormOpen.set(false); this.editingIncome.set(null); this.editingIncomeOccurrence.set(null); if (this.route.snapshot.queryParamMap.has('nova')) void this.router.navigate([], { relativeTo: this.route, queryParams: { nova: null }, queryParamsHandling: 'merge', replaceUrl: true }); }
 
   async submitIncome(): Promise<void> {
     this.resetErrors(); const raw = this.incomeForm.getRawValue(); const amountCents = parseMoneyToCents(raw.amount);

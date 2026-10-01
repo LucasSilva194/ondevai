@@ -42,7 +42,7 @@ import { expensesForMonth, MONTH_NAMES, sumExpenses } from '../../../shared/util
             <div class="advanced-filter-grid">
               <div class="field search-field">
                 <label for="expense-search">Descrição</label>
-                <input id="expense-search" type="search" formControlName="search" placeholder="Ex.: supermercado">
+                <input id="expense-search" name="search" autocomplete="off" type="search" formControlName="search" placeholder="Ex.: supermercado">
               </div>
               <div class="field">
                 <label for="expense-month">Mês</label>
@@ -148,12 +148,12 @@ import { expensesForMonth, MONTH_NAMES, sumExpenses } from '../../../shared/util
             <div class="form-grid">
               <div class="field">
                 <label for="expense-date">Data *</label>
-                <input id="expense-date" type="date" formControlName="date" required>
+                <input id="expense-date" name="date" autocomplete="off" type="date" formControlName="date" required>
                 @if (expenseForm.controls.date.touched && expenseForm.controls.date.invalid) { <p class="field-error">Indique a data da despesa.</p> }
               </div>
               <div class="field">
                 <label for="expense-amount">Valor em euros *</label>
-                <input id="expense-amount" type="text" inputmode="decimal" formControlName="amount" placeholder="0,00" required>
+                <input id="expense-amount" name="amount" autocomplete="off" type="text" inputmode="decimal" formControlName="amount" placeholder="0,00" required>
                 @if (amountError()) { <p class="field-error">{{ amountError() }}</p> }
               </div>
               <div class="field">
@@ -180,18 +180,18 @@ import { expensesForMonth, MONTH_NAMES, sumExpenses } from '../../../shared/util
                   </div>
                   <div class="field">
                     <label for="expense-description">Descrição</label>
-                    <input id="expense-description" type="text" formControlName="description" maxlength="140" placeholder="Ex.: compras da semana">
+                    <input id="expense-description" name="description" autocomplete="off" type="text" formControlName="description" maxlength="140" placeholder="Ex.: compras da semana">
                     <p class="helper">Opcional. Máximo de 140 caracteres.</p>
                   </div>
                   <div class="field">
                     <label for="expense-merchant">Comerciante</label>
-                    <input id="expense-merchant" type="text" formControlName="merchant" maxlength="100" list="recent-expense-merchants" placeholder="Ex.: mercearia">
+                    <input id="expense-merchant" name="merchant" autocomplete="off" type="text" formControlName="merchant" maxlength="100" list="recent-expense-merchants" placeholder="Ex.: mercearia">
                     <datalist id="recent-expense-merchants">@for (merchant of recentMerchants(); track merchant) { <option [value]="merchant"></option> }</datalist>
                     @if (recentMerchants().length) { <p class="helper">Recentes: {{ recentMerchants().join(' · ') }}</p> }
                   </div>
                   <div class="field">
                     <label for="expense-tags">Etiquetas</label>
-                    <input id="expense-tags" type="text" formControlName="tags" maxlength="329" placeholder="Ex.: casa, mensal">
+                    <input id="expense-tags" name="tags" autocomplete="off" type="text" formControlName="tags" maxlength="329" placeholder="Ex.: casa, mensal">
                     <p class="helper">Separe até 10 etiquetas por vírgulas.</p>
                     @if (recentTags().length) { <div class="recent-tags" aria-label="Etiquetas usadas recentemente">@for (tag of recentTags(); track tag) { <button type="button" (click)="appendTag(tag)">{{ tag }} +</button> }</div> }
                   </div>
@@ -203,8 +203,8 @@ import { expensesForMonth, MONTH_NAMES, sumExpenses } from '../../../shared/util
                   </select>
                 </div>
                 @if (expenseForm.controls.recurrenceType.value !== 'none') {
-                  <div class="field"><label for="expense-interval">Intervalo</label><input id="expense-interval" type="number" min="1" max="99" formControlName="interval"><p class="helper">Ex.: 2 significa a cada duas semanas, meses ou anos.</p></div>
-                  <div class="field"><label for="expense-end">Data de fim</label><input id="expense-end" type="date" formControlName="endDate" [min]="expenseForm.controls.date.value"></div>
+                  <div class="field"><label for="expense-interval">Intervalo</label><input id="expense-interval" name="interval" autocomplete="off" type="number" min="1" max="99" formControlName="interval"><p class="helper">Ex.: 2 significa a cada duas semanas, meses ou anos.</p></div>
+                  <div class="field"><label for="expense-end">Data de fim</label><input id="expense-end" name="endDate" autocomplete="off" type="date" formControlName="endDate" [min]="expenseForm.controls.date.value"></div>
                   <div class="field"><label for="expense-status">Estado</label><select id="expense-status" formControlName="recurrenceStatus"><option value="active">Ativa</option><option value="paused">Pausada</option></select></div>
                 }
               }
@@ -213,7 +213,7 @@ import { expensesForMonth, MONTH_NAMES, sumExpenses } from '../../../shared/util
             </div>
             @if (formError()) { <p class="form-message" role="alert">{{ formError() }}</p> }
             <div class="button-row form-actions">
-              <button class="btn btn-primary" type="submit" [disabled]="store.operationPending()">{{ store.operationPending() ? 'A guardar...' : 'Guardar despesa' }}</button>
+              <button class="btn btn-primary" type="submit" [disabled]="store.operationPending()">{{ store.operationPending() ? 'A guardar…' : 'Guardar despesa' }}</button>
               <button class="btn btn-secondary" type="button" (click)="closeForm()">Cancelar</button>
             </div>
           </form>
