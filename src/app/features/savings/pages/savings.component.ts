@@ -26,6 +26,13 @@ import { expensesForMonth, incomesForMonth, MONTH_NAMES, netSavingsContributions
   imports: [ReactiveFormsModule, IconComponent, ModalShellComponent],
   template: `
     <div class="page savings-page">
+      @if (incomeOnly) {
+        <header class="page-header-row income-page-header">
+          <div><p class="eyebrow">Rendimentos</p><h1>Configure as suas entradas.</h1><p class="page-intro">Registe salários e outros valores pontuais ou recorrentes para acompanhar o seu mês.</p></div>
+          <button class="btn btn-primary" type="button" (click)="openIncomeCreate()">Adicionar rendimento <span class="button-symbol" aria-hidden="true">+</span></button>
+        </header>
+        <section class="income-overview" aria-label="Resumo dos rendimentos deste mês"><span>Entradas previstas em {{ currentMonthName }}</span><strong>{{ formatCurrency(monthlyIncomeTotal()) }}</strong><small>{{ currentMonthIncomes().length }} {{ currentMonthIncomes().length === 1 ? 'entrada' : 'entradas' }} este mês</small></section>
+      } @else {
       <header class="page-header-row savings-header">
         <div><p class="eyebrow">Poupanças</p><h1>Dê um destino ao que fica.</h1><p class="page-intro">Organize rendimentos e acompanhe cada movimento dos seus objetivos.</p></div>
         <div class="header-actions"><button class="btn btn-secondary" type="button" (click)="openIncomeCreate()">Adicionar rendimento</button><button class="btn btn-primary" type="button" (click)="openGoalCreate()"><span>Novo objetivo</span><span class="button-symbol" aria-hidden="true">+</span></button></div>
@@ -39,11 +46,12 @@ import { expensesForMonth, incomesForMonth, MONTH_NAMES, netSavingsContributions
           <article><span>Livre após despesas e reforços</span><strong [class.negative]="availableAfterExpenses() < 0">{{ formatCurrency(availableAfterExpenses()) }}</strong><small>{{ formatCurrency(currentMonthExpenses()) }} em despesas e {{ formatCurrency(currentMonthSavingsContributions()) }} de movimento líquido nos objetivos</small></article>
         </div>
       </section>
+      }
 
-      <section class="income-section" aria-labelledby="income-title">
-        <div class="section-header"><div><h2 id="income-title">Rendimentos</h2><p>Entradas pontuais ou séries recorrentes usadas nos totais do mesmo motor de cálculo.</p></div>@if (store.monthlyIncomes().length > 0) { <button class="btn btn-ghost btn-compact" type="button" (click)="openIncomeCreate()">Adicionar</button> }</div>
+      <section class="income-section" [class.income-only]="incomeOnly" aria-labelledby="income-title">
+        <div class="section-header"><div><h2 id="income-title">{{ incomeOnly ? 'Fontes de rendimento' : 'Rendimentos' }}</h2><p>{{ incomeOnly ? 'Edite valores e frequência sempre que a sua situação mudar.' : 'Entradas pontuais ou recorrentes incluídas nos totais mensais.' }}</p></div>@if (!incomeOnly && store.monthlyIncomes().length > 0) { <button class="btn btn-ghost btn-compact" type="button" (click)="openIncomeCreate()">Adicionar</button> }</div>
         @if (store.monthlyIncomes().length === 0) {
-          <div class="empty-inline">Ainda não existem fontes de rendimento configuradas.</div>
+          <div class="empty-inline">Ainda não existem fontes de rendimento configuradas. <button class="text-button" type="button" (click)="openIncomeCreate()">Adicionar o primeiro rendimento</button></div>
         } @else {
           <div class="income-list">
             @for (income of store.monthlyIncomes(); track income.id) {
@@ -55,10 +63,18 @@ import { expensesForMonth, incomesForMonth, MONTH_NAMES, netSavingsContributions
                   </div>
                   @if (currentOccurrence(income); as occurrence) { @if (income.recurrence) {
                     <div class="income-header-actions">
+                      <button type="button" class="income-icon-action" (click)="openIncomeEdit(income)" [attr.aria-label]="'Editar rendimento ' + income.name" title="Editar rendimento"><app-icon name="edit" /></button>
+                      @if (!incomeOnly) {
                       <button type="button" class="income-icon-action" (click)="openIncomeOccurrenceEdit(occurrence)" [attr.aria-label]="'Editar este mês de ' + income.name" title="Editar este mês"><app-icon name="edit" /></button>
                       <button type="button" class="income-icon-action danger-text" (click)="omitIncomeOccurrence(occurrence)" [attr.aria-label]="'Omitir este mês de ' + income.name" title="Omitir este mês"><app-icon name="close" /></button>
+                      }
+                      <button type="button" class="income-icon-action danger-text" (click)="removeIncome(income)" [attr.aria-label]="'Eliminar rendimento ' + income.name" title="Eliminar série"><app-icon name="close" /></button>
                     </div>
-                  } }
+                  } @else {
+                    <div class="income-header-actions"><button type="button" class="income-icon-action" (click)="openIncomeEdit(income)" [attr.aria-label]="'Editar rendimento ' + income.name" title="Editar rendimento"><app-icon name="edit" /></button><button type="button" class="income-icon-action danger-text" (click)="removeIncome(income)" [attr.aria-label]="'Eliminar rendimento ' + income.name" title="Eliminar rendimento"><app-icon name="close" /></button></div>
+                  } } @else {
+                    <div class="income-header-actions"><button type="button" class="income-icon-action" (click)="openIncomeEdit(income)" [attr.aria-label]="'Editar rendimento ' + income.name" title="Editar rendimento"><app-icon name="edit" /></button><button type="button" class="income-icon-action danger-text" (click)="removeIncome(income)" [attr.aria-label]="'Eliminar rendimento ' + income.name" title="Eliminar rendimento"><app-icon name="close" /></button></div>
+                  }
                 </header>
                 <strong class="income-value">{{ formatCurrency(income.amountCents) }}</strong>
               </article>
@@ -67,6 +83,7 @@ import { expensesForMonth, incomesForMonth, MONTH_NAMES, netSavingsContributions
         }
       </section>
 
+      @if (!incomeOnly) {
       <section class="goals-section" aria-labelledby="goals-title">
         <div class="section-header goals-heading"><div><h2 id="goals-title">Objetivos de poupança</h2><p>Acompanhe o progresso e registe reforços ou levantamentos.</p></div>@if (store.savingsGoals().length > 0) { <button class="btn btn-secondary btn-compact" type="button" (click)="openGoalCreate()">Novo objetivo</button> }</div>
         @if (store.savingsGoals().length === 0) {
@@ -88,6 +105,7 @@ import { expensesForMonth, incomesForMonth, MONTH_NAMES, netSavingsContributions
           </div>
         }
       </section>
+      }
     </div>
 
     @if (incomeFormOpen()) {
@@ -154,6 +172,7 @@ export class SavingsComponent {
   private readonly formBuilder = inject(FormBuilder);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  readonly incomeOnly = this.route.snapshot.data['incomeOnly'] === true;
 
   constructor() {
     this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((params) => {
