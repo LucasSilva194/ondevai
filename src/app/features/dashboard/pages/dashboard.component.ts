@@ -101,7 +101,7 @@ import {
         <section class="empty-state dashboard-empty"><h2>A visão geral começa com o primeiro movimento</h2><p>Adicione um rendimento ou uma despesa para começar a acompanhar o saldo mensal.</p><div class="button-row empty-actions"><a class="btn btn-primary" routerLink="/poupancas">Adicionar rendimento</a><a class="btn btn-secondary" routerLink="/despesas" [queryParams]="{ nova: 1 }">Adicionar despesa</a></div></section>
       } @else {
         <section class="chart-layout">
-          <article class="dashboard-widget card card-padding distribution-chart" data-widget-id="categories" [attr.draggable]="editingWidgetOrder() ? 'true' : null" [attr.tabindex]="editingWidgetOrder() ? 0 : null" [class.widget-dragging]="draggedWidget() === 'categories'" [style.--mobile-order]="widgetOrder('categories')"><div class="section-heading"><div><h2>Por categoria</h2><p>{{ monthName() }} de {{ selectedYear() }}</p></div></div>@if (categoryGroups().length > 0) { <app-chart type="doughnut" [labels]="categoryLabels()" [values]="categoryValues()" [colors]="categoryColors()" accessibleLabel="Distribuição das despesas por categoria" /><details class="data-alternative"><summary>Ver dados em tabela</summary><table><thead><tr><th>Categoria</th><th>Total</th></tr></thead><tbody>@for (group of categoryGroups(); track group.id) { <tr><td>{{ group.name }}</td><td>{{ formatCurrency(group.amountCents) }}</td></tr> }</tbody></table></details> } @else { <p class="chart-empty">Sem despesas no mês selecionado.</p> }</article>
+          <article class="dashboard-widget card card-padding distribution-chart" data-widget-id="categories" [attr.draggable]="editingWidgetOrder() ? 'true' : null" [attr.tabindex]="editingWidgetOrder() ? 0 : null" [class.widget-dragging]="draggedWidget() === 'categories'" [style.--mobile-order]="widgetOrder('categories')"><div class="section-heading"><div><h2>Por categoria</h2><p>{{ monthName() }} de {{ selectedYear() }}</p></div></div>@if (categoryGroups().length > 0) { <app-chart type="doughnut" [labels]="categoryLabels()" [values]="categoryValues()" [colors]="categoryColors()" [showLegend]="false" accessibleLabel="Distribuição das despesas por categoria" /><ul class="category-chart-legend" aria-label="Principais despesas por categoria">@for (group of categoryChartGroups(); track group.id) { <li><i [style.backgroundColor]="group.color" aria-hidden="true"></i><span>{{ group.name }}</span><strong>{{ formatCurrency(group.amountCents) }}</strong></li> }</ul><details class="data-alternative"><summary>Ver dados em tabela</summary><table><thead><tr><th>Categoria</th><th>Total</th></tr></thead><tbody>@for (group of categoryGroups(); track group.id) { <tr><td>{{ group.name }}</td><td>{{ formatCurrency(group.amountCents) }}</td></tr> }</tbody></table></details> } @else { <p class="chart-empty">Sem despesas no mês selecionado.</p> }</article>
           <article class="dashboard-widget card card-padding yearly-chart" data-widget-id="yearly" [attr.draggable]="editingWidgetOrder() ? 'true' : null" [attr.tabindex]="editingWidgetOrder() ? 0 : null" [class.widget-dragging]="draggedWidget() === 'yearly'" [style.--mobile-order]="widgetOrder('yearly')"><div class="section-heading"><div><h2>Saldo mensal</h2><p>{{ seriesPeriodLabel() }}</p></div></div>@if (visiblePeriodHasData()) { <app-chart type="bar" [labels]="seriesLabels()" [values]="seriesValues()" [accessibleLabel]="'Saldo mensal em ' + selectedYear()" /><details class="data-alternative"><summary>Ver dados em tabela</summary><table><thead><tr><th>Mês</th><th>Saldo</th></tr></thead><tbody>@for (point of series(); track point.month) { <tr><td>{{ months[point.month - 1] }}</td><td>{{ formatCurrency(point.amountCents) }}</td></tr> }</tbody></table></details> } @else { <p class="chart-empty">Ainda não existem movimentos neste ano.</p> }</article>
         </section>
         <section class="dashboard-widget rankings" data-widget-id="rankings" [attr.draggable]="editingWidgetOrder() ? 'true' : null" [attr.tabindex]="editingWidgetOrder() ? 0 : null" [class.widget-dragging]="draggedWidget() === 'rankings'" [style.--mobile-order]="widgetOrder('rankings')"><article class="card-flat ranking-block"><h2>Categorias com maior despesa</h2>@if (categoryGroups().length > 0) { <ol>@for (group of categoryGroups().slice(0, 5); track group.id) { <li><span><i [style.background]="group.color"></i>{{ group.name }}</span><strong>{{ formatCurrency(group.amountCents) }}</strong></li> }</ol> } @else { <p class="muted">Sem informação para este mês.</p> }</article><article class="card-flat ranking-block"><h2>Subcategorias com maior despesa</h2>@if (subcategoryGroups().length > 0) { <ol>@for (group of subcategoryGroups().slice(0, 5); track group.id) { <li><span>{{ group.name }}</span><strong>{{ formatCurrency(group.amountCents) }}</strong></li> }</ol> } @else { <p class="muted">Sem informação para este mês.</p> }</article></section>
@@ -168,10 +168,23 @@ export class DashboardComponent {
   readonly seriesLabels = computed(() => this.series().map((point) => point.label));
   readonly seriesValues = computed(() => this.series().map((point) => point.amountCents));
   readonly categoryGroups = computed(() => groupByCategory(this.monthExpenses(), this.store.categories()));
+  readonly categoryChartGroups = computed(() => {
+    const groups = this.categoryGroups();
+    const top = groups.slice(0, 3);
+    const remaining = groups.slice(3);
+    if (!remaining.length) return top;
+    return [...top, {
+      id: 'other-categories',
+      name: 'Outras categorias',
+      color: '#788277',
+      amountCents: remaining.reduce((total, group) => total + group.amountCents, 0),
+      count: remaining.reduce((total, group) => total + group.count, 0),
+    }];
+  });
   readonly subcategoryGroups = computed(() => groupBySubcategory(this.monthExpenses(), this.store.categories()));
-  readonly categoryLabels = computed(() => this.categoryGroups().map((group) => group.name));
-  readonly categoryValues = computed(() => this.categoryGroups().map((group) => group.amountCents));
-  readonly categoryColors = computed(() => this.categoryGroups().map((group) => group.color ?? '#68727d'));
+  readonly categoryLabels = computed(() => this.categoryChartGroups().map((group) => group.name));
+  readonly categoryValues = computed(() => this.categoryChartGroups().map((group) => group.amountCents));
+  readonly categoryColors = computed(() => this.categoryChartGroups().map((group) => group.color ?? '#68727d'));
   widgetOrder(id: string): number { return this.widgetOrderIds().indexOf(id); }
   toggleWidgetEditing(): void {
     this.editingWidgetOrder.update((editing) => !editing);

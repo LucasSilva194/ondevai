@@ -26,6 +26,7 @@ export class ChartComponent implements AfterViewInit, OnChanges, OnDestroy {
   @Input({ required: true }) values: number[] = [];
   @Input() colors: string[] = [];
   @Input() accessibleLabel = 'Gráfico de despesas';
+  @Input() showLegend = true;
   @ViewChild('canvas') private canvas?: ElementRef<HTMLCanvasElement>;
 
   private chart?: Chart;
@@ -71,7 +72,7 @@ export class ChartComponent implements AfterViewInit, OnChanges, OnDestroy {
         maintainAspectRatio: false,
         animation: { duration: matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 260 },
         plugins: {
-          legend: { display: this.type === 'doughnut', position: 'bottom', labels: { color: textColor, usePointStyle: true, boxWidth: 8, boxHeight: 8, padding: 16, font: { family: getComputedStyle(document.documentElement).fontFamily, size: 11 }, generateLabels: (chart) => {
+          legend: { display: this.type === 'doughnut' && this.showLegend, position: 'bottom', labels: { color: textColor, usePointStyle: true, boxWidth: 8, boxHeight: 8, padding: 16, font: { family: getComputedStyle(document.documentElement).fontFamily, size: 11 }, generateLabels: (chart) => {
             const defaultLabels = Chart.defaults.plugins.legend.labels.generateLabels?.(chart) ?? [];
             if (this.type !== 'doughnut') return defaultLabels;
             return defaultLabels.map((item) => {
