@@ -18,7 +18,7 @@ import { calculateBudgetSummary, expensesForMonth, MONTH_NAMES, previousMonth } 
           <p class="page-intro">Defina limites mensais por categoria e acompanhe o progresso sem perder o histórico.</p>
         </div>
         <div class="period-actions">
-          <div class="field"><label for="budget-month">Mês</label><input id="budget-month" type="month" [value]="selectedMonth()" (change)="setMonth($event)"></div>
+          <div class="field"><label for="budget-month">Mês</label><input id="budget-month" name="month" autocomplete="off" type="month" [value]="selectedMonth()" (change)="setMonth($event)"></div>
           <button class="btn btn-secondary" type="button" (click)="beginCopyReview()" [disabled]="store.operationPending()">Copiar mês anterior</button>
           <button class="btn btn-primary" type="button" (click)="openCreate()"><span>Novo limite</span><span class="button-symbol" aria-hidden="true">+</span></button>
         </div>
@@ -80,10 +80,10 @@ import { calculateBudgetSummary, expensesForMonth, MONTH_NAMES, previousMonth } 
           <form [formGroup]="budgetForm" (ngSubmit)="submit()" novalidate>
             <div class="form-grid">
               <div class="field"><label for="budget-category">Categoria *</label><select id="budget-category" formControlName="categoryId" required><option value="">Selecione</option>@for (category of formCategories(); track category.id) { <option [value]="category.id">{{ category.name }}{{ category.archived ? ' (arquivada)' : '' }}</option> }</select></div>
-              <div class="field"><label for="budget-amount">Limite em euros *</label><input id="budget-amount" type="text" inputmode="decimal" formControlName="amount" placeholder="0,00" required>@if (amountError()) { <p class="field-error">{{ amountError() }}</p> }</div>
+              <div class="field"><label for="budget-amount">Limite em euros *</label><input id="budget-amount" name="amount" autocomplete="off" type="text" inputmode="decimal" formControlName="amount" placeholder="0,00" required>@if (amountError()) { <p class="field-error">{{ amountError() }}</p> }</div>
             </div>
             @if (formError()) { <p class="form-message" role="alert">{{ formError() }}</p> }
-            <div class="button-row form-actions"><button class="btn btn-primary" type="submit" [disabled]="store.operationPending()">{{ store.operationPending() ? 'A guardar...' : 'Guardar orçamento' }}</button><button class="btn btn-secondary" type="button" (click)="closeForm()">Cancelar</button></div>
+            <div class="button-row form-actions"><button class="btn btn-primary" type="submit" [disabled]="store.operationPending()">{{ store.operationPending() ? 'A guardar…' : 'Guardar orçamento' }}</button><button class="btn btn-secondary" type="button" (click)="closeForm()">Cancelar</button></div>
           </form>
       </app-modal-shell>
     }

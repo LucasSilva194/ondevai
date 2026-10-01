@@ -19,10 +19,10 @@ import { parseMoneyToCents } from '../../../shared/utils/money.utils';
         </header>
         <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
           <div class="form-grid">
-            <div class="field"><label for="quick-expense-date">Data *</label><input id="quick-expense-date" type="date" formControlName="date" required></div>
+            <div class="field"><label for="quick-expense-date">Data *</label><input id="quick-expense-date" name="date" autocomplete="off" type="date" formControlName="date" required></div>
             <div class="field">
               <label for="quick-expense-amount">Valor em euros *</label>
-              <input id="quick-expense-amount" type="text" inputmode="decimal" formControlName="amount" placeholder="0,00" required>
+              <input id="quick-expense-amount" name="amount" autocomplete="off" type="text" inputmode="decimal" formControlName="amount" placeholder="0,00" required>
               @if (amountError()) { <p class="field-error">{{ amountError() }}</p> }
             </div>
             <div class="field">
@@ -43,16 +43,16 @@ import { parseMoneyToCents } from '../../../shared/utils/money.utils';
                     @for (subcategory of subcategories(); track subcategory.id) { <option [value]="subcategory.id">{{ subcategory.name }}</option> }
                   </select>
                 </div>
-                <div class="field"><label for="quick-expense-description">Descrição</label><input id="quick-expense-description" type="text" formControlName="description" maxlength="140" placeholder="Ex.: compras da semana"></div>
-                <div class="field"><label for="quick-expense-merchant">Comerciante</label><input id="quick-expense-merchant" type="text" formControlName="merchant" maxlength="100" placeholder="Ex.: mercearia"></div>
-                <div class="field"><label for="quick-expense-tags">Etiquetas</label><input id="quick-expense-tags" type="text" formControlName="tags" maxlength="329" placeholder="Ex.: casa, mensal"><p class="helper">Separe até 10 etiquetas por vírgulas.</p></div>
+                <div class="field"><label for="quick-expense-description">Descrição</label><input id="quick-expense-description" name="description" autocomplete="off" type="text" formControlName="description" maxlength="140" placeholder="Ex.: compras da semana"></div>
+                <div class="field"><label for="quick-expense-merchant">Comerciante</label><input id="quick-expense-merchant" name="merchant" autocomplete="off" type="text" formControlName="merchant" maxlength="100" placeholder="Ex.: mercearia"></div>
+                <div class="field"><label for="quick-expense-tags">Etiquetas</label><input id="quick-expense-tags" name="tags" autocomplete="off" type="text" formControlName="tags" maxlength="329" placeholder="Ex.: casa, mensal"><p class="helper">Separe até 10 etiquetas por vírgulas.</p></div>
                 <div class="field">
                   <label for="quick-expense-recurrence">Recorrência</label>
                   <select id="quick-expense-recurrence" formControlName="recurrenceType"><option value="none">Movimento pontual</option><option value="weekly">Semanal</option><option value="monthly">Mensal</option><option value="yearly">Anual</option></select>
                 </div>
                 @if (form.controls.recurrenceType.value !== 'none') {
-                  <div class="field"><label for="quick-expense-interval">Intervalo</label><input id="quick-expense-interval" type="number" min="1" max="99" formControlName="interval"></div>
-                  <div class="field"><label for="quick-expense-end">Data de fim</label><input id="quick-expense-end" type="date" formControlName="endDate" [min]="form.controls.date.value"></div>
+                  <div class="field"><label for="quick-expense-interval">Intervalo</label><input id="quick-expense-interval" name="interval" autocomplete="off" type="number" min="1" max="99" formControlName="interval"></div>
+                  <div class="field"><label for="quick-expense-end">Data de fim</label><input id="quick-expense-end" name="endDate" autocomplete="off" type="date" formControlName="endDate" [min]="form.controls.date.value"></div>
                   <div class="field"><label for="quick-expense-status">Estado</label><select id="quick-expense-status" formControlName="recurrenceStatus"><option value="active">Ativa</option><option value="paused">Pausada</option></select></div>
                 }
               </div>
@@ -60,7 +60,7 @@ import { parseMoneyToCents } from '../../../shared/utils/money.utils';
           </div>
           @if (formError()) { <p class="form-message" role="alert">{{ formError() }}</p> }
           <div class="button-row form-actions">
-            <button class="btn btn-primary" type="submit" [disabled]="store.operationPending()">{{ store.operationPending() ? 'A guardar...' : 'Guardar despesa' }}</button>
+            <button class="btn btn-primary" type="submit" [disabled]="store.operationPending()">{{ store.operationPending() ? 'A guardar…' : 'Guardar despesa' }}</button>
             <button class="btn btn-secondary" type="button" (click)="close()">Cancelar</button>
           </div>
         </form>
