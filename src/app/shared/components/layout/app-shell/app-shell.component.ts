@@ -71,6 +71,11 @@ import { ExpenseCreateModalComponent } from '../../../../features/expenses/compo
               <span><strong>A caminho</strong><small>Movimentos previstos nos próximos 30 dias</small></span>
               <app-icon class="mobile-menu-arrow" name="arrow-right" />
             </a>
+            <a routerLink="/orcamentos" routerLinkActive="active" (click)="mobileMenuOpen.set(false)">
+              <span class="mobile-menu-icon"><app-icon name="budgets" /></span>
+              <span><strong>Orçamentos</strong><small>Defina limites por categoria</small></span>
+              <app-icon class="mobile-menu-arrow" name="arrow-right" />
+            </a>
             <a routerLink="/relatorios" routerLinkActive="active" (click)="mobileMenuOpen.set(false)">
               <span class="mobile-menu-icon"><app-icon name="chart" /></span>
               <span><strong>Relatórios</strong><small>Tendências e exportação CSV</small></span>
@@ -152,7 +157,8 @@ export class AppShellComponent {
     { path: '/despesas', label: 'Despesas', shortLabel: 'Despesas', icon: 'expenses', primary: true },
     { path: '/a-caminho', label: 'A caminho', shortLabel: 'A caminho', icon: 'calendar', primary: false },
     { path: '/relatorios', label: 'Relatórios', shortLabel: 'Relatórios', icon: 'chart', primary: false },
-    { path: '/orcamentos', label: 'Orçamentos', shortLabel: 'Limites', icon: 'budgets', primary: true },
+    { path: '/orcamentos', label: 'Orçamentos', shortLabel: 'Limites', icon: 'budgets', primary: false },
+    { path: '/rendimentos', label: 'Rendimentos', shortLabel: 'Entradas', icon: 'income', primary: true },
     { path: '/poupancas', label: 'Poupanças', shortLabel: 'Poupar', icon: 'savings', primary: true },
     { path: '/categorias', label: 'Categorias', shortLabel: 'Categorias', icon: 'categories', primary: false },
     { path: '/dados-e-privacidade', label: 'Dados e privacidade', shortLabel: 'Dados', icon: 'data', primary: false },

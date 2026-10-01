@@ -26,7 +26,8 @@ import { expensesForMonth, MONTH_NAMES, sumExpenses } from '../../../shared/util
         <button class="btn btn-primary" type="button" (click)="openCreate()"><span>Nova despesa</span><span class="button-symbol" aria-hidden="true">+</span></button>
       </header>
 
-      <section class="filters card-flat" aria-label="Filtros de despesas">
+      <details class="filters card-flat">
+        <summary><span>Filtros</span><span class="filter-summary-meta">{{ filterSummary() }}</span></summary>
         <form [formGroup]="filterForm" class="filter-grid">
           <div class="field category-filter">
             <label for="filter-category">Filtrar por categoria</label>
@@ -37,53 +38,53 @@ import { expensesForMonth, MONTH_NAMES, sumExpenses } from '../../../shared/util
               }
             </select>
           </div>
-          <details class="advanced-filters">
-            <summary>Mais filtros</summary>
-            <div class="advanced-filter-grid">
-              <div class="field search-field">
-                <label for="expense-search">Descrição</label>
-                <input id="expense-search" name="search" autocomplete="off" type="search" formControlName="search" placeholder="Ex.: supermercado">
-              </div>
-              <div class="field">
-                <label for="expense-month">Mês</label>
-                <select id="expense-month" formControlName="month">
-                  <option value="">Todos</option>
-                  @for (month of months; track $index) { <option [value]="$index + 1">{{ month }}</option> }
-                </select>
-              </div>
-              <div class="field">
-                <label for="expense-year">Ano</label>
-                <select id="expense-year" formControlName="year">
-                  <option value="">Todos</option>
-                  @for (year of availableYears(); track year) { <option [value]="year">{{ year }}</option> }
-                </select>
-              </div>
-              <div class="field">
-                <label for="filter-subcategory">Subcategoria</label>
-                <select id="filter-subcategory" formControlName="subcategoryId">
-                  <option value="">Todas</option>
-                  @for (subcategory of filterSubcategories(); track subcategory.id) {
-                    <option [value]="subcategory.id">{{ subcategory.name }}</option>
-                  }
-                </select>
-              </div>
-            </div>
-          </details>
-        </form>
-        <div class="filter-footer">
-          <button class="text-button" type="button" (click)="clearFilters()">Limpar filtros</button>
-          <label class="sort-control">Ordenar
-            <select [value]="sortDirection()" (change)="setSortDirection($event)">
-              <option value="desc">Mais recentes</option>
-              <option value="asc">Mais antigas</option>
+          <div class="field search-field">
+            <label for="expense-search">Descrição</label>
+            <input id="expense-search" name="search" autocomplete="off" type="search" formControlName="search" placeholder="Ex.: supermercado">
+          </div>
+          <div class="field">
+            <label for="expense-month">Mês</label>
+            <select id="expense-month" formControlName="month">
+              <option value="">Todos</option>
+              @for (month of months; track $index) { <option [value]="$index + 1">{{ month }}</option> }
             </select>
-          </label>
-        </div>
-      </section>
+          </div>
+          <div class="field">
+            <label for="expense-year">Ano</label>
+            <select id="expense-year" formControlName="year">
+              <option value="">Todos</option>
+              @for (year of availableYears(); track year) { <option [value]="year">{{ year }}</option> }
+            </select>
+          </div>
+          <div class="field">
+            <label for="filter-subcategory">Subcategoria</label>
+            <select id="filter-subcategory" formControlName="subcategoryId">
+              <option value="">Todas</option>
+              @for (subcategory of filterSubcategories(); track subcategory.id) {
+                <option [value]="subcategory.id">{{ subcategory.name }}</option>
+              }
+            </select>
+          </div>
+          <div class="filter-footer">
+            <button class="text-button" type="button" (click)="clearFilters()">Limpar filtros</button>
+            <label class="sort-control">Ordenar
+              <select [value]="sortDirection()" (change)="setSortDirection($event)">
+                <option value="desc">Mais recentes</option>
+                <option value="asc">Mais antigas</option>
+              </select>
+            </label>
+          </div>
+        </form>
+      </details>
 
       <div class="results-summary" aria-live="polite">
         <span>{{ filteredExpenses().length }} {{ filteredExpenses().length === 1 ? 'despesa' : 'despesas' }}</span>
         <strong>Total: {{ formatCurrency(filteredTotal()) }}</strong>
+      </div>
+
+      <div class="view-switch" role="group" aria-label="Vista das despesas">
+        <button type="button" [attr.aria-pressed]="viewMode() === 'list'" (click)="setViewMode('list')">Lista</button>
+        <button type="button" [attr.aria-pressed]="viewMode() === 'calendar'" (click)="setViewMode('calendar')">Calendário</button>
       </div>
 
       @if (store.expenses().length === 0) {
@@ -91,6 +92,39 @@ import { expensesForMonth, MONTH_NAMES, sumExpenses } from '../../../shared/util
           <h2>Ainda não existem despesas</h2>
           <p>Adicione a primeira despesa para começar a perceber quanto gasta e em que categorias.</p>
           <button class="btn btn-primary" type="button" (click)="openCreate()">Adicionar despesa</button>
+        </section>
+      } @else if (viewMode() === 'calendar') {
+        <section class="calendar-view" aria-label="Despesas por dia">
+          <header class="calendar-header">
+            <button class="calendar-nav" type="button" aria-label="Mês anterior" (click)="moveCalendarMonth(-1)"><app-icon name="arrow-right" class="previous-month-icon" /></button>
+            <div><h2>{{ calendarMonthLabel() }}</h2><strong>{{ formatCurrency(filteredTotal()) }}</strong></div>
+            <button class="calendar-nav" type="button" aria-label="Mês seguinte" (click)="moveCalendarMonth(1)"><app-icon name="arrow-right" /></button>
+          </header>
+          <div class="calendar-grid">
+            @for (weekday of weekdays; track weekday) { <span class="calendar-weekday" aria-hidden="true">{{ weekday }}</span> }
+            @for (day of calendarDays(); track $index) {
+              @if (day) {
+                <button class="calendar-day" type="button" [class.has-spending]="day.total > 0" [class.is-selected]="day.date === selectedCalendarDate()" [attr.aria-pressed]="day.date === selectedCalendarDate()" [attr.aria-label]="calendarDayLabel(day)" (click)="selectCalendarDay(day.date)">
+                  <span class="calendar-day-number">{{ day.day }}</span>
+                  @if (day.total > 0) { <span class="calendar-day-total">{{ formatCurrency(day.total) }}</span> }
+                </button>
+              } @else { <span class="calendar-day-empty" aria-hidden="true"></span> }
+            }
+          </div>
+          <section class="selected-day" aria-live="polite">
+            <header><h3>{{ selectedDayLabel() }}</h3><strong>{{ formatCurrency(selectedDayTotal()) }}</strong></header>
+            @if (selectedDayExpenses().length) {
+              <div class="selected-day-list">
+                @for (expense of selectedDayExpenses(); track expense.occurrenceKey) {
+                  <article class="selected-day-row">
+                    <div><strong>{{ expense.merchant || expense.description || categoryName(expense.categoryId) }}</strong><span>{{ categoryName(expense.categoryId) }}</span></div>
+                    <strong>{{ formatCurrency(expense.amountCents) }}</strong>
+                    <button class="expense-icon-action" type="button" (click)="openEdit(expense)" [attr.aria-label]="'Editar despesa de ' + (expense.merchant || expense.description || categoryName(expense.categoryId))"><app-icon name="edit" /></button>
+                  </article>
+                }
+              </div>
+            } @else { <p class="selected-day-empty">Sem despesas nesta data.</p> }
+          </section>
         </section>
       } @else if (filteredExpenses().length === 0) {
         <section class="empty-state">
@@ -239,6 +273,9 @@ export class ExpensesComponent {
   readonly amountError = signal<string | null>(null);
   readonly formError = signal<string | null>(null);
   readonly sortDirection = signal<'asc' | 'desc'>('desc');
+  readonly viewMode = signal<'list' | 'calendar'>('list');
+  readonly selectedCalendarDate = signal(todayDateString());
+  readonly weekdays = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
 
   readonly filterForm = this.formBuilder.nonNullable.group({
     search: [''], month: [''], year: [''], categoryId: [''], subcategoryId: [''],
@@ -259,7 +296,7 @@ export class ExpensesComponent {
   readonly filterValue = toSignal(this.filterForm.valueChanges.pipe(startWith(this.filterForm.getRawValue())), {
     initialValue: this.filterForm.getRawValue(),
   });
-  readonly availableYears = computed(() => [...new Set([new Date().getFullYear(), ...this.store.expenses().map((expense) => Number(expense.date.slice(0, 4)))])].sort((a, b) => b - a));
+  readonly availableYears = computed(() => [...new Set([new Date().getFullYear(), Number(this.filterValue().year), ...this.store.expenses().map((expense) => Number(expense.date.slice(0, 4)))])].filter(Boolean).sort((a, b) => b - a));
   readonly filterSubcategories = computed(() => {
     const categoryId = this.filterValue().categoryId;
     if (categoryId) return this.store.categories().find((category) => category.id === categoryId)?.subcategories ?? [];
@@ -290,6 +327,31 @@ export class ExpensesComponent {
       .sort((a, b) => this.sortDirection() === 'desc' ? b.date.localeCompare(a.date) : a.date.localeCompare(b.date));
   });
   readonly filteredTotal = computed(() => sumExpenses(this.filteredExpenses()));
+  readonly calendarMonthLabel = computed(() => {
+    const { month, year } = this.filterValue();
+    if (!month || !year) return '';
+    return new Intl.DateTimeFormat('pt-PT', { month: 'long', year: 'numeric' }).format(new Date(Number(year), Number(month) - 1, 1));
+  });
+  readonly calendarDays = computed(() => {
+    const { month, year } = this.filterValue();
+    if (!month || !year) return [];
+    const monthNumber = Number(month);
+    const yearNumber = Number(year);
+    const daysInMonth = new Date(yearNumber, monthNumber, 0).getDate();
+    const offset = (new Date(yearNumber, monthNumber - 1, 1).getDay() + 6) % 7;
+    const totals = new Map<string, number>();
+    for (const expense of this.filteredExpenses()) totals.set(expense.date, (totals.get(expense.date) ?? 0) + expense.amountCents);
+    return [
+      ...Array.from({ length: offset }, () => null),
+      ...Array.from({ length: daysInMonth }, (_, index) => {
+        const day = index + 1;
+        const date = `${yearNumber}-${String(monthNumber).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        return { date, day, total: totals.get(date) ?? 0 };
+      }),
+    ];
+  });
+  readonly selectedDayExpenses = computed(() => this.filteredExpenses().filter((expense) => expense.date === this.selectedCalendarDate()));
+  readonly selectedDayTotal = computed(() => sumExpenses(this.selectedDayExpenses()));
   readonly expenseGroups = computed(() => {
     const groups = new Map<string, ExpenseOccurrence[]>();
     for (const expense of this.filteredExpenses()) groups.set(expense.date, [...(groups.get(expense.date) ?? []), expense]);
@@ -309,6 +371,11 @@ export class ExpensesComponent {
   readonly recentTags = computed(() => [...new Set(this.store.expenses().flatMap((expense) => expense.tags ?? []))].slice(0, 6));
 
   constructor() {
+    this.filterForm.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((filters) => {
+      if (this.viewMode() !== 'calendar' || !filters.month || !filters.year) return;
+      const monthStart = `${filters.year}-${String(filters.month).padStart(2, '0')}-01`;
+      if (!this.selectedCalendarDate().startsWith(monthStart.slice(0, 7))) this.selectedCalendarDate.set(monthStart);
+    });
     this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
       if (params.get('nova') === '1') this.openCreate(false);
       if (params.has('busca') || params.has('categoria') || params.has('subcategoria')) {
@@ -438,7 +505,50 @@ export class ExpensesComponent {
   }
 
   clearFilters(): void {
-    this.filterForm.reset({ search: '', month: '', year: '', categoryId: '', subcategoryId: '' });
+    const { month, year } = this.filterValue();
+    this.filterForm.reset({ search: '', month: this.viewMode() === 'calendar' ? month : '', year: this.viewMode() === 'calendar' ? year : '', categoryId: '', subcategoryId: '' });
+  }
+
+  setViewMode(mode: 'list' | 'calendar'): void {
+    if (mode === 'calendar' && !this.exactPeriodSelected()) {
+      const now = new Date();
+      const month = String(now.getMonth() + 1);
+      const year = this.filterValue().year || String(now.getFullYear());
+      this.filterForm.patchValue({ month, year });
+      this.selectedCalendarDate.set(`${year}-${month.padStart(2, '0')}-01`);
+    }
+    this.viewMode.set(mode);
+    if (mode === 'calendar') {
+      const { month, year } = this.filterValue();
+      const today = todayDateString();
+      this.selectedCalendarDate.set(today.startsWith(`${year}-${String(month).padStart(2, '0')}`) ? today : `${year}-${String(month).padStart(2, '0')}-01`);
+    }
+  }
+
+  moveCalendarMonth(offset: number): void {
+    const { month, year } = this.filterValue();
+    const next = new Date(Number(year), Number(month) - 1 + offset, 1);
+    const nextMonth = String(next.getMonth() + 1);
+    const nextYear = String(next.getFullYear());
+    this.filterForm.patchValue({ month: nextMonth, year: nextYear });
+    this.selectedCalendarDate.set(`${nextYear}-${nextMonth.padStart(2, '0')}-01`);
+  }
+
+  selectCalendarDay(date: string): void { this.selectedCalendarDate.set(date); }
+  calendarDayLabel(day: { date: string; total: number }): string {
+    const date = new Intl.DateTimeFormat('pt-PT', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date(`${day.date}T12:00:00`));
+    return day.total ? `${date}, ${formatCurrency(day.total)} gastos` : `${date}, sem despesas`;
+  }
+  selectedDayLabel(): string { return new Intl.DateTimeFormat('pt-PT', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date(`${this.selectedCalendarDate()}T12:00:00`)); }
+  filterSummary(): string {
+    const filters = this.filterValue();
+    const active: string[] = [];
+    const search = filters.search?.trim() ?? '';
+    if (filters.categoryId) active.push(this.categoryName(filters.categoryId));
+    if (filters.subcategoryId) active.push(this.filterSubcategories().find((item) => item.id === filters.subcategoryId)?.name ?? 'Subcategoria');
+    if (filters.month || filters.year) active.push([filters.month ? this.months[Number(filters.month) - 1] : '', filters.year].filter(Boolean).join(' '));
+    if (search) active.push(`“${search}”`);
+    return active.join(' / ') || 'Categoria, período e pesquisa';
   }
 
   setSortDirection(event: Event): void {

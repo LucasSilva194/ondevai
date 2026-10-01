@@ -104,6 +104,12 @@ export const appRoutes: Routes = [
         loadComponent: () => import('./features/savings/pages/savings.component').then((module) => module.SavingsComponent),
       },
       {
+        path: 'rendimentos',
+        data: { incomeOnly: true },
+        title: 'Rendimentos | OndeVai',
+        loadComponent: () => import('./features/savings/pages/savings.component').then((module) => module.SavingsComponent),
+      },
+      {
         path: 'categorias',
         title: 'Categorias | OndeVai',
         loadComponent: () => import('./features/categories/pages/categories.component').then((module) => module.CategoriesComponent),
