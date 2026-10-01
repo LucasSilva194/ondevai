@@ -543,10 +543,11 @@ export class ExpensesComponent {
   filterSummary(): string {
     const filters = this.filterValue();
     const active: string[] = [];
+    const search = filters.search?.trim() ?? '';
     if (filters.categoryId) active.push(this.categoryName(filters.categoryId));
     if (filters.subcategoryId) active.push(this.filterSubcategories().find((item) => item.id === filters.subcategoryId)?.name ?? 'Subcategoria');
     if (filters.month || filters.year) active.push([filters.month ? this.months[Number(filters.month) - 1] : '', filters.year].filter(Boolean).join(' '));
-    if (filters.search.trim()) active.push(`“${filters.search.trim()}”`);
+    if (search) active.push(`“${search}”`);
     return active.join(' / ') || 'Categoria, período e pesquisa';
   }
 
