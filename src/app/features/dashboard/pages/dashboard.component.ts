@@ -17,6 +17,7 @@ import {
   incomesForMonth,
   MonthComparison,
   monthlyBalanceSeries,
+  netSavingsContributionsForMonth,
   monthKey,
   MONTH_NAMES,
   sumExpenses,
@@ -49,8 +50,8 @@ import {
       @else if (isPartialPeriod()) { <p class="period-note" role="status"><span class="desktop-note">Mês em curso: os valores e comparações são parciais até hoje.</span><span class="mobile-note">Mês em curso · valores parciais</span></p> }
 
       <section class="metrics" aria-label="Resumo do período">
-        <article class="metric-primary" [class.negative]="monthBalance() < 0"><div class="metric-core"><div class="metric-label"><span class="metric-icon" aria-hidden="true"><app-icon name="balance" /></span><span>Saldo em {{ monthName() }}</span></div><strong>{{ formatCurrency(monthBalance()) }}</strong><small>Rendimentos menos despesas</small></div></article>
-        <article class="metric"><div class="metric-core"><div class="metric-label"><span class="metric-icon" aria-hidden="true"><app-icon name="income" /></span><span>Entradas</span></div><strong>{{ formatCurrency(monthIncomeTotal()) }}</strong><small>{{ monthIncomes().length }} {{ monthIncomes().length === 1 ? 'rendimento' : 'rendimentos' }}</small></div></article>
+        <article class="metric-primary" [class.negative]="monthBalance() < 0"><div class="metric-core"><div class="metric-label"><span class="metric-icon" aria-hidden="true"><app-icon name="balance" /></span><span>Saldo em {{ monthName() }}</span></div><strong>{{ formatCurrency(monthBalance()) }}</strong><small>Rendimentos menos despesas e reforços</small></div></article>
+        <a class="metric metric-action" routerLink="/poupancas" [queryParams]="{ nova: 1 }"><div class="metric-core"><div class="metric-label"><span class="metric-icon" aria-hidden="true"><app-icon name="income" /></span><span>Entradas</span></div><strong>{{ formatCurrency(monthIncomeTotal()) }}</strong><small>{{ monthIncomes().length }} {{ monthIncomes().length === 1 ? 'rendimento' : 'rendimentos' }}</small></div></a>
         <article class="metric"><div class="metric-core"><div class="metric-label"><span class="metric-icon" aria-hidden="true"><app-icon name="expenses" /></span><span>Saídas</span></div><strong>{{ formatCurrency(monthExpenseTotal()) }}</strong><small>{{ monthExpenses().length }} {{ monthExpenses().length === 1 ? 'despesa' : 'despesas' }}</small></div></article>
       </section>
 
@@ -96,7 +97,7 @@ import {
         </section>
       }
 
-      @if (store.expenses().length === 0 && store.monthlyIncomes().length === 0) {
+      @if (store.expenses().length === 0 && store.monthlyIncomes().length === 0 && !hasSavingsCashFlow()) {
         <section class="empty-state dashboard-empty"><h2>A visão geral começa com o primeiro movimento</h2><p>Adicione um rendimento ou uma despesa para começar a acompanhar o saldo mensal.</p><div class="button-row empty-actions"><a class="btn btn-primary" routerLink="/poupancas">Adicionar rendimento</a><a class="btn btn-secondary" routerLink="/despesas" [queryParams]="{ nova: 1 }">Adicionar despesa</a></div></section>
       } @else {
         <section class="chart-layout">
@@ -126,6 +127,7 @@ export class DashboardComponent {
   readonly availableYears = computed(() => {
     const years = new Set(this.store.expenses().map((expense) => Number(expense.date.slice(0, 4))));
     this.store.monthlyIncomes().forEach((income) => years.add(Number(income.date.slice(0, 4))));
+    this.store.savingsTransactions().filter((item) => item.type !== 'opening').forEach((item) => years.add(Number(item.effectiveDate.slice(0, 4))));
     years.add(new Date().getFullYear());
     years.add(this.selectedYear());
     years.add(this.selectedYear() - 1);
@@ -141,9 +143,10 @@ export class DashboardComponent {
   readonly monthIncomes = computed(() => incomesForMonth(this.store.monthlyIncomes(), this.selectedYear(), this.selectedMonth(), this.store.recurrenceExceptions()).filter((item) => !this.isPartialPeriod() || item.date <= todayDateString()));
   readonly monthExpenseTotal = computed(() => sumExpenses(this.monthExpenses()));
   readonly monthIncomeTotal = computed(() => sumIncomes(this.monthIncomes()));
-  readonly monthBalance = computed(() => this.monthIncomeTotal() - this.monthExpenseTotal());
-  readonly comparisons = computed(() => comparePeriods(this.store.expenses(), this.store.monthlyIncomes(), this.store.recurrenceExceptions(), this.selectedYear(), this.selectedMonth(), this.isPartialPeriod() ? Number(todayDateString().slice(-2)) : undefined));
-  readonly threeMonthAverage = computed(() => averagePreviousThreeMonths(this.store.expenses(), this.store.monthlyIncomes(), this.store.recurrenceExceptions(), this.selectedYear(), this.selectedMonth()));
+  readonly monthSavingsContributions = computed(() => netSavingsContributionsForMonth(this.store.savingsTransactions(), this.selectedYear(), this.selectedMonth(), this.isPartialPeriod() ? Number(todayDateString().slice(-2)) : undefined));
+  readonly monthBalance = computed(() => this.monthIncomeTotal() - this.monthExpenseTotal() - this.monthSavingsContributions());
+  readonly comparisons = computed(() => comparePeriods(this.store.expenses(), this.store.monthlyIncomes(), this.store.recurrenceExceptions(), this.selectedYear(), this.selectedMonth(), this.isPartialPeriod() ? Number(todayDateString().slice(-2)) : undefined, this.store.savingsTransactions()));
+  readonly threeMonthAverage = computed(() => averagePreviousThreeMonths(this.store.expenses(), this.store.monthlyIncomes(), this.store.recurrenceExceptions(), this.selectedYear(), this.selectedMonth(), this.store.savingsTransactions()));
   readonly selectedBudgets = computed(() => this.store.monthlyBudgets().filter((budget) => budget.month === this.selectedKey()));
   readonly budgetSummary = computed(() => calculateBudgetSummary(this.selectedBudgets(), this.monthExpenses(), this.store.categories()));
   readonly plannedBudgetRemaining = computed(() => this.budgetSummary().rows.reduce((total, row) => total + row.remainingCents, 0));
@@ -156,11 +159,12 @@ export class DashboardComponent {
       ...materializeIncomes(this.store.monthlyIncomes(), this.store.recurrenceExceptions(), today, endDate).map((item) => ({ ...item, itemType: 'income' as const })),
     ].sort((a, b) => a.date.localeCompare(b.date)).slice(0, 3);
   });
-  readonly insights = computed(() => generateInsights({ year: this.selectedYear(), month: this.selectedMonth(), expenses: this.store.expenses(), incomes: this.store.monthlyIncomes(), categories: this.store.categories(), budgets: this.store.monthlyBudgets(), exceptions: this.store.recurrenceExceptions(), savingsGoals: this.store.savingsGoals() }));
+  readonly insights = computed(() => generateInsights({ year: this.selectedYear(), month: this.selectedMonth(), expenses: this.store.expenses(), incomes: this.store.monthlyIncomes(), categories: this.store.categories(), budgets: this.store.monthlyBudgets(), exceptions: this.store.recurrenceExceptions(), savingsGoals: this.store.savingsGoals(), savingsTransactions: this.store.savingsTransactions() }));
   readonly visibleMonthLimit = computed(() => { const now = new Date(); if (this.selectedYear() < now.getFullYear()) return 12; if (this.selectedYear() > now.getFullYear()) return 0; return now.getMonth() + 1; });
-  readonly series = computed(() => monthlyBalanceSeries(this.store.expenses(), this.store.monthlyIncomes(), this.selectedYear(), this.visibleMonthLimit(), this.store.recurrenceExceptions(), this.selectedYear() === new Date().getFullYear() ? todayDateString() : undefined));
-  readonly visiblePeriodHasData = computed(() => { const limit = this.visibleMonthLimit(); return Array.from({ length: limit }, (_, index) => index + 1).some((month) => expensesForMonth(this.store.expenses(), this.selectedYear(), month, this.store.recurrenceExceptions()).length > 0 || incomesForMonth(this.store.monthlyIncomes(), this.selectedYear(), month, this.store.recurrenceExceptions()).length > 0); });
-  readonly seriesPeriodLabel = computed(() => { const limit = this.visibleMonthLimit(); if (limit === 0) return `Ainda não existem meses decorridos em ${this.selectedYear()}`; if (limit === 12) return `Rendimentos menos despesas ao longo de ${this.selectedYear()}`; return `Rendimentos menos despesas até ${this.months[limit - 1]} de ${this.selectedYear()}`; });
+  readonly series = computed(() => monthlyBalanceSeries(this.store.expenses(), this.store.monthlyIncomes(), this.selectedYear(), this.visibleMonthLimit(), this.store.recurrenceExceptions(), this.selectedYear() === new Date().getFullYear() ? todayDateString() : undefined, this.store.savingsTransactions()));
+  readonly hasSavingsCashFlow = computed(() => this.store.savingsTransactions().some((item) => item.type !== 'opening'));
+  readonly visiblePeriodHasData = computed(() => { const limit = this.visibleMonthLimit(); return Array.from({ length: limit }, (_, index) => index + 1).some((month) => expensesForMonth(this.store.expenses(), this.selectedYear(), month, this.store.recurrenceExceptions()).length > 0 || incomesForMonth(this.store.monthlyIncomes(), this.selectedYear(), month, this.store.recurrenceExceptions()).length > 0 || this.store.savingsTransactions().some((item) => item.type !== 'opening' && item.effectiveDate.startsWith(`${this.selectedYear()}-${String(month).padStart(2, '0')}-`) && (!this.isPartialPeriod() || item.effectiveDate <= todayDateString()))); });
+  readonly seriesPeriodLabel = computed(() => { const limit = this.visibleMonthLimit(); if (limit === 0) return `Ainda não existem meses decorridos em ${this.selectedYear()}`; if (limit === 12) return `Rendimentos, despesas e poupanças em ${this.selectedYear()}`; return `Rendimentos, despesas e poupanças até ${this.months[limit - 1]} de ${this.selectedYear()}`; });
   readonly seriesLabels = computed(() => this.series().map((point) => point.label));
   readonly seriesValues = computed(() => this.series().map((point) => point.amountCents));
   readonly categoryGroups = computed(() => groupByCategory(this.monthExpenses(), this.store.categories()));

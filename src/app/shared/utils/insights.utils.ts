@@ -5,6 +5,7 @@ import {
   MonthlyIncome,
   RecurrenceException,
   SavingsGoal,
+  SavingsTransaction,
 } from '../../models/domain.models';
 import { materializeExpenses } from './recurrence.utils';
 import {
@@ -18,6 +19,7 @@ import {
   previousMonth,
   sumExpenses,
   sumIncomes,
+  netSavingsContributionsForMonth,
 } from './statistics.utils';
 
 export type InsightTone = 'critical' | 'warning' | 'positive' | 'informative';
@@ -39,6 +41,7 @@ export interface InsightInput {
   budgets: readonly MonthlyBudget[];
   exceptions: readonly RecurrenceException[];
   savingsGoals: readonly SavingsGoal[];
+  savingsTransactions?: readonly SavingsTransaction[];
   today?: string;
 }
 
@@ -171,20 +174,21 @@ export function savingsPlanInsights(input: InsightInput): Insight[] {
 export function balanceInsights(input: InsightInput): Insight[] {
   const currentExpenses = sumExpenses(expenseOccurrences(input, input.year, input.month));
   const currentIncomes = sumIncomes(incomeOccurrences(input, input.year, input.month));
-  const balance = currentIncomes - currentExpenses;
+  const todayForComparison = input.today ?? new Date().toISOString();
+  const partialDay = input.year === Number(todayForComparison.slice(0, 4)) && input.month === Number(todayForComparison.slice(5, 7)) ? Number(todayForComparison.slice(8, 10)) : undefined;
+  const savings = netSavingsContributionsForMonth(input.savingsTransactions ?? [], input.year, input.month, partialDay);
+  const balance = currentIncomes - currentExpenses - savings;
   const insights: Insight[] = [];
   if (balance < 0) {
     insights.push({
       id: 'negative-balance',
       title: 'O saldo do mês está negativo',
-      explanation: `As despesas excedem os rendimentos em ${formatEuros(Math.abs(balance))}.`,
+      explanation: `As despesas e os reforços líquidos excedem os rendimentos em ${formatEuros(Math.abs(balance))}.`,
       tone: 'critical',
       priority: 96,
     });
   }
-  const todayForComparison = input.today ?? new Date().toISOString();
-  const partialDay = input.year === Number(todayForComparison.slice(0, 4)) && input.month === Number(todayForComparison.slice(5, 7)) ? Number(todayForComparison.slice(8, 10)) : undefined;
-  const comparison = comparePeriods(input.expenses, input.incomes, input.exceptions, input.year, input.month, partialDay).balance;
+  const comparison = comparePeriods(input.expenses, input.incomes, input.exceptions, input.year, input.month, partialDay, input.savingsTransactions ?? []).balance;
   if (comparison.previousCents !== 0 && comparison.differenceCents >= 5_000
     && (comparison.differenceCents / Math.abs(comparison.previousCents)) * 100 >= 10) {
     insights.push({

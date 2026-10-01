@@ -6,6 +6,7 @@ import {
   MonthlyBudget,
   MonthlyIncome,
   RecurrenceException,
+  SavingsTransaction,
 } from '../../models/domain.models';
 import { materializeExpenses, materializeIncomes } from './recurrence.utils';
 
@@ -88,6 +89,20 @@ export function sumExpenses(expenses: readonly Pick<Expense, 'amountCents'>[]): 
 
 export function sumIncomes(incomes: readonly Pick<MonthlyIncome, 'amountCents'>[]): number {
   return incomes.reduce((total, income) => total + income.amountCents, 0);
+}
+
+export function netSavingsContributionsForMonth(
+  transactions: readonly SavingsTransaction[],
+  year: number,
+  month: number,
+  throughDay?: number,
+): number {
+  const prefix = `${monthKey(year, month)}-`;
+  return transactions.reduce((total, transaction) => {
+    if (transaction.type === 'opening' || !transaction.effectiveDate.startsWith(prefix)
+      || (throughDay !== undefined && Number(transaction.effectiveDate.slice(-2)) > throughDay)) return total;
+    return total + (transaction.type === 'deposit' ? transaction.amountCents : -transaction.amountCents);
+  }, 0);
 }
 
 export function expensesForMonth(
@@ -196,6 +211,7 @@ export function comparePeriods(
   year: number,
   month: number,
   throughDay?: number,
+  savingsTransactions: readonly SavingsTransaction[] = [],
 ): PeriodComparisons {
   const previous = previousMonth(year, month);
   const inPartialWindow = <T extends { date: string }>(items: readonly T[]): T[] => throughDay === undefined
@@ -205,10 +221,12 @@ export function comparePeriods(
   const previousExpenses = sumExpenses(inPartialWindow(expensesForMonth(expenses, previous.year, previous.month, exceptions)));
   const currentIncomes = sumIncomes(inPartialWindow(incomesForMonth(incomes, year, month, exceptions)));
   const previousIncomes = sumIncomes(inPartialWindow(incomesForMonth(incomes, previous.year, previous.month, exceptions)));
+  const currentSavings = netSavingsContributionsForMonth(savingsTransactions, year, month, throughDay);
+  const previousSavings = netSavingsContributionsForMonth(savingsTransactions, previous.year, previous.month, throughDay);
   return {
     expenses: compareAmounts(currentExpenses, previousExpenses),
     incomes: compareAmounts(currentIncomes, previousIncomes),
-    balance: compareAmounts(currentIncomes - currentExpenses, previousIncomes - previousExpenses),
+    balance: compareAmounts(currentIncomes - currentExpenses - currentSavings, previousIncomes - previousExpenses - previousSavings),
   };
 }
 
@@ -218,19 +236,24 @@ export function averagePreviousThreeMonths(
   exceptions: readonly RecurrenceException[],
   year: number,
   month: number,
+  savingsTransactions: readonly SavingsTransaction[] = [],
 ): ThreeMonthAverage | null {
-  const periods: Array<{ expenses: number; incomes: number }> = [];
+  const periods: Array<{ expenses: number; incomes: number; savings: number }> = [];
   let cursor = { year, month };
   for (let index = 0; index < 3; index += 1) {
     cursor = previousMonth(cursor.year, cursor.month);
     const expenseOccurrences = expensesForMonth(expenses, cursor.year, cursor.month, exceptions);
     const incomeOccurrences = incomesForMonth(incomes, cursor.year, cursor.month, exceptions);
-    if (expenseOccurrences.length === 0 && incomeOccurrences.length === 0) return null;
-    periods.push({ expenses: sumExpenses(expenseOccurrences), incomes: sumIncomes(incomeOccurrences) });
+    const key = `${monthKey(cursor.year, cursor.month)}-`;
+    const savings = netSavingsContributionsForMonth(savingsTransactions, cursor.year, cursor.month);
+    const hasSavingsActivity = savingsTransactions.some((item) => item.type !== 'opening' && item.effectiveDate.startsWith(key));
+    if (expenseOccurrences.length === 0 && incomeOccurrences.length === 0 && !hasSavingsActivity) return null;
+    periods.push({ expenses: sumExpenses(expenseOccurrences), incomes: sumIncomes(incomeOccurrences), savings });
   }
   const expensesCents = Math.round(periods.reduce((total, period) => total + period.expenses, 0) / 3);
   const incomesCents = Math.round(periods.reduce((total, period) => total + period.incomes, 0) / 3);
-  return { expensesCents, incomesCents, balanceCents: incomesCents - expensesCents };
+  const balanceCents = Math.round(periods.reduce((total, period) => total + period.incomes - period.expenses - period.savings, 0) / 3);
+  return { expensesCents, incomesCents, balanceCents };
 }
 
 export function monthlySeries(
@@ -252,6 +275,7 @@ export function monthlyBalanceSeries(
   throughMonth = 12,
   exceptions: readonly RecurrenceException[] = [],
   asOfDate?: string,
+  savingsTransactions: readonly SavingsTransaction[] = [],
 ): MonthPoint[] {
   const visibleMonths = Math.max(0, Math.min(12, throughMonth));
   return MONTH_NAMES.slice(0, visibleMonths).map((label, index) => {
@@ -259,7 +283,8 @@ export function monthlyBalanceSeries(
     const partial = asOfDate?.startsWith(`${year}-${String(month).padStart(2, '0')}`) ?? false;
     const monthExpenses = expensesForMonth(expenses, year, month, exceptions).filter((item) => !partial || item.date <= asOfDate!);
     const monthIncomes = incomesForMonth(incomes, year, month, exceptions).filter((item) => !partial || item.date <= asOfDate!);
-    return { month, label: label.slice(0, 3), amountCents: sumIncomes(monthIncomes) - sumExpenses(monthExpenses) };
+    const savings = netSavingsContributionsForMonth(savingsTransactions, year, month, partial ? Number(asOfDate!.slice(-2)) : undefined);
+    return { month, label: label.slice(0, 3), amountCents: sumIncomes(monthIncomes) - sumExpenses(monthExpenses) - savings };
   });
 }
 
