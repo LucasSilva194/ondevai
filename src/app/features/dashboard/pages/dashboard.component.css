@@ -16,23 +16,16 @@
 .period-note { margin: -24px 0 24px; padding: 13px 16px; border: 1px solid var(--accent-border); border-radius: 16px; background: var(--accent-soft); color: var(--accent-strong); font-size: .84rem; }
 
 .metrics { display: grid; grid-template-columns: 1.5fr 0.82fr 0.9fr; gap: 18px; margin-bottom: 22px; }
-.metric-primary, .metric { padding: 5px; border: 1px solid color-mix(in srgb, var(--border) 64%, transparent); border-radius: var(--radius-card); background: var(--bezel); box-shadow: var(--shadow-soft); transition: transform var(--motion), box-shadow var(--motion); }
+.metric-primary, .metric { padding: 5px; border: 1px solid color-mix(in srgb, var(--border) 64%, transparent); border-radius: var(--radius-card); background: var(--bezel); box-shadow: var(--shadow-soft); }
 .metric-action { display: block; color: inherit; text-decoration: none; }
-.metric-action-indicator { width: 29px; height: 29px; display: grid; place-items: center; flex: none; margin-left: auto; border: 1px solid var(--accent-border); border-radius: 9px; background: var(--accent-soft); color: var(--accent-strong); transition: background-color 160ms ease, color 160ms ease; }
-.metric-action-indicator app-icon { width: 15px; height: 15px; }
-@media (hover: hover) and (pointer: fine) {
-  .metric-action:hover .metric-action-indicator { background: var(--accent); color: var(--on-accent); }
-}
-.metric-primary:hover, .metric:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
+.metric-action-indicator { width: 29px; height: 29px; display: grid; place-items: center; flex: none; margin-left: auto; border-radius: 9px; background: var(--accent-soft); color: var(--accent-strong); }
 .metric-core { position: relative; min-height: 160px; overflow: hidden; padding: 27px; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid var(--inner-stroke); border-radius: var(--radius-inner); background: var(--surface-raised); }
 .metric-primary .metric-core { min-height: 190px; background: var(--accent); color: var(--on-accent); }
 .metric-primary.negative .metric-core { background: var(--danger); }
-.metric-primary .metric-core::after { position: absolute; width: 190px; height: 190px; right: -62px; bottom: -88px; border: 38px solid color-mix(in srgb, var(--on-accent) 9%, transparent); border-radius: 50%; content: ""; }
 .metric-core > * { position: relative; z-index: 1; }
 .metric-label { display: flex; align-items: center; gap: 9px; color: var(--text-muted); font-size: 0.78rem; font-weight: 720; text-transform: uppercase; letter-spacing: 0.055em; }
 .metric-primary .metric-label { color: color-mix(in srgb, var(--on-accent) 78%, transparent); }
 .metric-icon { width: 29px; height: 29px; display: grid; place-items: center; border-radius: 10px; background: var(--surface-subtle); color: var(--accent-strong); }
-.metric-icon app-icon { width: 15px; height: 15px; }
 .metric-primary .metric-icon { background: color-mix(in srgb, var(--on-accent) 13%, transparent); color: currentColor; }
 .metric-primary small { width: max-content; padding: 6px 10px; border-radius: 999px; background: color-mix(in srgb, var(--on-accent) 12%, transparent); color: color-mix(in srgb, var(--on-accent) 84%, transparent); }
 .metric strong, .metric-primary strong { font-size: clamp(1.85rem, 3.4vw, 3.35rem); line-height: 1; letter-spacing: -0.058em; font-weight: 680; font-variant-numeric: tabular-nums; }
@@ -59,13 +52,13 @@
 .budget-mini-stats span { display: grid; gap: 4px; padding: 10px 12px; border-radius: 14px; background: var(--surface-subtle); color: var(--text-muted); font-size: .72rem; }
 .budget-mini-stats strong { color: var(--text); font-size: .92rem; }
 .insight-grid { display: grid; grid-template-columns: repeat(5, minmax(180px, 1fr)); gap: 12px; overflow-x: auto; padding-bottom: 6px; }
-.insight-card { min-height: 190px; padding: 20px; border: 5px solid var(--bezel); border-radius: 22px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--border); }
+.insight-card { min-height: 190px; padding: 20px; border-radius: 22px; background: var(--surface); }
 .insight-card > span { color: var(--text-muted); font-size: .65rem; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
 .insight-card h3 { margin-top: 24px; }
 .insight-card p { margin: 9px 0 0; color: var(--text-soft); font-size: .82rem; line-height: 1.55; }
-.insight-card.critical { box-shadow: inset 0 0 0 1px var(--danger-border); }
-.insight-card.warning { box-shadow: inset 0 0 0 1px var(--warning); }
-.insight-card.positive { box-shadow: inset 0 0 0 1px var(--accent-border); background: var(--accent-soft); }
+.insight-card.critical { background: var(--danger-soft); }
+.insight-card.warning { background: var(--warning-soft); }
+.insight-card.positive { background: var(--accent-soft); }
 
 .section-heading { min-height: 62px; margin-bottom: 18px; }
 .chart-layout { display: contents; }
@@ -83,13 +76,11 @@ th, td { padding: 10px 5px; border-bottom: 1px solid var(--border); text-align: 
 th:last-child, td:last-child { text-align: right; }
 
 .rankings { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
-.ranking-block { padding: 32px; transition: transform var(--motion), box-shadow var(--motion); }
-.ranking-block:hover { transform: translateY(-3px); box-shadow: inset 0 0 0 1px var(--inner-stroke), var(--shadow); }
-.ranking-block ol { padding: 0; margin: 21px 0 0; list-style: none; counter-reset: ranking; }
-.ranking-block li { min-height: 48px; display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 11px 0; border-bottom: 1px solid var(--border); counter-increment: ranking; }
+.ranking-block { padding: 32px; }
+.ranking-block ol { padding-left: 1.5em; margin: 21px 0 0; }
+.ranking-block li { min-height: 48px; display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 11px 0; border-bottom: 1px solid var(--border); }
 .ranking-block li:last-child { border-bottom: 0; }
 .ranking-block li span { display: flex; align-items: center; gap: 9px; color: var(--text-soft); }
-.ranking-block li span::before { width: 18px; color: var(--text-muted); content: "0" counter(ranking); font-size: 0.62rem; font-weight: 780; }
 .ranking-block i { width: 9px; height: 9px; border-radius: 50%; box-shadow: 0 0 0 4px var(--surface-subtle); }
 .ranking-block strong { font-variant-numeric: tabular-nums; }
 
