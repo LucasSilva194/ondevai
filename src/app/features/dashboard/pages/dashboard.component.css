@@ -1,4 +1,4 @@
-.dashboard-header { min-height: clamp(210px, 24vw, 270px); display: flex; align-items: flex-end; justify-content: space-between; gap: 40px; padding-bottom: 16px; }
+.dashboard-header { min-height: clamp(150px, 18vw, 205px); display: flex; align-items: flex-end; justify-content: space-between; gap: 40px; padding-bottom: 16px; }
 .dashboard-controls { display: flex; flex: 0 0 auto; flex-direction: column; align-items: flex-end; gap: 8px; }
 .widget-edit-label-short { display: none; }
 .widget-edit-toggle app-icon { width: 15px; height: 15px; }
@@ -15,12 +15,17 @@
 .period-selectors .field select { min-height: 40px; padding: 7px 36px 7px 14px; border-radius: 12px; font-size: .84rem; }
 .period-note { margin: -24px 0 24px; padding: 13px 16px; border: 1px solid var(--accent-border); border-radius: 16px; background: var(--accent-soft); color: var(--accent-strong); font-size: .84rem; }
 
-.metrics { display: grid; grid-template-columns: 1.5fr 0.82fr 0.9fr; gap: 18px; margin-bottom: 28px; }
+.metrics { display: grid; grid-template-columns: 1.5fr 0.82fr 0.9fr; gap: 18px; margin-bottom: 22px; }
 .metric-primary, .metric { padding: 5px; border: 1px solid color-mix(in srgb, var(--border) 64%, transparent); border-radius: var(--radius-card); background: var(--bezel); box-shadow: var(--shadow-soft); transition: transform var(--motion), box-shadow var(--motion); }
 .metric-action { display: block; color: inherit; text-decoration: none; }
+.metric-action-indicator { width: 29px; height: 29px; display: grid; place-items: center; flex: none; margin-left: auto; border: 1px solid var(--accent-border); border-radius: 9px; background: var(--accent-soft); color: var(--accent-strong); transition: background-color 160ms ease, color 160ms ease; }
+.metric-action-indicator app-icon { width: 15px; height: 15px; }
+@media (hover: hover) and (pointer: fine) {
+  .metric-action:hover .metric-action-indicator { background: var(--accent); color: var(--on-accent); }
+}
 .metric-primary:hover, .metric:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
-.metric-core { position: relative; min-height: 184px; overflow: hidden; padding: 27px; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid var(--inner-stroke); border-radius: var(--radius-inner); background: var(--surface-raised); }
-.metric-primary .metric-core { min-height: 210px; background: var(--accent); color: var(--on-accent); }
+.metric-core { position: relative; min-height: 160px; overflow: hidden; padding: 27px; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid var(--inner-stroke); border-radius: var(--radius-inner); background: var(--surface-raised); }
+.metric-primary .metric-core { min-height: 190px; background: var(--accent); color: var(--on-accent); }
 .metric-primary.negative .metric-core { background: var(--danger); }
 .metric-primary .metric-core::after { position: absolute; width: 190px; height: 190px; right: -62px; bottom: -88px; border: 38px solid color-mix(in srgb, var(--on-accent) 9%, transparent); border-radius: 50%; content: ""; }
 .metric-core > * { position: relative; z-index: 1; }
@@ -68,6 +73,11 @@
 .chart-empty { min-height: 280px; display: grid; place-items: center; margin: 0; color: var(--text-muted); text-align: center; }
 .data-alternative { margin-top: 16px; }
 .data-alternative summary { width: max-content; cursor: pointer; color: var(--text-soft); font-size: 0.78rem; font-weight: 720; }
+.category-chart-legend { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 18px; margin: 4px 0 16px; padding: 0; list-style: none; }
+.category-chart-legend li { min-width: 0; display: grid; grid-template-columns: 8px minmax(0, 1fr) auto; align-items: center; gap: 8px; color: var(--text-soft); font-size: .74rem; }
+.category-chart-legend i { width: 8px; height: 8px; border-radius: 50%; }
+.category-chart-legend li > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.category-chart-legend strong { color: var(--text); font-variant-numeric: tabular-nums; white-space: nowrap; }
 table { width: 100%; margin-top: 14px; border-collapse: collapse; font-size: 0.82rem; }
 th, td { padding: 10px 5px; border-bottom: 1px solid var(--border); text-align: left; }
 th:last-child, td:last-child { text-align: right; }
@@ -93,7 +103,7 @@ th:last-child, td:last-child { text-align: right; }
 }
 
 @media (max-width: 1100px) {
-  .dashboard-header { min-height: 250px; align-items: flex-start; flex-direction: column; justify-content: flex-end; }
+  .dashboard-header { min-height: 190px; align-items: flex-start; flex-direction: column; justify-content: flex-end; }
   .metrics { grid-template-columns: 1fr 1fr; }
   .metric-primary { grid-column: 1 / -1; }
   .dashboard-budget { grid-template-columns: 1fr; }
@@ -130,6 +140,8 @@ th:last-child, td:last-child { text-align: right; }
   .metric-core { min-height: 116px; padding: 14px; border-radius: 15px; }
   .metric-primary .metric-core { min-height: 124px; padding: 16px; }
   .metric-label { gap: 7px; font-size: .64rem; letter-spacing: .045em; }
+  .metric-action-indicator { width: 25px; height: 25px; border-radius: 8px; }
+  .metric-action-indicator app-icon { width: 13px; height: 13px; }
   .metric-icon { width: 27px; height: 27px; border-radius: 9px; }
   .metric strong { font-size: clamp(1.22rem, 6vw, 1.55rem); letter-spacing: -.045em; }
   .metric-primary strong { font-size: clamp(2rem, 10vw, 2.7rem); }
@@ -156,6 +168,7 @@ th:last-child, td:last-child { text-align: right; }
   .insight-card h3 { margin-top: 18px; }
   .insight-card p { font-size: .74rem; }
   .chart-layout .card { padding: 18px; }
+  .category-chart-legend { grid-template-columns: 1fr; gap: 9px; }
   .section-heading { min-height: 50px; margin-bottom: 10px; }
   .rankings { grid-template-columns: 1fr; gap: 12px; }
   .ranking-block { padding: 18px; }
