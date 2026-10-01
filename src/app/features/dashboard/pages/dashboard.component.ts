@@ -51,7 +51,7 @@ import {
 
       <section class="metrics" aria-label="Resumo do período">
         <article class="metric-primary" [class.negative]="monthBalance() < 0"><div class="metric-core"><div class="metric-label"><span class="metric-icon" aria-hidden="true"><app-icon name="balance" /></span><span>Saldo em {{ monthName() }}</span></div><strong>{{ formatCurrency(monthBalance()) }}</strong><small>Rendimentos menos despesas e reforços</small></div></article>
-        <a class="metric metric-action" routerLink="/poupancas" [queryParams]="{ nova: 1 }"><div class="metric-core"><div class="metric-label"><span class="metric-icon" aria-hidden="true"><app-icon name="income" /></span><span>Entradas</span></div><strong>{{ formatCurrency(monthIncomeTotal()) }}</strong><small>{{ monthIncomes().length }} {{ monthIncomes().length === 1 ? 'rendimento' : 'rendimentos' }}</small></div></a>
+        <a class="metric metric-action" routerLink="/poupancas" [queryParams]="{ nova: 1 }"><div class="metric-core"><div class="metric-label"><span class="metric-icon" aria-hidden="true"><app-icon name="income" /></span><span>Entradas</span><span class="metric-action-indicator" aria-hidden="true"><app-icon name="plus" /></span></div><strong>{{ formatCurrency(monthIncomeTotal()) }}</strong><small>{{ monthIncomes().length }} {{ monthIncomes().length === 1 ? 'rendimento' : 'rendimentos' }}</small></div></a>
         <article class="metric"><div class="metric-core"><div class="metric-label"><span class="metric-icon" aria-hidden="true"><app-icon name="expenses" /></span><span>Saídas</span></div><strong>{{ formatCurrency(monthExpenseTotal()) }}</strong><small>{{ monthExpenses().length }} {{ monthExpenses().length === 1 ? 'despesa' : 'despesas' }}</small></div></article>
       </section>
 
