@@ -147,8 +147,8 @@ import { AccountService } from '../../account/services/account.service';
       </section>
 
       <section class="secondary-actions card-flat card-padding">
-        <div><h2>Rever a introdução</h2><p>Volte a consultar a explicação inicial sem alterar despesas ou categorias.</p></div>
-        <button class="btn btn-secondary" type="button" (click)="repeatOnboarding()">Repetir onboarding</button>
+        <div><h2>Guia da aplicação</h2><p>Volte a consultar como registar movimentos, definir objetivos e explorar os seus dados.</p></div>
+        <a class="btn btn-secondary" routerLink="/guia">Abrir guia</a>
       </section>
 
       <section class="danger-zone">
@@ -329,13 +329,6 @@ export class DataManagementComponent implements OnInit {
     this.pendingBackup.set(null);
     this.importErrors.set([]);
     this.importForm.reset({ confirmation: '' });
-  }
-
-  async repeatOnboarding(): Promise<void> {
-    try {
-      await this.store.repeatOnboarding();
-      await this.router.navigate(['/onboarding']);
-    } catch (error: unknown) { this.captureOperationError(error, 'Não foi possível abrir o onboarding.'); }
   }
 
   closeDeleteDialog(): void {

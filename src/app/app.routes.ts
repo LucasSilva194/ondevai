@@ -74,6 +74,11 @@ export const appRoutes: Routes = [
         loadComponent: () => import('./features/dashboard/pages/dashboard.component').then((module) => module.DashboardComponent),
       },
       {
+        path: 'guia',
+        title: 'Guia | OndeVai',
+        loadComponent: () => import('./features/guide/pages/guide.component').then((module) => module.GuideComponent),
+      },
+      {
         path: 'despesas',
         title: 'Despesas | OndeVai',
         loadComponent: () => import('./features/expenses/pages/expenses.component').then((module) => module.ExpensesComponent),

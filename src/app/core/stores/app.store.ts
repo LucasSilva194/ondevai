@@ -194,13 +194,6 @@ export class AppStore {
     });
   }
 
-  async repeatOnboarding(): Promise<void> {
-    await this.execute(
-      () => this.settingsService.setOnboardingCompleted(false),
-      (settings) => this._settings.set(settings),
-    );
-  }
-
   async saveExpense(input: ExpenseInput, id?: string): Promise<void> {
     await this.execute(
       () => id ? this.expenseService.update(id, input) : this.expenseService.create(input),
