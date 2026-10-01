@@ -1,4 +1,4 @@
-.dashboard-header { min-height: clamp(210px, 24vw, 270px); display: flex; align-items: flex-end; justify-content: space-between; gap: 40px; padding-bottom: 16px; }
+.dashboard-header { min-height: clamp(150px, 18vw, 205px); display: flex; align-items: flex-end; justify-content: space-between; gap: 40px; padding-bottom: 16px; }
 .dashboard-controls { display: flex; flex: 0 0 auto; flex-direction: column; align-items: flex-end; gap: 8px; }
 .widget-edit-label-short { display: none; }
 .widget-edit-toggle app-icon { width: 15px; height: 15px; }
@@ -15,12 +15,12 @@
 .period-selectors .field select { min-height: 40px; padding: 7px 36px 7px 14px; border-radius: 12px; font-size: .84rem; }
 .period-note { margin: -24px 0 24px; padding: 13px 16px; border: 1px solid var(--accent-border); border-radius: 16px; background: var(--accent-soft); color: var(--accent-strong); font-size: .84rem; }
 
-.metrics { display: grid; grid-template-columns: 1.5fr 0.82fr 0.9fr; gap: 18px; margin-bottom: 28px; }
+.metrics { display: grid; grid-template-columns: 1.5fr 0.82fr 0.9fr; gap: 18px; margin-bottom: 22px; }
 .metric-primary, .metric { padding: 5px; border: 1px solid color-mix(in srgb, var(--border) 64%, transparent); border-radius: var(--radius-card); background: var(--bezel); box-shadow: var(--shadow-soft); transition: transform var(--motion), box-shadow var(--motion); }
 .metric-action { display: block; color: inherit; text-decoration: none; }
 .metric-primary:hover, .metric:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
-.metric-core { position: relative; min-height: 184px; overflow: hidden; padding: 27px; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid var(--inner-stroke); border-radius: var(--radius-inner); background: var(--surface-raised); }
-.metric-primary .metric-core { min-height: 210px; background: var(--accent); color: var(--on-accent); }
+.metric-core { position: relative; min-height: 160px; overflow: hidden; padding: 27px; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid var(--inner-stroke); border-radius: var(--radius-inner); background: var(--surface-raised); }
+.metric-primary .metric-core { min-height: 190px; background: var(--accent); color: var(--on-accent); }
 .metric-primary.negative .metric-core { background: var(--danger); }
 .metric-primary .metric-core::after { position: absolute; width: 190px; height: 190px; right: -62px; bottom: -88px; border: 38px solid color-mix(in srgb, var(--on-accent) 9%, transparent); border-radius: 50%; content: ""; }
 .metric-core > * { position: relative; z-index: 1; }
@@ -93,7 +93,7 @@ th:last-child, td:last-child { text-align: right; }
 }
 
 @media (max-width: 1100px) {
-  .dashboard-header { min-height: 250px; align-items: flex-start; flex-direction: column; justify-content: flex-end; }
+  .dashboard-header { min-height: 190px; align-items: flex-start; flex-direction: column; justify-content: flex-end; }
   .metrics { grid-template-columns: 1fr 1fr; }
   .metric-primary { grid-column: 1 / -1; }
   .dashboard-budget { grid-template-columns: 1fr; }
