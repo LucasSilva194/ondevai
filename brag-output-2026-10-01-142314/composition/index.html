@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="pt-PT" data-resolution="landscape">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=1920, height=1080">
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; background: #f7f3ea; color: #182d25; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    #root { position: relative; width: 100%; height: 100%; overflow: hidden; background: #f7f3ea; }
+    .scene { position: absolute; inset: 0; overflow: hidden; padding: 76px 110px; background: #f7f3ea; }
+    .scene:not(#s1), #s2, #s3, #s4, #s5 { opacity: 0; }
+    .ambient { position: absolute; width: 690px; height: 690px; right: -140px; top: -190px; border-radius: 50%; background: #e4e9df; }
+    .ambient.bottom { width: 450px; height: 450px; top: auto; right: auto; left: -180px; bottom: -260px; background: #f0e5d9; }
+    .brand { position: relative; z-index: 2; display: flex; gap: 14px; align-items: center; color: #1b3f33; font-size: 29px; font-weight: 760; letter-spacing: -.04em; }
+    .brand-mark { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 14px; background: #1b3f33; color: #f7f3ea; }
+    .brand-mark svg { width: 32px; height: 32px; }
+    .brand-mark path { fill: currentColor; }
+    .kicker { margin: 0 0 20px; color: #4b5e53; font-size: 19px; line-height: 1.2; font-weight: 750; letter-spacing: .12em; text-transform: uppercase; }
+    h1, h2, p { margin-top: 0; }
+    h1 { max-width: 790px; margin-bottom: 26px; color: #182d25; font-size: 80px; line-height: 1.04; letter-spacing: -.06em; font-weight: 760; }
+    .lead { max-width: 620px; color: #4b5e53; font-size: 27px; line-height: 1.5; }
+    .hero-copy { position: absolute; z-index: 2; left: 132px; top: 325px; width: 790px; }
+    .hero-orbit { position: absolute; width: 300px; height: 300px; right: 205px; top: 365px; border: 4px solid #a7b59f; border-radius: 50%; }
+    .hero-orbit::before, .hero-orbit::after { content: ""; position: absolute; border-radius: 50%; }
+    .hero-orbit::before { width: 30px; height: 30px; right: 22px; top: 26px; background: #c46f56; }
+    .hero-orbit::after { width: 16px; height: 16px; left: 40px; bottom: 28px; background: #1b3f33; }
+    .tiny-label { position: absolute; right: 186px; top: 708px; color: #4b5e53; font-size: 19px; font-weight: 650; }
+    .eyebrow { color: #626a61; font-size: 18px; font-weight: 680; letter-spacing: .02em; }
+
+    .scene-head { position: relative; z-index: 1; display: flex; justify-content: space-between; align-items: center; margin-bottom: 48px; }
+    .scene-title { position: relative; z-index: 1; max-width: 700px; font-size: 51px; line-height: 1.05; letter-spacing: -.045em; font-weight: 740; }
+    .dashboard-layout { position: relative; z-index: 1; display: grid; grid-template-columns: 620px 1fr; gap: 62px; align-items: center; }
+    .dashboard-copy { padding-left: 26px; }
+    .dashboard-copy h2 { margin-bottom: 20px; font-size: 58px; line-height: 1.06; letter-spacing: -.055em; }
+    .dashboard-copy p { max-width: 490px; color: #4b5e53; font-size: 24px; line-height: 1.5; }
+    .preview-card { width: 100%; padding: 37px 42px 32px; border: 2px solid #ded9cc; border-radius: 32px; background: #fcfaf5; box-shadow: 0 28px 72px rgba(24,45,37,.12), inset 0 2px 0 rgba(255,255,255,.8); }
+    .preview-heading { display: flex; justify-content: space-between; align-items: center; padding-bottom: 22px; border-bottom: 1px solid #ded9cc; }
+    .preview-kicker { color: #697268; font-size: 17px; font-weight: 650; }
+    .preview-heading h3 { margin: 6px 0 0; font-size: 31px; letter-spacing: -.035em; }
+    .month-pill { padding: 12px 17px; border: 1px solid #ded9cc; border-radius: 999px; background: #f7f3ea; color: #4b5e53; font-size: 17px; font-weight: 650; }
+    .balance { padding: 28px 0 22px; }
+    .balance-label { color: #4b5e53; font-size: 19px; }
+    .balance-value { display: block; margin-top: 7px; color: #182d25; font-size: 58px; letter-spacing: -.055em; font-weight: 770; font-variant-numeric: tabular-nums; }
+    .balance-value small { font-size: 32px; }
+    .trend { margin-top: 8px; color: #1b3f33; font-size: 18px; font-weight: 720; }
+    .chart { height: 190px; margin: 4px 0 17px; padding: 12px 10px; border-radius: 18px; background: #f3f1e9; }
+    .chart svg { width: 100%; height: 100%; overflow: visible; }
+    .chart-grid { stroke: #d8d8ca; stroke-width: 1; stroke-dasharray: 5 8; }
+    .chart-fill { fill: rgba(27,63,51,.10); }
+    .chart-line { fill: none; stroke: #1b3f33; stroke-width: 5; stroke-linecap: round; }
+    .chart-dot { fill: #c46f56; stroke: #fcfaf5; stroke-width: 5; }
+    .totals { display: flex; justify-content: space-between; gap: 20px; padding-top: 17px; border-top: 1px solid #ded9cc; }
+    .total { color: #4b5e53; font-size: 17px; }
+    .total b { display: block; margin-top: 6px; color: #182d25; font-size: 24px; font-variant-numeric: tabular-nums; }
+    .badge { display: inline-flex; align-items: center; gap: 10px; padding: 14px 18px; border-radius: 999px; background: #e4e9df; color: #1b3f33; font-size: 18px; font-weight: 740; }
+    .badge span:first-child { width: 12px; height: 12px; border-radius: 50%; background: #1b3f33; }
+    .note { margin-top: 18px; color: #697268; font-size: 16px; }
+
+    .entry-layout { position: relative; z-index: 1; display: grid; grid-template-columns: 1fr 690px; gap: 95px; align-items: center; margin: 95px 60px 0; }
+    .entry-copy h2 { max-width: 670px; font-size: 64px; line-height: 1.04; letter-spacing: -.055em; }
+    .entry-copy p { max-width: 540px; color: #4b5e53; font-size: 25px; line-height: 1.5; }
+    .form-card { padding: 35px 38px; border: 2px solid #ded9cc; border-radius: 30px; background: #fcfaf5; box-shadow: 0 25px 66px rgba(24,45,37,.12); }
+    .form-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 27px; }
+    .form-top strong { font-size: 28px; letter-spacing: -.03em; }
+    .form-top span { padding: 9px 13px; border-radius: 999px; background: #e4e9df; color: #1b3f33; font-size: 15px; font-weight: 700; }
+    .field { margin: 19px 0; }
+    .field label { display: block; margin-bottom: 8px; color: #4b5e53; font-size: 16px; font-weight: 650; }
+    .input { min-height: 61px; padding: 17px 18px; border: 1.5px solid #c8c3b5; border-radius: 13px; background: #fffdf8; color: #182d25; font-size: 22px; }
+    .field-row { display: grid; grid-template-columns: 1fr 180px; gap: 14px; }
+    .save-button { display: flex; justify-content: center; align-items: center; gap: 11px; min-height: 62px; margin-top: 24px; border-radius: 999px; background: #1b3f33; color: #f7f3ea; font-size: 19px; font-weight: 730; }
+    .save-button i { font-style: normal; font-size: 21px; }
+    .saved-row { display: grid; grid-template-columns: 54px 1fr auto; gap: 16px; align-items: center; margin-top: 23px; padding: 16px 18px; border: 1px solid #ded9cc; border-radius: 17px; background: #f7f3ea; }
+    .saved-icon { width: 50px; height: 50px; display: grid; place-items: center; border-radius: 15px; background: #f0e5d9; color: #9c523d; font-size: 24px; }
+    .saved-row strong { display: block; font-size: 20px; }
+    .saved-row small { color: #697268; font-size: 15px; }
+    .saved-row b { font-size: 20px; font-variant-numeric: tabular-nums; }
+
+    .budget-layout { position: relative; z-index: 1; display: grid; grid-template-columns: 1fr 760px; gap: 100px; align-items: center; margin: 108px 60px 0; }
+    .budget-copy h2 { max-width: 700px; font-size: 65px; line-height: 1.03; letter-spacing: -.055em; }
+    .budget-copy p { max-width: 570px; color: #4b5e53; font-size: 25px; line-height: 1.5; }
+    .budget-copy .eyebrow { color: #626a61; font-size: 18px; }
+    .budget-card { padding: 39px 40px 32px; border: 2px solid #ded9cc; border-radius: 30px; background: #fcfaf5; box-shadow: 0 25px 65px rgba(24,45,37,.11); }
+    .budget-card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
+    .budget-card-head strong { font-size: 24px; }
+    .budget-card-head span { padding: 10px 14px; border-radius: 999px; background: #f1ede3; color: #4b5e53; font-size: 16px; }
+    .category-row { display: flex; gap: 17px; align-items: center; }
+    .category-icon { width: 58px; height: 58px; display: grid; place-items: center; flex: none; border-radius: 18px; background: #e4e9df; color: #1b3f33; font-size: 27px; }
+    .category-row h3 { margin: 0 0 6px; font-size: 24px; }
+    .category-row p { margin: 0; color: #626a61; font-size: 16px; }
+    .budget-amount { margin-left: auto; color: #182d25; font-size: 24px; font-weight: 740; font-variant-numeric: tabular-nums; }
+    .progress { height: 18px; margin: 31px 0 16px; overflow: hidden; border-radius: 999px; background: #e8e5d9; }
+    .progress-fill { width: 0; height: 100%; border-radius: inherit; background: #1b3f33; }
+    .budget-foot { display: flex; justify-content: space-between; color: #4b5e53; font-size: 17px; }
+    .budget-foot strong { color: #1b3f33; font-size: 19px; }
+    .budget-note { margin: 23px 0 0; padding: 15px 18px; border-radius: 15px; background: #e4e9df; color: #1b3f33; font-size: 16px; font-weight: 700; }
+
+    .privacy { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding-bottom: 42px; text-align: center; }
+    .privacy-mark { width: 90px; height: 90px; display: grid; place-items: center; margin-bottom: 32px; border: 2px solid #a7b59f; border-radius: 28px; background: #1b3f33; color: #f7f3ea; box-shadow: 0 14px 28px rgba(27,63,51,.18); }
+    .privacy-mark svg { width: 60px; height: 60px; }
+    .privacy-mark path { fill: currentColor; }
+    .privacy h2 { max-width: 1270px; margin-bottom: 25px; font-size: 58px; line-height: 1.15; letter-spacing: -.045em; }
+    .privacy .subline { margin-bottom: 48px; color: #4b5e53; font-size: 25px; }
+    .privacy .tagline { color: #697268; font-size: 22px; font-weight: 650; letter-spacing: .01em; }
+    .privacy .final-brand { display: flex; align-items: center; gap: 14px; color: #1b3f33; font-size: 31px; font-weight: 770; }
+
+    .audio-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
+  </style>
+</head>
+<body>
+  <div data-hf-id="hf-at0g" id="root" data-composition-id="main" data-start="0" data-duration="20" data-width="1920" data-height="1080">
+    <section data-hf-id="hf-jmq1" id="s1" class="scene" aria-label="Abertura">
+      <div data-hf-id="hf-ij6x" class="ambient" data-layout-ignore=""></div><div data-hf-id="hf-xjdg" class="ambient bottom" data-layout-ignore=""></div>
+      <div data-hf-id="hf-8clp" class="brand" id="s1-brand"><span data-hf-id="hf-lcsu" class="brand-mark"><svg data-hf-id="hf-c6us" viewBox="0 0 386 386" aria-hidden="true"><g data-hf-id="hf-49a9" transform="translate(0 17)"><path data-hf-id="hf-iwdk" d="M76 253a144 144 0 1 1 120 67l8-44a99 99 0 1 0-85-36l-43 13Z" /><path data-hf-id="hf-bg6e" d="M92 271c53-21 129-64 192-73-37 12-75 37-96 68l-19 49c-29-7-57-27-77-44Z" /></g></svg></span><span data-hf-id="hf-qqvx">OndeVai</span></div>
+      <div data-hf-id="hf-jloi" class="hero-copy"><p data-hf-id="hf-sj6z" class="kicker" id="s1-kicker">Finanças pessoais, com clareza</p><h1 data-hf-id="hf-yq90" id="s1-title">Perceba para onde vai o seu dinheiro.</h1><p data-hf-id="hf-wi4y" class="lead" id="s1-lead">Despesas, rendimentos e objetivos numa visão simples.</p></div>
+      <div data-hf-id="hf-a9rf" class="hero-orbit" id="s1-orbit" data-layout-ignore=""></div><span data-hf-id="hf-ugxb" class="tiny-label" id="s1-orbit-label">clareza, mês a mês</span>
+    </section>
+
+    <section data-hf-id="hf-uhu7" id="s2" class="scene" data-layout-allow-overlap="" aria-label="Resumo mensal">
+      <div data-hf-id="hf-lkt9" class="ambient" data-layout-ignore=""></div>
+      <div data-hf-id="hf-5gif" class="scene-head"><div data-hf-id="hf-hw1q" class="brand" id="s2-brand"><span data-hf-id="hf-vok2" class="brand-mark"><svg data-hf-id="hf-4szw" viewBox="0 0 386 386" aria-hidden="true"><g data-hf-id="hf-bm6t" transform="translate(0 17)"><path data-hf-id="hf-84f4" d="M76 253a144 144 0 1 1 120 67l8-44a99 99 0 1 0-85-36l-43 13Z" /><path data-hf-id="hf-idyi" d="M92 271c53-21 129-64 192-73-37 12-75 37-96 68l-19 49c-29-7-57-27-77-44Z" /></g></svg></span><span data-hf-id="hf-q27l">OndeVai</span></div><span data-hf-id="hf-spem" class="badge" id="s2-badge"><span data-hf-id="hf-uckh"></span>Dentro do orçamento</span></div>
+      <div data-hf-id="hf-u4z7" class="dashboard-layout">
+        <div data-hf-id="hf-y1ni" class="dashboard-copy"><p data-hf-id="hf-t79o" class="kicker" id="s2-kicker">A sua visão geral</p><h2 data-hf-id="hf-07yd" id="s2-title">Este mês.</h2><p data-hf-id="hf-mb0g" id="s2-copy">Veja o saldo, acompanhe o ritmo e saiba como estão as despesas.</p><p data-hf-id="hf-1zcm" class="note" id="s2-note">Exemplo ilustrativo · Junho</p></div>
+        <article data-hf-id="hf-01b6" class="preview-card" id="s2-card">
+          <div data-hf-id="hf-fo91" class="preview-heading"><div data-hf-id="hf-yeow"><span data-hf-id="hf-5r5y" class="preview-kicker">A sua visão geral</span><h3 data-hf-id="hf-o97f">Este mês</h3></div><span data-hf-id="hf-ovrf" class="month-pill">Junho⌄</span></div>
+          <div data-hf-id="hf-04ro" class="balance"><span data-hf-id="hf-k2o6" class="balance-label">Saldo disponível</span><strong data-hf-id="hf-4x7h" class="balance-value" id="s2-balance">1 248,60 <small data-hf-id="hf-tsjc">€</small></strong><div data-hf-id="hf-1rnd" class="trend">↗ 8,4% <span data-hf-id="hf-qq6a" style="color:#697268;font-weight:500">face ao mês passado</span></div></div>
+          <div data-hf-id="hf-pbyi" class="chart" id="s2-chart"><svg data-hf-id="hf-xnt2" viewBox="0 0 700 175" role="img" aria-label="Gráfico ilustrativo de despesas ao longo do mês"><path data-hf-id="hf-5nkc" class="chart-grid" d="M0 35H700M0 82H700M0 129H700" /><path data-hf-id="hf-vd7s" class="chart-fill" d="M0 131 C48 116 61 88 112 99 S178 126 224 77 S291 89 339 62 S410 83 458 55 S529 77 576 38 S650 57 700 19 V175 H0Z" /><path data-hf-id="hf-28di" class="chart-line" d="M0 131 C48 116 61 88 112 99 S178 126 224 77 S291 89 339 62 S410 83 458 55 S529 77 576 38 S650 57 700 19" /><circle data-hf-id="hf-heoj" class="chart-dot" cx="576" cy="38" r="9" /></svg></div>
+          <div data-hf-id="hf-etjl" class="totals"><div data-hf-id="hf-gf0m" class="total">Despesas<b data-hf-id="hf-eo7k">842,30 €</b></div><div data-hf-id="hf-76oe" class="total">Rendimentos<b data-hf-id="hf-085x">2 090,90 €</b></div></div>
+        </article>
+      </div>
+    </section>
+
+    <section data-hf-id="hf-5udc" id="s3" class="scene" data-layout-allow-overlap="" aria-label="Registo de despesa">
+      <div data-hf-id="hf-3y3w" class="ambient bottom" data-layout-ignore=""></div>
+      <div data-hf-id="hf-sdlj" class="scene-head"><div data-hf-id="hf-zawz" class="brand" id="s3-brand"><span data-hf-id="hf-w2v3" class="brand-mark"><svg data-hf-id="hf-3m2t" viewBox="0 0 386 386" aria-hidden="true"><g data-hf-id="hf-ct3w" transform="translate(0 17)"><path data-hf-id="hf-6xi1" d="M76 253a144 144 0 1 1 120 67l8-44a99 99 0 1 0-85-36l-43 13Z" /><path data-hf-id="hf-is9j" d="M92 271c53-21 129-64 192-73-37 12-75 37-96 68l-19 49c-29-7-57-27-77-44Z" /></g></svg></span><span data-hf-id="hf-r94o">OndeVai</span></div></div>
+      <div data-hf-id="hf-vj0j" class="entry-layout"><div data-hf-id="hf-et8u" class="entry-copy"><p data-hf-id="hf-hhkt" class="kicker" id="s3-kicker">Despesas e rendimentos</p><h2 data-hf-id="hf-b19k" id="s3-title">Registe o essencial.</h2><p data-hf-id="hf-80p3" id="s3-copy">Um movimento simples entra no mês e ajuda a contar a história completa.</p><p data-hf-id="hf-lmj6" class="note" id="s3-note">Dados fictícios para demonstração</p></div>
+        <div data-hf-id="hf-i1e8" class="form-card" id="s3-form"><div data-hf-id="hf-ogn4" class="form-top"><strong data-hf-id="hf-f76r">Nova despesa</strong><span data-hf-id="hf-b673">Junho</span></div><div data-hf-id="hf-0ztw" class="field"><label data-hf-id="hf-x2g0">Descrição</label><div data-hf-id="hf-kut5" class="input" id="s3-name">Café</div></div><div data-hf-id="hf-vm7f" class="field-row"><div data-hf-id="hf-bxgc" class="field"><label data-hf-id="hf-xh0o">Categoria</label><div data-hf-id="hf-150h" class="input" id="s3-category">Alimentação</div></div><div data-hf-id="hf-aqj9" class="field"><label data-hf-id="hf-miy1">Valor</label><div data-hf-id="hf-rxv0" class="input" id="s3-amount">3,20 €</div></div></div><div data-hf-id="hf-ehy3" class="save-button" id="s3-save"><i data-hf-id="hf-q7i5">✓</i> Guardar despesa</div><div data-hf-id="hf-ob7h" class="saved-row" id="s3-row"><span data-hf-id="hf-ocso" class="saved-icon">↘</span><span data-hf-id="hf-l73p"><strong data-hf-id="hf-1k1f">Café</strong><small data-hf-id="hf-fzmz">Hoje · Alimentação</small></span><b data-hf-id="hf-g3rg">−3,20 €</b></div></div>
+      </div>
+    </section>
+
+    <section data-hf-id="hf-dlvi" id="s4" class="scene" data-layout-allow-overlap="" aria-label="Orçamento por categoria">
+      <div data-hf-id="hf-mrqc" class="ambient" data-layout-ignore=""></div>
+      <div data-hf-id="hf-rzai" class="scene-head"><div data-hf-id="hf-bul8" class="brand" id="s4-brand"><span data-hf-id="hf-wh64" class="brand-mark"><svg data-hf-id="hf-40du" viewBox="0 0 386 386" aria-hidden="true"><g data-hf-id="hf-cesv" transform="translate(0 17)"><path data-hf-id="hf-7bt2" d="M76 253a144 144 0 1 1 120 67l8-44a99 99 0 1 0-85-36l-43 13Z" /><path data-hf-id="hf-j6kk" d="M92 271c53-21 129-64 192-73-37 12-75 37-96 68l-19 49c-29-7-57-27-77-44Z" /></g></svg></span><span data-hf-id="hf-qutn">OndeVai</span></div><span data-hf-id="hf-0t99" class="eyebrow">Acompanhe como evoluem ao longo do mês</span></div>
+      <div data-hf-id="hf-uoty" class="budget-layout"><div data-hf-id="hf-ytez" class="budget-copy"><p data-hf-id="hf-h5o2" class="kicker" id="s4-kicker">Orçamentos que fazem sentido</p><h2 data-hf-id="hf-zlgm" id="s4-title">Planeie antes de gastar.</h2><p data-hf-id="hf-yc56" id="s4-copy">Defina limites mensais por categoria. Veja o progresso sem perder o histórico.</p></div>
+        <article data-hf-id="hf-82qd" class="budget-card" id="s4-card"><div data-hf-id="hf-pa09" class="budget-card-head"><strong data-hf-id="hf-d3lg">Orçamentos · Junho</strong><span data-hf-id="hf-d0m6">Este mês⌄</span></div><div data-hf-id="hf-j9xz" class="category-row"><span data-hf-id="hf-ob3h" class="category-icon">⌂</span><div data-hf-id="hf-y7yw"><h3 data-hf-id="hf-p1pg">Casa</h3><p data-hf-id="hf-t63p">Despesas da categoria</p></div><span data-hf-id="hf-iy42" class="budget-amount">360,00 €</span></div><div data-hf-id="hf-fu8e" class="progress" id="s4-progress"><div data-hf-id="hf-zvfk" class="progress-fill" id="s4-fill"></div></div><div data-hf-id="hf-dbgg" class="budget-foot"><span data-hf-id="hf-v1gj">270,00 € gastos</span><strong data-hf-id="hf-kswe">90,00 € restantes</strong></div><p data-hf-id="hf-f1jc" class="budget-note" id="s4-note">75% do limite utilizado · dentro do orçamento</p></article>
+      </div>
+    </section>
+
+    <section data-hf-id="hf-v1e2" id="s5" class="scene" aria-label="Privacidade e marca">
+      <div data-hf-id="hf-mdfb" class="ambient" data-layout-ignore=""></div><div data-hf-id="hf-2r6t" class="ambient bottom" data-layout-ignore=""></div>
+      <div data-hf-id="hf-pirk" class="privacy"><span data-hf-id="hf-znv1" class="privacy-mark" id="s5-mark"><svg data-hf-id="hf-5zwz" viewBox="0 0 386 386" aria-hidden="true"><g data-hf-id="hf-dlpy" transform="translate(0 17)"><path data-hf-id="hf-64vz" d="M76 253a144 144 0 1 1 120 67l8-44a99 99 0 1 0-85-36l-43 13Z" /><path data-hf-id="hf-jkvl" d="M92 271c53-21 129-64 192-73-37 12-75 37-96 68l-19 49c-29-7-57-27-77-44Z" /></g></svg></span><p data-hf-id="hf-j3y8" class="kicker" id="s5-kicker">Privacidade por escolha</p><h2 data-hf-id="hf-zgkm" id="s5-title">Sem ligação a bancos. Sem anúncios. Os seus dados ficam sob o seu controlo.</h2><p data-hf-id="hf-ce28" class="subline" id="s5-subline">Exporte os seus dados sempre que quiser.</p><p data-hf-id="hf-z5lz" class="tagline" id="s5-tagline">O seu dinheiro, explicado.</p><div data-hf-id="hf-cnrm" class="final-brand" id="s5-brand"><span data-hf-id="hf-ovai">OndeVai</span></div></div>
+    </section>
+    <audio data-hf-id="hf-lykl" id="music-bed" data-start="0" data-duration="20" data-track-index="10" data-volume="0.31" data-automation="{&quot;version&quot;:1,&quot;lanes&quot;:[{&quot;target&quot;:&quot;volume&quot;,&quot;points&quot;:[{&quot;t&quot;:0,&quot;v&quot;:0},{&quot;t&quot;:0.8,&quot;v&quot;:0.31},{&quot;t&quot;:19,&quot;v&quot;:0.31},{&quot;t&quot;:20,&quot;v&quot;:0}]}]}" src="assets/music/happy-beats-business-moves-vol-12-by-ende-dot-app.mp3"></audio>
+    <audio data-hf-id="hf-obcg" id="save-click" data-start="9.78" data-duration="0.01" data-track-index="11" data-volume="0.62" src="assets/sfx/interface/click_002.ogg"></audio>
+    <audio data-hf-id="hf-ntf4" id="budget-drop" data-start="12.94" data-duration="0.11" data-track-index="12" data-volume="0.52" src="assets/sfx/interface/drop_001.ogg"></audio>
+  </div>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+
+    // Hook — enter quickly and hold the full sentence.
+    tl.from("#s1-brand", { y: -24, opacity: 0, duration: 0.55, ease: "power3.out" }, 0.15);
+    tl.from("#s1-kicker", { x: -22, opacity: 0, duration: 0.45, ease: "power2.out" }, 0.45);
+    tl.from("#s1-title", { y: 34, opacity: 0, duration: 0.72, ease: "expo.out" }, 0.58);
+    tl.from("#s1-lead", { y: 18, opacity: 0, duration: 0.52, ease: "power2.out" }, 1.28);
+    tl.from("#s1-orbit", { scale: 0.82, opacity: 0, duration: 0.8, ease: "back.out(1.2)" }, 0.82);
+    tl.from("#s1-orbit-label", { x: 14, opacity: 0, duration: 0.45, ease: "sine.out" }, 1.4);
+
+    // Dashboard reveal lands on the nearby 2.73s strong cue.
+    tl.to("#s1", { opacity: 0, duration: 0.48, ease: "power2.inOut" }, 2.52);
+    tl.fromTo("#s2", { opacity: 0 }, { opacity: 1, duration: 0.48, ease: "power2.inOut" }, 2.52);
+    tl.from("#s2-brand", { y: -16, opacity: 0, duration: 0.46, ease: "power3.out" }, 2.72);
+    tl.from("#s2-badge", { scale: 0.92, opacity: 0, duration: 0.44, ease: "back.out(1.3)" }, 2.92);
+    tl.from("#s2-kicker", { x: -20, opacity: 0, duration: 0.4, ease: "power2.out" }, 3.0);
+    tl.from("#s2-title", { y: 25, opacity: 0, duration: 0.52, ease: "expo.out" }, 3.12);
+    tl.from("#s2-copy", { y: 18, opacity: 0, duration: 0.48, ease: "sine.out" }, 3.48);
+    tl.from("#s2-note", { opacity: 0, duration: 0.38, ease: "power1.out" }, 3.78);
+    tl.from("#s2-card", { y: 28, scale: 0.97, opacity: 0, duration: 0.7, ease: "power3.out" }, 2.72);
+    tl.from("#s2-balance", { y: 14, opacity: 0, duration: 0.5, ease: "back.out(1.1)" }, 3.2);
+    tl.from("#s2-chart", { scaleY: 0.78, opacity: 0, transformOrigin: "center bottom", duration: 0.65, ease: "power2.out" }, 3.62);
+
+    // Expense entry. Each fictional field appears, then a single save click lands.
+    tl.to("#s2", { opacity: 0, duration: 0.44, ease: "power2.inOut" }, 6.52);
+    tl.fromTo("#s3", { opacity: 0 }, { opacity: 1, duration: 0.44, ease: "power2.inOut" }, 6.52);
+    tl.from("#s3-brand", { y: -14, opacity: 0, duration: 0.42, ease: "power3.out" }, 6.72);
+    tl.from("#s3-kicker", { x: -18, opacity: 0, duration: 0.42, ease: "power2.out" }, 6.88);
+    tl.from("#s3-title", { y: 25, opacity: 0, duration: 0.54, ease: "expo.out" }, 7.0);
+    tl.from("#s3-copy", { y: 16, opacity: 0, duration: 0.46, ease: "sine.out" }, 7.34);
+    tl.from("#s3-note", { opacity: 0, duration: 0.36, ease: "power1.out" }, 7.67);
+    tl.from("#s3-form", { x: 28, opacity: 0, duration: 0.65, ease: "power3.out" }, 6.74);
+    tl.from("#s3-name", { y: 12, opacity: 0, duration: 0.38, ease: "power2.out" }, 7.28);
+    tl.from("#s3-category", { y: 12, opacity: 0, duration: 0.38, ease: "sine.out" }, 7.62);
+    tl.from("#s3-amount", { y: 12, opacity: 0, duration: 0.42, ease: "back.out(1.1)" }, 7.82);
+    tl.from("#s3-save", { scale: 0.95, opacity: 0, duration: 0.4, ease: "back.out(1.25)" }, 8.3);
+    tl.to("#s3-save", { scale: 0.98, duration: 0.09, ease: "power1.in" }, 9.78);
+    tl.to("#s3-save", { scale: 1, duration: 0.16, ease: "back.out(1.8)" }, 9.87);
+    tl.from("#s3-row", { y: 16, opacity: 0, duration: 0.44, ease: "power3.out" }, 10.0);
+
+    // Budget row fills; held after landing so the status remains readable.
+    tl.to("#s3", { opacity: 0, duration: 0.44, ease: "power2.inOut" }, 10.52);
+    tl.fromTo("#s4", { opacity: 0 }, { opacity: 1, duration: 0.44, ease: "power2.inOut" }, 10.52);
+    tl.from("#s4-brand", { y: -14, opacity: 0, duration: 0.42, ease: "power3.out" }, 10.72);
+    tl.from("#s4-kicker", { x: -18, opacity: 0, duration: 0.42, ease: "power2.out" }, 10.94);
+    tl.from("#s4-title", { y: 25, opacity: 0, duration: 0.54, ease: "expo.out" }, 11.08);
+    tl.from("#s4-copy", { y: 16, opacity: 0, duration: 0.46, ease: "sine.out" }, 11.43);
+    tl.from("#s4-card", { x: 26, opacity: 0, duration: 0.62, ease: "power3.out" }, 10.76);
+    tl.to("#s4-fill", { width: "75%", duration: 1.1, ease: "power2.out" }, 12.15);
+    tl.from("#s4-note", { y: 9, opacity: 0, duration: 0.42, ease: "back.out(1.1)" }, 13.04);
+
+    // Privacy close — a soft crossfade and a long, legible hold.
+    tl.to("#s4", { opacity: 0, duration: 0.58, ease: "sine.inOut" }, 15.12);
+    tl.fromTo("#s5", { opacity: 0 }, { opacity: 1, duration: 0.58, ease: "sine.inOut" }, 15.12);
+    tl.from("#s5-mark", { scale: 0.86, opacity: 0, duration: 0.62, ease: "back.out(1.25)" }, 15.42);
+    tl.from("#s5-kicker", { y: 12, opacity: 0, duration: 0.42, ease: "power2.out" }, 15.82);
+    tl.from("#s5-title", { y: 22, opacity: 0, duration: 0.64, ease: "expo.out" }, 16.04);
+    tl.from("#s5-subline", { y: 14, opacity: 0, duration: 0.46, ease: "sine.out" }, 16.8);
+    tl.from("#s5-tagline", { opacity: 0, duration: 0.45, ease: "power1.out" }, 17.36);
+    tl.from("#s5-brand", { y: 12, opacity: 0, duration: 0.48, ease: "power3.out" }, 17.65);
+
+    window.__timelines["main"] = tl;
+  </script>
+</body>
+</html>
