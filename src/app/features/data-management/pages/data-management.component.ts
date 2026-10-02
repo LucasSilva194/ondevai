@@ -82,7 +82,7 @@ import { AccountService } from '../../account/services/account.service';
         <div>
           <h2>Dados locais legados</h2>
           @if (migration.summary()?.totalRecords) {
-            <p>Encontrámos {{ migration.summary()?.totalRecords }} registos no IndexedDB antigo. Permanecem neste browser até existir uma ação separada para os remover.</p>
+            <p>Encontrámos {{ migration.summary()?.totalRecords }} registos antigos neste browser. Depois de os migrar, pode apagá-los deste dispositivo.</p>
           } @else {
             <p>Não foram encontrados dados financeiros da versão local neste browser.</p>
           }
@@ -90,15 +90,18 @@ import { AccountService } from '../../account/services/account.service';
         @if (migration.summary()?.totalRecords && migration.status() !== 'completed') {
           <a class="btn btn-secondary" routerLink="/migrar-dados">Migrar para a conta</a>
         }
+        @if (migration.summary()?.totalRecords) {
+          <button class="btn btn-danger" type="button" (click)="clearLegacyData()" [disabled]="accountPending()">Apagar dados locais antigos</button>
+        }
       </section>
 
       <section class="data-section card card-padding">
         <div class="section-copy">
           <h2>Cópia de segurança JSON</h2>
-          <p>O ficheiro inclui despesas, recorrências e exceções, orçamentos, rendimentos, objetivos, movimentos de poupança e preferências. Não inclui totais ou gráficos.</p>
+          <p>O ficheiro inclui os dados financeiros cifrados com uma senha definida por si. Guarde essa senha: não é possível recuperá-la.</p>
           <p class="last-export"><strong>Última exportação:</strong> {{ lastExportLabel() }}</p>
         </div>
-        <button class="btn btn-primary" type="button" (click)="exportData()" [disabled]="store.operationPending() || pwa.offline()">Exportar JSON</button>
+        <button class="btn btn-primary" type="button" (click)="openBackupExport()" [disabled]="store.operationPending() || pwa.offline()">Exportar JSON cifrado</button>
       </section>
 
       <section class="data-section card-flat card-padding import-section">
@@ -142,7 +145,7 @@ import { AccountService } from '../../account/services/account.service';
         <div class="information-columns">
           <div><h3>Na sua conta</h3><p>É necessária autenticação. O servidor associa os registos à sua conta e a aplicação sincroniza alterações em tempo real.</p></div>
           <div><h3>Sem fila offline</h3><p>Dados já carregados podem ficar visíveis sem rede, mas não garantimos leitura atualizada nem guardamos novas alterações offline.</p></div>
-          <div><h3>Backup portátil</h3><p>O JSON pode ser reimportado por substituição. Como não está encriptado, deve ser guardado em segurança.</p></div>
+          <div><h3>Backup portátil</h3><p>As cópias são cifradas com AES-GCM. A senha não é guardada nem pode ser recuperada.</p></div>
         </div>
       </section>
 
@@ -182,6 +185,26 @@ import { AccountService } from '../../account/services/account.service';
         </form>
       </app-modal-shell>
     }
+
+    @if (backupPasswordDialogOpen()) {
+      <app-modal-shell panelClass="modal delete-modal" labelledBy="backup-password-title">
+        <header class="modal-header"><div><h2 id="backup-password-title">{{ backupPasswordPurpose() === 'export' ? 'Cifrar cópia de segurança' : 'Abrir cópia de segurança' }}</h2><p>{{ backupPasswordPurpose() === 'export' ? 'Use uma senha forte com pelo menos 12 caracteres. Sem ela, não poderá recuperar o ficheiro.' : 'A senha é usada apenas para decifrar o ficheiro neste dispositivo.' }}</p></div></header>
+        <form [formGroup]="backupPasswordForm" (ngSubmit)="submitBackupPassword()" novalidate>
+          <div class="field"><label for="backup-password">Senha da cópia</label><input id="backup-password" type="password" formControlName="password" [attr.autocomplete]="backupPasswordPurpose() === 'export' ? 'new-password' : 'current-password'" maxlength="1024">
+            @if (backupPasswordForm.controls.password.touched && backupPasswordForm.controls.password.value.length < 12) { <small class="field-error">Use pelo menos 12 caracteres.</small> }
+          </div>
+          @if (backupPasswordPurpose() === 'export') {
+            <div class="field"><label for="backup-password-confirm">Confirmar senha</label><input id="backup-password-confirm" type="password" formControlName="passwordConfirm" autocomplete="new-password" maxlength="1024">
+              @if (backupPasswordForm.controls.passwordConfirm.touched && backupPasswordForm.controls.password.value !== backupPasswordForm.controls.passwordConfirm.value) { <small class="field-error">As senhas não coincidem.</small> }
+            </div>
+          }
+          <div class="button-row form-actions">
+            <button class="btn btn-primary" type="submit" [disabled]="backupPending() || backupPasswordForm.invalid">{{ backupPasswordPurpose() === 'export' ? 'Exportar cifrado' : 'Abrir ficheiro' }}</button>
+            <button class="btn btn-secondary" type="button" (click)="closeBackupPasswordDialog()" [disabled]="backupPending()">Cancelar</button>
+          </div>
+        </form>
+      </app-modal-shell>
+    }
   `,
   styleUrl: './data-management.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -203,11 +226,19 @@ export class DataManagementComponent implements OnInit {
   readonly deleteDialogOpen = signal(false);
   readonly accountDeleteDialogOpen = signal(false);
   readonly accountPending = signal(false);
+  readonly backupPasswordDialogOpen = signal(false);
+  readonly backupPasswordPurpose = signal<'export' | 'import'>('export');
+  readonly backupPending = signal(false);
+  private readonly pendingEncryptedContents = signal<string | null>(null);
   readonly accountError = signal<string | null>(null);
   readonly emailForm = this.formBuilder.nonNullable.group({ email: ['', [Validators.required, Validators.email]] });
   readonly passwordForm = this.formBuilder.nonNullable.group({ currentPassword: ['', Validators.required], password: ['', [Validators.required, Validators.minLength(8)]], passwordConfirm: ['', Validators.required] });
   readonly accountDeleteForm = this.formBuilder.nonNullable.group({ password: ['', Validators.required], confirmation: ['', Validators.required] });
   readonly importForm = this.formBuilder.nonNullable.group({ confirmation: ['', Validators.required] });
+  readonly backupPasswordForm = this.formBuilder.nonNullable.group({
+    password: ['', [Validators.required, Validators.maxLength(1024)]],
+    passwordConfirm: ['', Validators.maxLength(1024)],
+  });
   readonly deleteForm = this.formBuilder.nonNullable.group({ confirmation: ['', Validators.required] });
   readonly formatDate = formatDate;
 
@@ -245,13 +276,23 @@ export class DataManagementComponent implements OnInit {
     await this.runAccountAction(async () => {
       await this.auth.changePassword(values.currentPassword, values.password, values.passwordConfirm);
       this.passwordForm.reset({ currentPassword: '', password: '', passwordConfirm: '' });
-      this.successMessage.set('Palavra-passe alterada. A sessão foi renovada com segurança.');
+      await this.session.logout(true);
     });
   }
 
   async logout(): Promise<void> {
     if (this.accountPending()) return;
     await this.runAccountAction(() => this.session.logout());
+  }
+
+  async clearLegacyData(): Promise<void> {
+    if (!window.confirm('Apagar permanentemente todos os dados locais antigos deste browser?')) return;
+    try {
+      await this.migration.clearLocalData();
+      this.successMessage.set('Os dados locais antigos foram apagados deste dispositivo.');
+    } catch {
+      this.operationError.set('Não foi possível apagar os dados locais antigos.');
+    }
   }
 
   closeAccountDeleteDialog(): void {
@@ -279,13 +320,51 @@ export class DataManagementComponent implements OnInit {
     finally { this.accountPending.set(false); }
   }
 
-  async exportData(): Promise<void> {
+  openBackupExport(): void {
     this.successMessage.set(null);
     this.operationError.set(null);
+    this.backupPasswordPurpose.set('export');
+    this.pendingEncryptedContents.set(null);
+    this.backupPasswordForm.reset({ password: '', passwordConfirm: '' });
+    this.backupPasswordDialogOpen.set(true);
+  }
+
+  async submitBackupPassword(): Promise<void> {
+    const { password, passwordConfirm } = this.backupPasswordForm.getRawValue();
+    if (this.backupPending() || password.length < 12) {
+      this.backupPasswordForm.controls.password.markAsTouched();
+      return;
+    }
+    if (this.backupPasswordPurpose() === 'export' && password !== passwordConfirm) {
+      this.backupPasswordForm.controls.passwordConfirm.markAsTouched();
+      return;
+    }
+    this.backupPending.set(true);
+    this.operationError.set(null);
     try {
-      await this.store.exportBackup();
-      this.successMessage.set('A cópia de segurança foi criada com sucesso.');
+      if (this.backupPasswordPurpose() === 'export') {
+        await this.store.exportBackup(password);
+        this.backupPasswordDialogOpen.set(false);
+        this.successMessage.set('A cópia de segurança cifrada foi criada com sucesso.');
+      } else {
+        const contents = this.pendingEncryptedContents();
+        if (!contents) return;
+        await this.previewBackup(contents, password);
+        this.backupPasswordDialogOpen.set(false);
+      }
     } catch (error: unknown) { this.captureOperationError(error, 'Não foi possível exportar os dados.'); }
+    finally {
+      this.backupPending.set(false);
+      this.backupPasswordForm.reset({ password: '', passwordConfirm: '' });
+      this.pendingEncryptedContents.set(null);
+    }
+  }
+
+  closeBackupPasswordDialog(): void {
+    if (this.backupPending()) return;
+    this.backupPasswordDialogOpen.set(false);
+    this.pendingEncryptedContents.set(null);
+    this.backupPasswordForm.reset({ password: '', passwordConfirm: '' });
   }
 
   async selectFile(event: Event): Promise<void> {
@@ -294,22 +373,34 @@ export class DataManagementComponent implements OnInit {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
-    if (file.size > 20 * 1024 * 1024) {
-      this.importErrors.set(['O ficheiro excede o limite de 20 MB.']);
+    if (file.size > 29 * 1024 * 1024) {
+      this.importErrors.set(['O ficheiro excede o limite de 29 MB.']);
       input.value = '';
       return;
     }
     try {
-      const validation = this.store.parseBackup(await file.text());
-      if (!validation.valid) this.importErrors.set(validation.errors);
-      else {
-        this.pendingBackup.set(validation.backup);
-        this.preview.set(validation.preview);
+      const contents = await file.text();
+      if (this.store.isEncryptedBackup(contents)) {
+        this.pendingEncryptedContents.set(contents);
+        this.backupPasswordPurpose.set('import');
+        this.backupPasswordForm.reset({ password: '', passwordConfirm: '' });
+        this.backupPasswordDialogOpen.set(true);
+      } else {
+        await this.previewBackup(contents);
       }
     } catch {
       this.importErrors.set(['Não foi possível ler o ficheiro selecionado.']);
     }
     input.value = '';
+  }
+
+  private async previewBackup(contents: string, passphrase?: string): Promise<void> {
+    const validation = await this.store.parseBackup(contents, passphrase);
+    if (!validation.valid) this.importErrors.set(validation.errors);
+    else {
+      this.pendingBackup.set(validation.backup);
+      this.preview.set(validation.preview);
+    }
   }
 
   async confirmImport(): Promise<void> {

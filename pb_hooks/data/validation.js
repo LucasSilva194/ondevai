@@ -362,7 +362,7 @@ function parseExpenses(e, values, context) {
       e,
       item,
       ['id', 'date', 'amountCents', 'categoryId', 'createdAt', 'updatedAt'],
-      ['subcategoryId', 'description', 'recurrence'],
+      ['subcategoryId', 'description', 'merchant', 'tags', 'recurrence'],
       `A despesa ${i + 1}`,
     )
     const date = assertCivilDate(e, item.date, 'A data da despesa')
@@ -387,6 +387,19 @@ function parseExpenses(e, values, context) {
     }
     if (item.description !== undefined) {
       expense.description = assertString(e, item.description, 1, 140, 'A descricao da despesa', true)
+    }
+    if (item.merchant !== undefined) {
+      expense.merchant = assertString(e, item.merchant, 1, 100, 'O comerciante da despesa', true)
+    }
+    if (item.tags !== undefined) {
+      const tags = assertArray(e, item.tags, 10, 'As etiquetas da despesa')
+      const uniqueTags = {}
+      expense.tags = tags.map(function (tag) {
+        const normalized = assertString(e, tag, 1, 32, 'Uma etiqueta da despesa', true)
+        if (uniqueTags[normalized]) fail(e, 'As etiquetas da despesa nao podem repetir-se.')
+        uniqueTags[normalized] = true
+        return normalized
+      })
     }
     const recurrence = parseRecurrence(e, item.recurrence, date, `a despesa ${i + 1}`)
     if (recurrence) {
@@ -827,8 +840,8 @@ function validateBackup(e, value) {
     [],
     'O backup',
   )
-  if (backup.schemaVersion !== 4) {
-    fail(e, 'Apenas backups schemaVersion 4 sao aceites.')
+  if (backup.schemaVersion !== 4 && backup.schemaVersion !== 5) {
+    fail(e, 'Apenas backups schemaVersion 4 ou 5 sao aceites.')
   }
 
   let total = 0
@@ -873,7 +886,7 @@ function validateBackup(e, value) {
   )
 
   return {
-    schemaVersion: 4,
+    schemaVersion: backup.schemaVersion,
     exportedAt: assertTimestamp(e, backup.exportedAt, 'A data de exportacao'),
     settings: settings,
     categories: categories,

@@ -4,7 +4,7 @@ import { LocalDataMigrationService } from '../migration/local-data-migration.ser
 import { AppStore } from '../stores/app.store';
 import { AuthService } from './auth.service';
 
-export type LoginDestination = 'verification-required' | 'migration' | 'application';
+export type LoginDestination = 'mfa-required' | 'verification-required' | 'migration' | 'application';
 
 @Injectable({ providedIn: 'root' })
 export class UserSessionService {
@@ -24,6 +24,17 @@ export class UserSessionService {
   async login(email: string, password: string): Promise<LoginDestination> {
     this.errorState.set(null);
     await this.auth.login(email, password);
+    if (this.auth.mfaRequired()) return 'mfa-required';
+    return this.finishLogin();
+  }
+
+  async completeMfaLogin(code: string): Promise<LoginDestination> {
+    this.errorState.set(null);
+    await this.auth.completeMfaLogin(code);
+    return this.finishLogin();
+  }
+
+  private async finishLogin(): Promise<LoginDestination> {
     const user = this.auth.user();
     if (!user?.verified) {
       await this.store.clearUserState();
@@ -50,11 +61,11 @@ export class UserSessionService {
     return 'application';
   }
 
-  async logout(): Promise<void> {
+  async logout(passwordChanged = false): Promise<void> {
     this.errorState.set(null);
     await this.store.clearUserState();
     this.auth.logout();
-    await this.router.navigate(['/entrar']);
+    await this.router.navigate(['/entrar'], { queryParams: passwordChanged ? { passwordChanged: '1' } : undefined });
   }
 
   clearError(): void {

@@ -15,9 +15,11 @@ import { AppStore } from '../../../core/stores/app.store';
       <p class="eyebrow">Bem-vindo de volta</p>
       <h1>Entrar no OndeVai</h1>
       <p class="intro">Aceda aos seus dados financeiros com o seu email e palavra-passe.</p>
+      @if (passwordChanged()) { <p class="form-message success" role="status">A palavra-passe foi alterada. Inicie sessão novamente.</p> }
 
       <form class="auth-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
         <fieldset [disabled]="auth.loading() || submitting()">
+          @if (!mfaPending()) {
           <div class="field">
             <label for="login-email">Email</label>
             <input id="login-email" type="email" formControlName="email" autocomplete="username" inputmode="email"
@@ -35,6 +37,19 @@ import { AppStore } from '../../../core/stores/app.store';
           <button class="btn btn-primary" type="submit" [disabled]="auth.loading() || submitting()">
             {{ auth.loading() || submitting() ? 'A entrar...' : 'Entrar' }}
           </button>
+          } @else {
+            <p class="intro">Enviámos um código de segurança para o email da conta. Introduza o código para concluir a autenticação.</p>
+            <div class="field">
+              <label for="login-mfa-code">Código de segurança</label>
+              <input id="login-mfa-code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6"
+                formControlName="mfaCode" aria-describedby="login-mfa-help">
+              <small id="login-mfa-help">O código tem 6 dígitos.</small>
+            </div>
+            <button class="btn btn-primary" type="submit" [disabled]="auth.loading() || submitting() || form.controls.mfaCode.invalid">
+              {{ auth.loading() || submitting() ? 'A validar...' : 'Confirmar código' }}
+            </button>
+            <button class="btn btn-secondary" type="button" (click)="cancelMfa()" [disabled]="auth.loading() || submitting()">Voltar</button>
+          }
         </fieldset>
       </form>
 
@@ -61,6 +76,7 @@ export class LoginComponent {
   readonly session = inject(UserSessionService);
   readonly store = inject(AppStore);
   readonly submitting = signal(false);
+  readonly mfaPending = this.auth.mfaRequired;
   private readonly formBuilder = inject(FormBuilder);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
@@ -68,11 +84,16 @@ export class LoginComponent {
   readonly form = this.formBuilder.nonNullable.group({
     email: ['', [Validators.required, Validators.email]],
     password: ['', Validators.required],
+    mfaCode: ['', [Validators.pattern(/^\d{6}$/)]],
   });
 
   showEmailError(): boolean {
     const control = this.form.controls.email;
     return control.invalid && (control.dirty || control.touched);
+  }
+
+  passwordChanged(): boolean {
+    return this.route.snapshot.queryParamMap.get('passwordChanged') === '1';
   }
 
   showPasswordError(): boolean {
@@ -82,15 +103,25 @@ export class LoginComponent {
 
   async submit(): Promise<void> {
     if (this.submitting()) return;
-    if (this.form.invalid) {
+    if (this.mfaPending()) {
+      if (this.form.controls.mfaCode.invalid) {
+        this.form.controls.mfaCode.markAsTouched();
+        return;
+      }
+    } else if (this.form.controls.email.invalid || this.form.controls.password.invalid) {
       this.form.markAllAsTouched();
       return;
     }
 
-    const { email, password } = this.form.getRawValue();
     this.submitting.set(true);
     try {
-      const destination = await this.session.login(email, password);
+      const destination = this.mfaPending()
+        ? await this.session.completeMfaLogin(this.form.controls.mfaCode.value)
+        : await this.session.login(this.form.controls.email.value, this.form.controls.password.value);
+      if (destination === 'mfa-required') {
+        this.form.controls.password.reset('');
+        return;
+      }
       if (destination === 'verification-required') {
         await this.router.navigate(['/confirmar-email']);
         return;
@@ -105,6 +136,11 @@ export class LoginComponent {
     } finally {
       this.submitting.set(false);
     }
+  }
+
+  cancelMfa(): void {
+    this.auth.cancelMfaLogin();
+    this.form.controls.mfaCode.reset('');
   }
 
   private safeReturnUrl(): string {

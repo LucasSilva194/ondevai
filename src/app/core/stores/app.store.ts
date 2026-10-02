@@ -382,12 +382,16 @@ export class AppStore {
     }).then(({ copied }) => copied);
   }
 
-  async exportBackup(): Promise<void> {
-    await this.execute(() => this.backupService.exportToFile(), (backup) => this._settings.set(backup.settings));
+  async exportBackup(passphrase: string): Promise<void> {
+    await this.execute(() => this.backupService.exportToFile(passphrase), (backup) => this._settings.set(backup.settings));
   }
 
-  parseBackup(contents: string): BackupValidationResult {
-    return this.backupService.parse(contents);
+  isEncryptedBackup(contents: string): boolean {
+    return this.backupService.isEncryptedBackup(contents);
+  }
+
+  parseBackup(contents: string, passphrase?: string): Promise<BackupValidationResult> {
+    return this.backupService.parse(contents, passphrase);
   }
 
   async importBackup(backup: AppBackup): Promise<void> {
