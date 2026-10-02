@@ -121,9 +121,9 @@ async function decryptBackup(envelope: EncryptedBackup, passphrase: string): Pro
   }
   const key = await deriveKey(passphrase, fromBase64(envelope.salt));
   const cleartext = await crypto.subtle.decrypt(
-    { name: 'AES-GCM', iv: fromBase64(envelope.iv) },
+    { name: 'AES-GCM', iv: toArrayBuffer(fromBase64(envelope.iv)) },
     key,
-    fromBase64(envelope.ciphertext),
+    toArrayBuffer(fromBase64(envelope.ciphertext)),
   );
   return new TextDecoder().decode(cleartext);
 }
@@ -131,12 +131,18 @@ async function decryptBackup(envelope: EncryptedBackup, passphrase: string): Pro
 async function deriveKey(passphrase: string, salt: Uint8Array): Promise<CryptoKey> {
   const material = await crypto.subtle.importKey('raw', new TextEncoder().encode(passphrase), 'PBKDF2', false, ['deriveKey']);
   return crypto.subtle.deriveKey(
-    { name: 'PBKDF2', salt, iterations: BACKUP_KDF_ITERATIONS, hash: 'SHA-256' },
+    { name: 'PBKDF2', salt: toArrayBuffer(salt), iterations: BACKUP_KDF_ITERATIONS, hash: 'SHA-256' },
     material,
     { name: 'AES-GCM', length: 256 },
     false,
     ['encrypt', 'decrypt'],
   );
+}
+
+function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
+  const buffer = new ArrayBuffer(bytes.byteLength);
+  new Uint8Array(buffer).set(bytes);
+  return buffer;
 }
 
 function isEncryptedEnvelope(value: unknown): value is EncryptedBackup {

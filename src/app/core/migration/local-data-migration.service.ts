@@ -308,15 +308,17 @@ export class LocalDataMigrationService {
   async clearLocalData(): Promise<void> {
     await this.database.transaction(
       'rw',
-      this.database.expenses,
-      this.database.categories,
-      this.database.monthlyIncomes,
-      this.database.savingsGoals,
-      this.database.savingsTransactions,
-      this.database.monthlyBudgets,
-      this.database.recurrenceExceptions,
-      this.database.settings,
-      this.database.metadata,
+      [
+        this.database.expenses,
+        this.database.categories,
+        this.database.monthlyIncomes,
+        this.database.savingsGoals,
+        this.database.savingsTransactions,
+        this.database.monthlyBudgets,
+        this.database.recurrenceExceptions,
+        this.database.settings,
+        this.database.metadata,
+      ],
       async () => {
         await Promise.all([
           this.database.expenses.clear(),
