@@ -1,5 +1,5 @@
 import { Injectable, InjectionToken, inject } from '@angular/core';
-import PocketBase from 'pocketbase';
+import PocketBase, { BaseAuthStore } from 'pocketbase';
 import { environment } from '../../../environments/environment';
 
 export const DEFAULT_POCKETBASE_URL = environment.pocketBaseUrl;
@@ -14,6 +14,7 @@ export class PocketBaseClientService {
   public readonly client: PocketBase;
 
   constructor() {
-    this.client = new PocketBase(inject(POCKETBASE_URL));
+    // Keep bearer tokens in memory so they are not recoverable from localStorage.
+    this.client = new PocketBase(inject(POCKETBASE_URL), new BaseAuthStore());
   }
 }

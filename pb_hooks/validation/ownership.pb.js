@@ -29,6 +29,7 @@ onRecordCreateRequest(
       validation = require(`${__hooks}/ownership.js`)
     }
     validation.assertRequestOwner(e)
+    validation.assertRequestFields(e)
     validation.assertRelations(e)
     e.next()
   },
@@ -44,6 +45,7 @@ onRecordUpdateRequest(
       validation = require(`${__hooks}/ownership.js`)
     }
     validation.assertUnchangedOwner(e)
+    validation.assertRequestFields(e)
     validation.assertRelations(e)
     e.next()
   },

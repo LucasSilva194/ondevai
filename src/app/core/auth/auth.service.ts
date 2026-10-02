@@ -28,6 +28,7 @@ interface PocketBaseErrorLike {
   readonly status: number;
   readonly isAbort?: boolean;
   readonly originalError?: unknown;
+  readonly response?: { readonly mfaId?: unknown };
 }
 
 class AuthMessageError extends Error {}
@@ -41,11 +42,14 @@ export class AuthService {
   private readonly errorState = signal<string | null>(null);
   private initialization: Promise<void> | null = null;
   private pendingVerificationEmail: string | null = null;
+  private pendingMfa: { readonly mfaId: string; readonly otpId: string } | null = null;
+  private readonly mfaRequiredState = signal(false);
 
   readonly user = this.userState.asReadonly();
   readonly authenticated = computed(() => this.user() !== null);
   readonly loading = this.loadingState.asReadonly();
   readonly error = this.errorState.asReadonly();
+  readonly mfaRequired = this.mfaRequiredState.asReadonly();
 
   constructor() {
     const unsubscribe = this.pocketBase.authStore.onChange(
@@ -73,15 +77,49 @@ export class AuthService {
   }
 
   async login(email: string, password: string): Promise<void> {
+    const normalizedEmail = normalizeEmail(email);
+    this.cancelMfaLogin();
     await this.run('login', async () => {
-      await this.pocketBase.collection('users').authWithPassword<AuthUserRecord>(normalizeEmail(email), password);
-      this.pendingVerificationEmail = null;
+      try {
+        await this.pocketBase.collection('users').authWithPassword<AuthUserRecord>(normalizedEmail, password);
+        this.pendingVerificationEmail = null;
+        this.syncUser(this.pocketBase.authStore.record);
+      } catch (error: unknown) {
+        const mfaId = isPocketBaseError(error) && error.response?.mfaId;
+        if (typeof mfaId !== 'string' || !mfaId) throw error;
+        const challenge = await this.pocketBase.collection('users').requestOTP(normalizedEmail);
+        this.pendingMfa = { mfaId, otpId: challenge.otpId };
+        this.mfaRequiredState.set(true);
+      }
+    });
+  }
+
+  async completeMfaLogin(code: string): Promise<void> {
+    const pending = this.pendingMfa;
+    const normalizedCode = code.trim();
+    if (!pending || !/^\d{6}$/.test(normalizedCode)) {
+      throw new AuthMessageError('O código de segurança não é válido.');
+    }
+    await this.run('login', async () => {
+      await this.pocketBase.collection('users').authWithOTP<AuthUserRecord>(
+        pending.otpId,
+        normalizedCode,
+        { mfaId: pending.mfaId },
+      );
+      this.pendingMfa = null;
+      this.mfaRequiredState.set(false);
       this.syncUser(this.pocketBase.authStore.record);
     });
   }
 
+  cancelMfaLogin(): void {
+    this.pendingMfa = null;
+    this.mfaRequiredState.set(false);
+  }
+
   logout(): void {
     this.errorState.set(null);
+    this.cancelMfaLogin();
     this.pendingVerificationEmail = null;
     this.pocketBase.authStore.clear();
     this.userState.set(null);
@@ -109,10 +147,11 @@ export class AuthService {
         password,
         passwordConfirm,
       });
-      // Alterar a palavra-passe invalida tokens anteriores. Uma nova autenticação
-      // mantém esta sessão ativa sem conservar qualquer credencial no cliente.
-      await this.pocketBase.collection('users').authWithPassword<AuthUserRecord>(user.email, password);
-      this.syncUser(this.pocketBase.authStore.record);
+      // With MFA enabled, re-authentication needs a second factor. End this
+      // session and require a fresh password + OTP login instead.
+      this.cancelMfaLogin();
+      this.pocketBase.authStore.clear();
+      this.userState.set(null);
     });
   }
 
