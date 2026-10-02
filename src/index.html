@@ -22,11 +22,16 @@
     <style>
       #boot-splash { position: fixed; inset: 0; z-index: 1000; display: grid; place-content: center; justify-items: center; gap: 16px; padding: 24px; background: #f7f3ea; color: #182d25; font: 500 15px/1.5 system-ui, sans-serif; text-align: center; opacity: 1; transition: opacity 180ms cubic-bezier(.23,1,.32,1); }
       #boot-splash.boot-splash-leaving { opacity: 0; }
-      .boot-mark { width: 50px; height: 50px; display: grid; place-items: center; border: 1px solid #a7b59f; border-radius: 17px; background: #1b3f33; color: #f7f3ea; }
+      .boot-mark { width: 50px; height: 50px; display: grid; place-items: center; border: 1px solid #a7b59f; border-radius: 17px; background: #1b3f33; color: #f7f3ea; animation: boot-mark-pulse 1.6s cubic-bezier(0.77, 0, 0.175, 1) infinite; }
       .boot-mark svg { width: 36px; height: 36px; }
       .boot-mark path { fill: currentColor; }
       .boot-copy { color: #4b5e53; }
-      @media (prefers-reduced-motion: reduce) { #boot-splash { transition-duration: 0.01ms; } }
+      @keyframes boot-mark-pulse { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-2px) scale(1.04); } }
+      @media (prefers-reduced-motion: reduce) {
+        #boot-splash { transition-duration: 0.01ms; }
+        .boot-mark { animation: boot-mark-breathe 1.6s cubic-bezier(0.77, 0, 0.175, 1) infinite; }
+      }
+      @keyframes boot-mark-breathe { 0%, 100% { opacity: 1; } 50% { opacity: 0.78; } }
     </style>
     <app-root></app-root>
     <noscript>O OndeVai precisa de JavaScript para guardar e analisar as suas despesas neste dispositivo.</noscript>
