@@ -68,11 +68,6 @@
 .expense-icon-action.danger-text:hover { background: var(--danger-soft); color: var(--danger); }
 .danger-text { color: var(--danger); }
 .status-badge.recurring { background: var(--accent-soft); color: var(--accent-strong); }
-.check-field { min-height: 66px; display: flex; align-items: flex-start; gap: 12px; padding: 14px; border: 1px solid var(--border); border-radius: var(--radius-control); background: var(--surface); cursor: pointer; }
-.check-field input { width: 18px; height: 18px; margin: 2px 0 0; accent-color: var(--accent); }
-.check-field span { display: grid; gap: 4px; }
-.check-field strong { font-size: .82rem; }
-.check-field small { color: var(--text-muted); line-height: 1.4; }
 .form-actions { margin-top: 26px; }
 .form-message { padding: 12px 14px; margin: 18px 0 0; border-radius: 14px; background: var(--danger-soft); color: var(--danger); font-size: .83rem; }
 .expense-more-details { margin-top: 18px; overflow: hidden; border: 1px solid var(--border); border-radius: var(--radius-inner); background: var(--surface); }
