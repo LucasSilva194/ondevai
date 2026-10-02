@@ -4,7 +4,6 @@
 .filter-summary-meta { max-width: 72%; overflow: hidden; color: var(--text-muted); font-size: .76rem; font-weight: 560; text-overflow: ellipsis; white-space: nowrap; }
 .filters[open] > summary { border-bottom: 1px solid var(--border); }
 .filter-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; padding: 18px; }
-.field { min-width: 0; }
 .filter-footer { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 20px; padding-top: 14px; border-top: 1px solid var(--border); }
 .sort-control { display: flex; align-items: center; gap: 9px; color: var(--text-muted); font-size: .75rem; font-weight: 720; }
 .sort-control select { min-height: 38px; padding: 6px 36px 6px 11px; border: 1px solid var(--border); border-radius: 999px; background-color: var(--surface-raised); color: var(--text); }
@@ -74,7 +73,6 @@
 .check-field small { color: var(--text-muted); line-height: 1.4; }
 .form-actions { margin-top: 26px; }
 .form-message { padding: 12px 14px; margin: 18px 0 0; border-radius: 14px; background: var(--danger-soft); color: var(--danger); font-size: .83rem; }
-.expense-primary-grid { gap: 18px; }
 .expense-more-details { margin-top: 18px; overflow: hidden; border: 1px solid var(--border); border-radius: var(--radius-inner); background: var(--surface); }
 .expense-more-details summary { min-height: 72px; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 16px; color: var(--text); cursor: pointer; list-style: none; transition: background-color 160ms ease-out; }
 .expense-more-details summary::-webkit-details-marker { display: none; }
@@ -90,12 +88,9 @@
 .expense-more-details[open] .details-summary-action i { transform: rotate(225deg) translate(-1px, -1px); }
 .expense-more-details[open] summary { border-bottom: 1px solid var(--border); }
 .expense-details-grid { padding: 18px; gap: 18px 20px; align-items: start; }
-.expense-details-grid .field { align-content: start; }
-.expense-details-grid .helper { max-width: 42ch; }
 .recent-tags { display: flex; flex-wrap: wrap; gap: 5px; }
 .recent-tags button { padding: 4px 8px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); color: var(--text-soft); font-size: .67rem; cursor: pointer; transition: background-color 160ms ease, color 160ms ease; }
 .recent-tags button:hover { background: var(--accent-soft); color: var(--accent-strong); }
-.expense-more-details [role="list"] { margin: 0; }
 
 :is(.filters, .view-switch, .calendar-view, .expense-list) :is(button, summary, select, input):focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 60%, white); outline-offset: 2px; }
 
