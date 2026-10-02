@@ -153,7 +153,7 @@ export class DashboardComponent {
   readonly nextItems = computed(() => {
     const today = todayDateString();
     const [year, month, day] = today.split('-').map(Number);
-    const endDate = new Date(Date.UTC(year, month - 1, day + 29)).toISOString().slice(0, 10);
+    const endDate = new Date(Date.UTC(year, month - 1, day + 30)).toISOString().slice(0, 10);
     return [
       ...materializeExpenses(this.store.expenses(), this.store.recurrenceExceptions(), today, endDate).map((item) => ({ ...item, itemType: 'expense' as const })),
       ...materializeIncomes(this.store.monthlyIncomes(), this.store.recurrenceExceptions(), today, endDate).map((item) => ({ ...item, itemType: 'income' as const })),

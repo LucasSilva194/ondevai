@@ -108,7 +108,7 @@ export class UpcomingComponent {
   readonly filter = signal<'all' | 'expense' | 'income'>('all');
   readonly notice = signal('');
   readonly today = todayDateString();
-  readonly until = addDays(this.today, 29);
+  readonly until = addDays(this.today, 30);
   readonly expenses = computed(() => materializeExpenses(this.store.expenses(), this.store.recurrenceExceptions(), this.today, this.until));
   readonly incomes = computed(() => materializeIncomes(this.store.monthlyIncomes(), this.store.recurrenceExceptions(), this.today, this.until));
   readonly outgoingTotal = computed(() => this.expenses().reduce((total, item) => total + item.amountCents, 0));
