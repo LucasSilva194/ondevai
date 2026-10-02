@@ -173,13 +173,13 @@ import { expensesForMonth, MONTH_NAMES, sumExpenses } from '../../../shared/util
     </div>
 
     @if (formOpen()) {
-      <app-modal-shell labelledBy="expense-form-title" (closeRequest)="closeForm()">
+      <app-modal-shell labelledBy="expense-form-title" panelClass="modal expense-create-modal" (closeRequest)="closeForm()">
           <header class="modal-header">
             <div><h2 id="expense-form-title">{{ editingOccurrence() ? 'Editar ocorrência' : editingExpense() ? 'Editar despesa' : 'Nova despesa' }}</h2><p>{{ editingOccurrence() ? 'Esta alteração aplica-se apenas à data selecionada.' : 'Os campos assinalados são obrigatórios.' }}</p></div>
             <button class="btn btn-ghost btn-compact" type="button" (click)="closeForm()" aria-label="Fechar formulário">Fechar</button>
           </header>
           <form [formGroup]="expenseForm" (ngSubmit)="submit()" novalidate>
-            <div class="form-grid">
+            <div class="form-grid expense-primary-grid">
               <div class="field">
                 <label for="expense-date">Data *</label>
                 <input id="expense-date" name="date" autocomplete="off" type="date" formControlName="date" required>
@@ -200,9 +200,13 @@ import { expensesForMonth, MONTH_NAMES, sumExpenses } from '../../../shared/util
                 </select>
                 @if (expenseForm.controls.categoryId.touched && expenseForm.controls.categoryId.invalid) { <p class="field-error">Selecione uma categoria.</p> }
               </div>
-              <details class="expense-more-details">
-                <summary>Mais detalhes <span>Descrição, comerciante, etiquetas e recorrência</span></summary>
-                <div class="form-grid">
+            </div>
+            <details class="expense-more-details">
+              <summary>
+                <span class="details-summary-copy"><strong>Mais detalhes</strong><span>Descrição, comerciante, etiquetas e recorrência</span></span>
+                <span class="details-summary-action"><span class="details-action-closed">Adicionar</span><span class="details-action-open">Recolher</span><i aria-hidden="true"></i></span>
+              </summary>
+              <div class="form-grid expense-details-grid">
                   <div class="field">
                     <label for="expense-subcategory">Subcategoria</label>
                     <select id="expense-subcategory" formControlName="subcategoryId">
@@ -242,9 +246,8 @@ import { expensesForMonth, MONTH_NAMES, sumExpenses } from '../../../shared/util
                   <div class="field"><label for="expense-status">Estado</label><select id="expense-status" formControlName="recurrenceStatus"><option value="active">Ativa</option><option value="paused">Pausada</option></select></div>
                 }
               }
-                </div>
-              </details>
-            </div>
+              </div>
+            </details>
             @if (formError()) { <p class="form-message" role="alert">{{ formError() }}</p> }
             <div class="button-row form-actions">
               <button class="btn btn-primary" type="submit" [disabled]="store.operationPending()">{{ store.operationPending() ? 'A guardar…' : 'Guardar despesa' }}</button>

@@ -12,13 +12,13 @@ import { parseMoneyToCents } from '../../../shared/utils/money.utils';
   imports: [ReactiveFormsModule, ModalShellComponent],
   template: `
     @if (open) {
-      <app-modal-shell labelledBy="quick-expense-title" (closeRequest)="close()">
+      <app-modal-shell labelledBy="quick-expense-title" panelClass="modal expense-create-modal" (closeRequest)="close()">
         <header class="modal-header">
           <div><h2 id="quick-expense-title">Nova despesa</h2><p>Os campos assinalados são obrigatórios.</p></div>
           <button class="btn btn-ghost btn-compact" type="button" (click)="close()" aria-label="Fechar formulário">Fechar</button>
         </header>
         <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
-          <div class="form-grid">
+          <div class="form-grid expense-primary-grid">
             <div class="field"><label for="quick-expense-date">Data *</label><input id="quick-expense-date" name="date" autocomplete="off" type="date" formControlName="date" required></div>
             <div class="field">
               <label for="quick-expense-amount">Valor em euros *</label>
@@ -33,9 +33,13 @@ import { parseMoneyToCents } from '../../../shared/utils/money.utils';
               </select>
               @if (form.controls.categoryId.touched && form.controls.categoryId.invalid) { <p class="field-error">Selecione uma categoria.</p> }
             </div>
-            <details class="expense-more-details">
-              <summary>Mais detalhes <span>Descrição, comerciante, etiquetas e recorrência</span></summary>
-              <div class="form-grid">
+          </div>
+          <details class="expense-more-details">
+            <summary>
+              <span class="details-summary-copy"><strong>Mais detalhes</strong><span>Descrição, comerciante, etiquetas e recorrência</span></span>
+              <span class="details-summary-action"><span class="details-action-closed">Adicionar</span><span class="details-action-open">Recolher</span><i aria-hidden="true"></i></span>
+            </summary>
+            <div class="form-grid expense-details-grid">
                 <div class="field">
                   <label for="quick-expense-subcategory">Subcategoria</label>
                   <select id="quick-expense-subcategory" formControlName="subcategoryId">
@@ -55,9 +59,8 @@ import { parseMoneyToCents } from '../../../shared/utils/money.utils';
                   <div class="field"><label for="quick-expense-end">Data de fim</label><input id="quick-expense-end" name="endDate" autocomplete="off" type="date" formControlName="endDate" [min]="form.controls.date.value"></div>
                   <div class="field"><label for="quick-expense-status">Estado</label><select id="quick-expense-status" formControlName="recurrenceStatus"><option value="active">Ativa</option><option value="paused">Pausada</option></select></div>
                 }
-              </div>
-            </details>
-          </div>
+            </div>
+          </details>
           @if (formError()) { <p class="form-message" role="alert">{{ formError() }}</p> }
           <div class="button-row form-actions">
             <button class="btn btn-primary" type="submit" [disabled]="store.operationPending()">{{ store.operationPending() ? 'A guardar…' : 'Guardar despesa' }}</button>
