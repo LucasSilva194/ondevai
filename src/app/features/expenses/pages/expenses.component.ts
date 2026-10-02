@@ -11,6 +11,7 @@ import { formatDate, todayDateString } from '../../../shared/utils/date.utils';
 import { centsToInputValue, formatCurrency, parseMoneyToCents } from '../../../shared/utils/money.utils';
 import { recurrenceLabel } from '../../../shared/utils/recurrence.utils';
 import { expensesForMonth, MONTH_NAMES, sumExpenses } from '../../../shared/utils/statistics.utils';
+import { expenseIconFor } from '../../../shared/utils/expense-icons';
 
 @Component({
   selector: 'app-expenses',
@@ -117,7 +118,7 @@ import { expensesForMonth, MONTH_NAMES, sumExpenses } from '../../../shared/util
               <div class="selected-day-list">
                 @for (expense of selectedDayExpenses(); track expense.occurrenceKey) {
                   <article class="selected-day-row">
-                    <div><strong>{{ expense.merchant || expense.description || categoryName(expense.categoryId) }}</strong><span>{{ categoryName(expense.categoryId) }}</span></div>
+                    <div class="selected-day-details"><span class="selected-day-icon" [style.color]="categoryColor(expense.categoryId)" aria-hidden="true"><app-icon [name]="expenseIconFor(expense.categoryId, expense.subcategoryId)" /></span><span class="selected-day-copy"><strong>{{ expense.merchant || expense.description || categoryName(expense.categoryId) }}</strong><span>{{ categoryName(expense.categoryId) }}</span></span></div>
                     <strong>{{ formatCurrency(expense.amountCents) }}</strong>
                     <button class="expense-icon-action" type="button" (click)="openEdit(expense)" [attr.aria-label]="'Editar despesa de ' + (expense.merchant || expense.description || categoryName(expense.categoryId))"><app-icon name="edit" /></button>
                   </article>
@@ -138,7 +139,7 @@ import { expensesForMonth, MONTH_NAMES, sumExpenses } from '../../../shared/util
           <div class="expense-day-group"><header><strong>{{ dateLabel(group.date) }}</strong><span>{{ formatCurrency(group.total) }}</span></header>
           @for (expense of group.expenses; track expense.id) {
             <article class="expense-row">
-              <div class="date-block"><strong>{{ expense.date.slice(8, 10) }}</strong><span>{{ monthShort(expense.date) }}</span></div>
+              <div class="expense-category-icon" [style.--expense-category-color]="categoryColor(expense.categoryId)" aria-hidden="true"><app-icon [name]="expenseIconFor(expense.categoryId, expense.subcategoryId)" /></div>
               <div class="expense-main">
                 <div class="expense-title-row">
                   <strong>{{ expense.merchant || expense.description || categoryName(expense.categoryId) }}</strong>
@@ -560,6 +561,7 @@ export class ExpensesComponent {
 
   categoryName(id: string): string { return this.category(id)?.name ?? 'Categoria indisponível'; }
   categoryColor(id: string): string { return this.category(id)?.color ?? '#68727d'; }
+  expenseIconFor(categoryId: string, subcategoryId?: string) { return expenseIconFor(this.store.categories(), categoryId, subcategoryId); }
   categoryArchived(id: string): boolean { return this.category(id)?.archived ?? false; }
   subcategoryName(categoryId: string, subcategoryId: string): string {
     return this.category(categoryId)?.subcategories.find((subcategory) => subcategory.id === subcategoryId)?.name ?? 'Subcategoria indisponível';

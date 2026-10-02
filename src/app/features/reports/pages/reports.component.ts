@@ -7,10 +7,12 @@ import { todayDateString } from '../../../shared/utils/date.utils';
 import { ChartComponent } from '../../../shared/components/chart/chart.component';
 import { RouterLink } from '@angular/router';
 import { MONTH_NAMES } from '../../../shared/utils/statistics.utils';
+import { IconComponent } from '../../../shared/components/common/icon/icon.component';
+import { expenseIconFor } from '../../../shared/utils/expense-icons';
 
 @Component({
   selector: 'app-reports',
-  imports: [ChartComponent, RouterLink],
+  imports: [ChartComponent, RouterLink, IconComponent],
   template: `
     <div class="page">
       <header class="page-header-row">
@@ -44,7 +46,7 @@ import { MONTH_NAMES } from '../../../shared/utils/statistics.utils';
 
       <section class="report-transactions">
         <div class="report-section-heading"><div><h2>Movimentos do período</h2><p>{{ rows().length }} registos e previsões entre {{ from() }} e {{ to() }}.</p></div></div>
-        @if (rows().length) { <div class="report-row-list">@for (row of rows(); track row.occurrenceKey) { <article><time [attr.datetime]="row.date">{{ row.date }}</time><div><strong>{{ row.merchant || row.description || categoryName(row.categoryId) }}</strong><small>{{ categoryName(row.categoryId) }}{{ tagsLabel(row) }}</small></div><span class="status-badge" [class.projected]="row.date > today">{{ row.date > today ? 'Previsto' : 'Registado' }}</span><strong>{{ formatCurrency(row.amountCents) }}</strong></article> }</div> }
+        @if (rows().length) { <div class="report-row-list">@for (row of rows(); track row.occurrenceKey) { <article><span class="report-expense-icon" aria-hidden="true"><app-icon [name]="expenseIconFor(row.categoryId, row.subcategoryId)" /></span><time [attr.datetime]="row.date">{{ row.date }}</time><div><strong>{{ row.merchant || row.description || categoryName(row.categoryId) }}</strong><small>{{ categoryName(row.categoryId) }}{{ tagsLabel(row) }}</small></div><span class="status-badge" [class.projected]="row.date > today">{{ row.date > today ? 'Previsto' : 'Registado' }}</span><strong>{{ formatCurrency(row.amountCents) }}</strong></article> }</div> }
         @else { <section class="empty-state"><h2>Sem despesas neste período</h2><p>Altere as datas para consultar outro intervalo.</p></section> }
       </section>
       @if (message()) { <p role="status" class="report-message">{{ message() }}</p> }
@@ -75,7 +77,9 @@ import { MONTH_NAMES } from '../../../shared/utils/statistics.utils';
     .month-comparison small { color: var(--text-muted); text-align: right; line-height: 1.5; }
     .report-transactions { margin-top: 28px; }
     .report-row-list { border-top: 1px solid var(--border); }
-    .report-row-list article { display: grid; grid-template-columns: 92px minmax(0,1fr) auto 120px; align-items: center; gap: 14px; min-height: 60px; border-bottom: 1px solid var(--border); }
+    .report-row-list article { display: grid; grid-template-columns: 32px 92px minmax(0,1fr) auto 120px; align-items: center; gap: 14px; min-height: 60px; border-bottom: 1px solid var(--border); }
+    .report-expense-icon { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 10px; background: var(--accent-soft); color: var(--accent-strong); }
+    .report-expense-icon app-icon { width: 17px; height: 17px; }
     .report-row-list time { color: var(--text-muted); font-size: .74rem; font-variant-numeric: tabular-nums; }
     .report-row-list article div { display: grid; gap: 3px; min-width: 0; }
     .report-row-list article div strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .83rem; }
@@ -83,7 +87,7 @@ import { MONTH_NAMES } from '../../../shared/utils/statistics.utils';
     .report-row-list article > strong { text-align: right; font-size: .82rem; font-variant-numeric: tabular-nums; }
     .status-badge.projected { background: var(--warning-soft); color: var(--warning); }
     .report-message { color: var(--accent-strong); }
-    @media (max-width: 760px) { .report-filters { display: grid; grid-template-columns: 1fr 1fr; } .report-filters .field { min-width: 0; } .report-summary { gap: 7px; } .report-summary article { padding: 13px; } .report-summary strong { font-size: 1.25rem; } .report-summary small { font-size: .6rem; } .report-columns { grid-template-columns: 1fr; } .report-chart { grid-row: auto; } .report-row-list article { grid-template-columns: 64px minmax(0,1fr) auto; gap: 8px; padding: 9px 0; } .report-row-list .status-badge { display: none; } .report-row-list article > strong { grid-column: 3; grid-row: 1; font-size: .72rem; } }
+    @media (max-width: 760px) { .report-filters { display: grid; grid-template-columns: 1fr 1fr; } .report-filters .field { min-width: 0; } .report-summary { gap: 7px; } .report-summary article { padding: 13px; } .report-summary strong { font-size: 1.25rem; } .report-summary small { font-size: .6rem; } .report-columns { grid-template-columns: 1fr; } .report-chart { grid-row: auto; } .report-row-list article { grid-template-columns: 28px 64px minmax(0,1fr) auto; gap: 8px; padding: 9px 0; } .report-row-list .status-badge { display: none; } .report-row-list article > strong { grid-column: 4; grid-row: 1; font-size: .72rem; } }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -162,6 +166,7 @@ export class ReportsComponent {
   setThisYear(): void { this.from.set(`${this.now.getFullYear()}-01-01`); this.to.set(this.today); }
   setThisMonth(): void { this.from.set(`${this.today.slice(0, 7)}-01`); this.to.set(this.today); }
   categoryName(id: string): string { return this.store.categories().find((item) => item.id === id)?.name ?? 'Categoria indisponível'; }
+  expenseIconFor(categoryId: string, subcategoryId?: string) { return expenseIconFor(this.store.categories(), categoryId, subcategoryId); }
   tagsLabel(row: ExpenseOccurrence): string { return row.tags?.length ? ` · ${row.tags.join(', ')}` : ''; }
 
   exportCsv(): void {

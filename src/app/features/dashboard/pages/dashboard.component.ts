@@ -6,6 +6,7 @@ import { IconComponent } from '../../../shared/components/common/icon/icon.compo
 import { generateInsights } from '../../../shared/utils/insights.utils';
 import { formatCurrency } from '../../../shared/utils/money.utils';
 import { todayDateString } from '../../../shared/utils/date.utils';
+import { expenseIconFor } from '../../../shared/utils/expense-icons';
 import { materializeExpenses, materializeIncomes } from '../../../shared/utils/recurrence.utils';
 import {
   averagePreviousThreeMonths,
@@ -28,7 +29,7 @@ import {
   selector: 'app-dashboard',
   imports: [RouterLink, ChartComponent, IconComponent],
   template: `
-    <div class="page">
+    <div class="page" [class.is-editing-widgets]="editingWidgetOrder()">
       <header class="page-header dashboard-header">
         <div class="dashboard-heading"><p class="eyebrow">Visão geral</p><h1><span class="desktop-heading">O seu dinheiro, explicado.</span><span class="mobile-heading">Visão geral</span></h1><p class="page-intro">Veja quanto entrou, quanto saiu e o saldo real de cada mês.</p></div>
         <div class="dashboard-controls">
@@ -39,8 +40,8 @@ import {
             <button class="period-arrow period-next" type="button" (click)="shiftPeriod(1)" aria-label="Mês seguinte"><app-icon name="arrow-up" /></button>
             <button class="period-current" type="button" (click)="goToCurrentMonth()" aria-label="Ir para este mês"><app-icon name="refresh" /></button>
           </div>
-          <button class="btn btn-ghost btn-compact widget-edit-toggle" type="button" (click)="toggleWidgetEditing()" [attr.aria-pressed]="editingWidgetOrder()" [attr.aria-label]="editingWidgetOrder() ? 'Concluir personalização' : 'Personalizar visão geral'">
-            @if (editingWidgetOrder()) { <app-icon name="close" /><span>Concluir</span> } @else { <app-icon name="edit" /><span class="widget-edit-label-full">Personalizar visão geral</span><span class="widget-edit-label-short">Personalizar</span> }
+          <button class="btn btn-ghost btn-compact widget-edit-toggle" type="button" (click)="toggleWidgetEditing()" [attr.aria-pressed]="editingWidgetOrder()" [attr.aria-label]="editingWidgetOrder() ? 'Cancelar personalização' : 'Personalizar visão geral'">
+            @if (editingWidgetOrder()) { <app-icon name="close" /><span>Cancelar</span> } @else { <app-icon name="edit" /><span class="widget-edit-label-full">Personalizar visão geral</span><span class="widget-edit-label-short">Personalizar</span> }
           </button>
           @if (editingWidgetOrder()) { <p class="widget-edit-hint">Arraste os blocos ou foque um e use as setas do teclado.</p> }
         </div>
@@ -64,7 +65,7 @@ import {
         <div class="dashboard-coming">
           <div class="coming-heading"><div><h2>A caminho</h2><p>Previsões para os próximos 30 dias</p></div><a routerLink="/a-caminho">Ver agenda <app-icon name="arrow-right" /></a></div>
           @if (nextItems().length) {
-            <ul>@for (item of nextItems(); track item.occurrenceKey) { <li><span class="coming-date">{{ shortDate(item.date) }}</span><span class="coming-name">{{ item.itemType === 'income' ? item.name : (item.description || categoryName(item.categoryId)) }}<small>{{ item.itemType === 'income' ? 'Entrada prevista' : 'Saída prevista' }}</small></span><strong [class.income-amount]="item.itemType === 'income'">{{ item.itemType === 'income' ? '+' : '−' }}{{ formatCurrency(item.amountCents) }}</strong></li> }</ul>
+            <ul>@for (item of nextItems(); track item.occurrenceKey) { <li><span class="coming-date">{{ shortDate(item.date) }}</span><span class="coming-category-icon" aria-hidden="true">@if (item.itemType === 'income') { <app-icon name="income" /> } @else { <app-icon [name]="expenseIconFor(item.categoryId, item.subcategoryId)" /> }</span><span class="coming-name">{{ item.itemType === 'income' ? item.name : (item.description || categoryName(item.categoryId)) }}<small>{{ item.itemType === 'income' ? 'Entrada prevista' : 'Saída prevista' }}</small></span><strong [class.income-amount]="item.itemType === 'income'">{{ item.itemType === 'income' ? '+' : '−' }}{{ formatCurrency(item.amountCents) }}</strong></li> }</ul>
           } @else { <p class="coming-empty">Sem movimentos previstos nos próximos 30 dias.</p> }
         </div>
       </section>
@@ -108,6 +109,9 @@ import {
       }
       </div>
       <p class="visually-hidden" aria-live="polite">{{ widgetOrderAnnouncement() }}</p>
+      @if (editingWidgetOrder()) {
+        <button class="btn btn-primary widget-edit-save" type="button" (click)="saveWidgetChanges()">Guardar alterações</button>
+      }
     </div>
   `,
   styleUrl: './dashboard.component.css',
@@ -120,6 +124,7 @@ export class DashboardComponent {
   private readonly widgetStorageKey = 'ondevai.dashboard.widget-order';
   readonly widgetOrderIds = signal<string[]>(this.readWidgetOrder());
   readonly editingWidgetOrder = signal(false);
+  private editStartOrder: string[] = [];
   readonly draggedWidget = signal<string | null>(null);
   readonly widgetOrderAnnouncement = signal('');
   readonly selectedMonth = signal(new Date().getMonth() + 1);
@@ -187,8 +192,21 @@ export class DashboardComponent {
   readonly categoryColors = computed(() => this.categoryChartGroups().map((group) => group.color ?? '#68727d'));
   widgetOrder(id: string): number { return this.widgetOrderIds().indexOf(id); }
   toggleWidgetEditing(): void {
-    this.editingWidgetOrder.update((editing) => !editing);
+    if (this.editingWidgetOrder()) {
+      this.widgetOrderIds.set(this.editStartOrder);
+      this.editingWidgetOrder.set(false);
+    } else {
+      this.editStartOrder = [...this.widgetOrderIds()];
+      this.editingWidgetOrder.set(true);
+    }
     this.draggedWidget.set(null);
+  }
+  saveWidgetChanges(): void {
+    try { localStorage.setItem(this.widgetStorageKey, JSON.stringify(this.widgetOrderIds())); } catch { /* Preference remains available for this session. */ }
+    this.editStartOrder = [...this.widgetOrderIds()];
+    this.editingWidgetOrder.set(false);
+    this.draggedWidget.set(null);
+    this.widgetOrderAnnouncement.set('Personalização guardada.');
   }
   startWidgetDrag(event: DragEvent): void {
     if (!this.editingWidgetOrder()) return;
@@ -240,7 +258,6 @@ export class DashboardComponent {
     this.widgetOrderIds.set(order);
     const labels: Record<string, string> = { categories: 'Por categoria', yearly: 'Saldo mensal', comparison: 'Comparação', budget: 'Orçamento do mês', insights: 'Insights', rankings: 'Rankings' };
     this.widgetOrderAnnouncement.set(`${labels[id] ?? 'Widget'} reposicionado.`);
-    try { localStorage.setItem(this.widgetStorageKey, JSON.stringify(order)); } catch { /* Preference remains available for this session. */ }
   }
   private widgetFromTarget(target: EventTarget | null): HTMLElement | null {
     return target instanceof Element ? target.closest<HTMLElement>('[data-widget-id]') : null;
@@ -263,6 +280,7 @@ export class DashboardComponent {
   goToCurrentMonth(): void { const now = new Date(); this.selectedYear.set(now.getFullYear()); this.selectedMonth.set(now.getMonth() + 1); }
   shortDate(date: string): string { return new Intl.DateTimeFormat('pt-PT', { day: 'numeric', month: 'short' }).format(new Date(`${date}T12:00:00`)); }
   categoryName(id: string): string { return this.store.categories().find((category) => category.id === id)?.name ?? 'Despesa'; }
+  expenseIconFor(categoryId: string, subcategoryId?: string) { return expenseIconFor(this.store.categories(), categoryId, subcategoryId); }
   signedCurrency(cents: number): string { return `${cents > 0 ? '+' : cents < 0 ? '−' : ''}${formatCurrency(Math.abs(cents))}`; }
   comparisonLabel(comparison: MonthComparison): string { if (comparison.percentage === null) return 'Sem base de comparação'; if (comparison.direction === 'same') return 'Sem alteração'; return `${comparison.direction === 'up' ? 'Aumento' : 'Redução'} de ${Math.abs(comparison.percentage)}%`; }
   directionClass(comparison: MonthComparison): string { return `comparison-${comparison.direction}`; }

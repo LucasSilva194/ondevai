@@ -5,12 +5,14 @@ import { ExpenseOccurrence, IncomeOccurrence } from '../../../models/domain.mode
 import { formatCurrency } from '../../../shared/utils/money.utils';
 import { materializeExpenses, materializeIncomes, recurrenceLabel } from '../../../shared/utils/recurrence.utils';
 import { todayDateString } from '../../../shared/utils/date.utils';
+import { IconComponent } from '../../../shared/components/common/icon/icon.component';
+import { expenseIconFor } from '../../../shared/utils/expense-icons';
 
 type UpcomingItem = (ExpenseOccurrence & { itemType: 'expense' }) | (IncomeOccurrence & { itemType: 'income' });
 
 @Component({
   selector: 'app-upcoming',
-  imports: [RouterLink],
+  imports: [RouterLink, IconComponent],
   template: `
     <div class="page">
       <header class="page-header-row upcoming-header">
@@ -37,7 +39,7 @@ type UpcomingItem = (ExpenseOccurrence & { itemType: 'expense' }) | (IncomeOccur
               <header><div><span>{{ weekday(group.date) }}</span><h2>{{ dateLabel(group.date) }}</h2></div><span>{{ group.items.length }} {{ group.items.length === 1 ? 'movimento' : 'movimentos' }}</span></header>
               @for (item of group.items; track item.occurrenceKey) {
                 <article class="agenda-item" [class.income]="item.itemType === 'income'">
-                  <span class="agenda-mark" aria-hidden="true">{{ item.itemType === 'income' ? '＋' : '−' }}</span>
+                  <span class="agenda-mark" [style.--expense-category-color]="item.itemType === 'expense' ? categoryColor(item.categoryId) : null" aria-hidden="true">@if (item.itemType === 'income') { ＋ } @else { <app-icon [name]="expenseIconFor(item.categoryId, item.subcategoryId)" /> }</span>
                   <div class="agenda-main"><strong>{{ item.itemType === 'income' ? item.name : (item.description || categoryName(item.categoryId)) }}</strong><span>{{ item.itemType === 'income' ? 'Rendimento' : categoryName(item.categoryId) }} · {{ recurrenceLabel(item.recurrence) }}</span></div>
                   <strong class="agenda-amount">{{ item.itemType === 'income' ? '+' : '−' }}{{ formatCurrency(item.amountCents) }}</strong>
                   <span class="status-badge projected">Previsto</span>
@@ -76,7 +78,8 @@ type UpcomingItem = (ExpenseOccurrence & { itemType: 'expense' }) | (IncomeOccur
     .agenda-day h2 { font-family: var(--display-font); font-size: 1.45rem; font-weight: 500; }
     .agenda-item { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto auto auto; align-items: center; gap: 12px; min-height: 68px; padding: 10px 12px; border-radius: 14px; }
     .agenda-item:hover { background: var(--surface); }
-    .agenda-mark { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 11px; background: var(--danger-soft); color: var(--danger); font-size: 1.12rem; }
+    .agenda-mark { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 11px; background: color-mix(in srgb, var(--expense-category-color, var(--danger)) 14%, var(--surface)); color: var(--expense-category-color, var(--danger)); font-size: 1.12rem; }
+    .agenda-mark app-icon { width: 17px; height: 17px; }
     .agenda-item.income .agenda-mark { background: var(--accent-soft); color: var(--accent-strong); }
     .agenda-main { display: grid; gap: 4px; min-width: 0; }
     .agenda-main strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .88rem; }
@@ -109,8 +112,8 @@ export class UpcomingComponent {
   readonly notice = signal('');
   readonly today = todayDateString();
   readonly until = addDays(this.today, 30);
-  readonly expenses = computed(() => materializeExpenses(this.store.expenses(), this.store.recurrenceExceptions(), this.today, this.until));
-  readonly incomes = computed(() => materializeIncomes(this.store.monthlyIncomes(), this.store.recurrenceExceptions(), this.today, this.until));
+  readonly expenses = computed(() => materializeExpenses(this.store.expenses(), this.store.recurrenceExceptions(), this.today, this.until).filter((item) => item.seriesId));
+  readonly incomes = computed(() => materializeIncomes(this.store.monthlyIncomes(), this.store.recurrenceExceptions(), this.today, this.until).filter((item) => item.seriesId));
   readonly outgoingTotal = computed(() => this.expenses().reduce((total, item) => total + item.amountCents, 0));
   readonly incomingTotal = computed(() => this.incomes().reduce((total, item) => total + item.amountCents, 0));
   readonly items = computed<UpcomingItem[]>(() => [
@@ -125,6 +128,8 @@ export class UpcomingComponent {
   });
 
   categoryName(id: string): string { return this.store.categories().find((item) => item.id === id)?.name ?? 'Despesa'; }
+  categoryColor(id: string): string { return this.store.categories().find((item) => item.id === id)?.color ?? '#68727d'; }
+  expenseIconFor(categoryId: string, subcategoryId?: string) { return expenseIconFor(this.store.categories(), categoryId, subcategoryId); }
   weekday(date: string): string { return new Intl.DateTimeFormat('pt-PT', { weekday: 'long' }).format(new Date(`${date}T12:00:00`)); }
   dateLabel(date: string): string { return new Intl.DateTimeFormat('pt-PT', { day: 'numeric', month: 'long' }).format(new Date(`${date}T12:00:00`)); }
 
