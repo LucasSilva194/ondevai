@@ -136,6 +136,7 @@ describe('AuthService', () => {
       email: 'nova@example.com',
       password: 'password-123',
       passwordConfirm: 'password-123',
+      legalAcceptanceVersion: '2026-10-02-v2',
     });
     expect(collection.requestVerification).toHaveBeenCalledWith('nova@example.com');
     expect(service.authenticated()).toBe(false);

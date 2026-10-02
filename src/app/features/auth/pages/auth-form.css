@@ -7,6 +7,10 @@ h1 { max-width: 12ch; margin: 0; font-size: clamp(2.25rem, 7vw, 3.7rem); line-he
 .auth-form .btn { width: 100%; margin-top: 4px; }
 .auth-form fieldset { display: contents; }
 .auth-form fieldset:disabled { opacity: 0.7; }
+.registration-consents { display: grid; gap: 12px; }
+.registration-consents label { display: flex; align-items: flex-start; gap: 9px; font-size: .8rem; line-height: 1.5; }
+.registration-consents input { flex: none; width: 18px; height: 18px; margin: 1px 0 0; accent-color: var(--accent); }
+.registration-consents a { text-underline-offset: 3px; }
 .auth-links { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 22px 0 0; font-size: 0.82rem; }
 .auth-links.single { justify-content: center; }
 .auth-links a { font-weight: 720; text-underline-offset: 3px; }

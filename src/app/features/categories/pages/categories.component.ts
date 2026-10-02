@@ -107,7 +107,7 @@ import { IconComponent } from '../../../shared/components/common/icon/icon.compo
     </div>
 
     @if (categoryFormOpen()) {
-      <app-modal-shell panelClass="modal category-modal" labelledBy="category-form-title">
+      <app-modal-shell panelClass="modal category-modal" labelledBy="category-form-title" (closeRequest)="closeCategoryForm()">
           <header class="modal-header">
             <div><h2 id="category-form-title">{{ editingCategory() ? 'Editar categoria' : 'Nova categoria' }}</h2><p>Escolha um nome simples e uma cor distinta.</p></div>
             <button class="category-modal-close" type="button" (click)="closeCategoryForm()" aria-label="Fechar"><span aria-hidden="true">×</span></button>

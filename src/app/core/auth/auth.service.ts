@@ -71,6 +71,7 @@ export class AuthService {
         email: normalizedEmail,
         password,
         passwordConfirm,
+        legalAcceptanceVersion: '2026-10-02-v2',
       });
       this.pendingVerificationEmail = normalizedEmail;
     });

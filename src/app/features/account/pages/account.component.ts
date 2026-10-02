@@ -93,7 +93,7 @@ import { ModalShellComponent } from '../../../shared/components/common/modal-she
     </div>
 
     @if (deleteDialogOpen()) {
-      <app-modal-shell panelClass="modal delete-modal" labelledBy="delete-dialog-title">
+      <app-modal-shell panelClass="modal delete-modal" labelledBy="delete-dialog-title" (closeRequest)="deleteDialogOpen.set(false)">
           <header class="modal-header">
             <div>
               <h2 id="delete-dialog-title">Eliminar definitivamente a conta?</h2>

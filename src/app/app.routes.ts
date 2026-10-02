@@ -21,6 +21,18 @@ export const appRoutes: Routes = [
     loadComponent: () => import('./features/landing/pages/landing.component').then((module) => module.LandingComponent),
   },
   {
+    path: 'privacidade',
+    data: { policy: 'privacy' },
+    title: 'Política de privacidade | OndeVai',
+    loadComponent: () => import('./features/legal/pages/legal-page.component').then((module) => module.LegalPageComponent),
+  },
+  {
+    path: 'termos',
+    data: { policy: 'terms' },
+    title: 'Termos de utilização | OndeVai',
+    loadComponent: () => import('./features/legal/pages/legal-page.component').then((module) => module.LegalPageComponent),
+  },
+  {
     path: 'entrar',
     canActivate: [guestGuard],
     title: 'Entrar | OndeVai',
