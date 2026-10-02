@@ -6,6 +6,7 @@ import { IconComponent } from '../../../shared/components/common/icon/icon.compo
 import { generateInsights } from '../../../shared/utils/insights.utils';
 import { formatCurrency } from '../../../shared/utils/money.utils';
 import { todayDateString } from '../../../shared/utils/date.utils';
+import { expenseIconFor } from '../../../shared/utils/expense-icons';
 import { materializeExpenses, materializeIncomes } from '../../../shared/utils/recurrence.utils';
 import {
   averagePreviousThreeMonths,
@@ -64,7 +65,7 @@ import {
         <div class="dashboard-coming">
           <div class="coming-heading"><div><h2>A caminho</h2><p>Previsões para os próximos 30 dias</p></div><a routerLink="/a-caminho">Ver agenda <app-icon name="arrow-right" /></a></div>
           @if (nextItems().length) {
-            <ul>@for (item of nextItems(); track item.occurrenceKey) { <li><span class="coming-date">{{ shortDate(item.date) }}</span><span class="coming-name">{{ item.itemType === 'income' ? item.name : (item.description || categoryName(item.categoryId)) }}<small>{{ item.itemType === 'income' ? 'Entrada prevista' : 'Saída prevista' }}</small></span><strong [class.income-amount]="item.itemType === 'income'">{{ item.itemType === 'income' ? '+' : '−' }}{{ formatCurrency(item.amountCents) }}</strong></li> }</ul>
+            <ul>@for (item of nextItems(); track item.occurrenceKey) { <li><span class="coming-date">{{ shortDate(item.date) }}</span><span class="coming-category-icon" aria-hidden="true">@if (item.itemType === 'income') { <app-icon name="income" /> } @else { <app-icon [name]="expenseIconFor(item.categoryId, item.subcategoryId)" /> }</span><span class="coming-name">{{ item.itemType === 'income' ? item.name : (item.description || categoryName(item.categoryId)) }}<small>{{ item.itemType === 'income' ? 'Entrada prevista' : 'Saída prevista' }}</small></span><strong [class.income-amount]="item.itemType === 'income'">{{ item.itemType === 'income' ? '+' : '−' }}{{ formatCurrency(item.amountCents) }}</strong></li> }</ul>
           } @else { <p class="coming-empty">Sem movimentos previstos nos próximos 30 dias.</p> }
         </div>
       </section>
@@ -263,6 +264,7 @@ export class DashboardComponent {
   goToCurrentMonth(): void { const now = new Date(); this.selectedYear.set(now.getFullYear()); this.selectedMonth.set(now.getMonth() + 1); }
   shortDate(date: string): string { return new Intl.DateTimeFormat('pt-PT', { day: 'numeric', month: 'short' }).format(new Date(`${date}T12:00:00`)); }
   categoryName(id: string): string { return this.store.categories().find((category) => category.id === id)?.name ?? 'Despesa'; }
+  expenseIconFor(categoryId: string, subcategoryId?: string) { return expenseIconFor(this.store.categories(), categoryId, subcategoryId); }
   signedCurrency(cents: number): string { return `${cents > 0 ? '+' : cents < 0 ? '−' : ''}${formatCurrency(Math.abs(cents))}`; }
   comparisonLabel(comparison: MonthComparison): string { if (comparison.percentage === null) return 'Sem base de comparação'; if (comparison.direction === 'same') return 'Sem alteração'; return `${comparison.direction === 'up' ? 'Aumento' : 'Redução'} de ${Math.abs(comparison.percentage)}%`; }
   directionClass(comparison: MonthComparison): string { return `comparison-${comparison.direction}`; }
