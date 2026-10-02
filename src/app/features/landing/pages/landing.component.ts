@@ -28,7 +28,7 @@ import { BrandMarkComponent } from '../../../shared/components/common/brand-mark
             <a class="btn btn-primary hero-primary" routerLink="/registar">Começar gratuitamente <span aria-hidden="true">↗</span></a>
             <a class="text-link" routerLink="/entrar">Já tem conta? <strong>Entrar</strong></a>
           </div>
-          <div class="hero-trust"><span class="trust-mark" aria-hidden="true">✓</span><span>Sem ligação a bancos. Sem anúncios. Os seus dados ficam sob o seu controlo.</span></div>
+          <div class="hero-trust"><span class="trust-mark" aria-hidden="true">✓</span><span>Sem ligação a bancos nem anúncios. Exporte ou elimine os seus dados quando quiser.</span></div>
         </div>
 
         <div class="preview-wrap" aria-label="Exemplo ilustrativo do resumo financeiro OndeVai">
@@ -56,13 +56,13 @@ import { BrandMarkComponent } from '../../../shared/components/common/brand-mark
       </section>
 
       <section class="privacy-band" aria-label="Privacidade e segurança">
-        <div><span class="privacy-symbol" aria-hidden="true">⌑</span><span><strong>Os seus dados, sob o seu controlo.</strong><small>Sem contas bancárias ligadas, anúncios ou telemetria.</small></span></div>
+        <div><span class="privacy-symbol" aria-hidden="true">⌑</span><span><strong>Escolha o que guarda.</strong><small>Sem contas bancárias ligadas, anúncios ou telemetria.</small></span></div>
         <span class="privacy-divider" aria-hidden="true"></span>
         <div><span class="privacy-symbol export-symbol" aria-hidden="true">↓</span><span><strong>Leve uma cópia consigo.</strong><small>Exporte os seus dados sempre que quiser.</small></span></div>
         <a routerLink="/registar">Começar agora <span aria-hidden="true">→</span></a>
       </section>
 
-      <footer class="landing-footer"><a class="landing-brand footer-brand" routerLink="/" aria-label="OndeVai, página inicial"><app-brand-mark class="brand-mark" /><span>OndeVai</span></a><p>O seu dinheiro, explicado.</p><a routerLink="/entrar">Já tem conta? Entrar</a></footer>
+      <footer class="landing-footer"><a class="landing-brand footer-brand" routerLink="/" aria-label="OndeVai, página inicial"><app-brand-mark class="brand-mark" /><span>OndeVai</span></a><p>O seu dinheiro, explicado.</p><nav aria-label="Informação legal"><a routerLink="/privacidade">Privacidade</a><a routerLink="/termos">Termos</a></nav><a routerLink="/entrar">Já tem conta? Entrar</a></footer>
     </main>
   `,
   styleUrl: './landing.component.css',

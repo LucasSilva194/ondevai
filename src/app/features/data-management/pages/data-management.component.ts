@@ -166,7 +166,7 @@ import { AccountService } from '../../account/services/account.service';
     </div>
 
     @if (deleteDialogOpen()) {
-      <app-modal-shell panelClass="modal delete-modal" labelledBy="delete-title">
+      <app-modal-shell panelClass="modal delete-modal" labelledBy="delete-title" (closeRequest)="deleteDialogOpen.set(false)">
           <header class="modal-header"><div><h2 id="delete-title">Apagar os dados financeiros cloud?</h2><p>A conta e os dados locais legados permanecem.</p></div></header>
           <form [formGroup]="deleteForm" (ngSubmit)="deleteAll()">
             <div class="field"><label for="delete-confirmation">Escreva APAGAR DADOS para confirmar</label><input id="delete-confirmation" formControlName="confirmation" autocomplete="off"></div>
@@ -176,7 +176,7 @@ import { AccountService } from '../../account/services/account.service';
     }
 
     @if (accountDeleteDialogOpen()) {
-      <app-modal-shell panelClass="modal delete-modal" labelledBy="account-delete-title">
+      <app-modal-shell panelClass="modal delete-modal" labelledBy="account-delete-title" (closeRequest)="accountDeleteDialogOpen.set(false)">
         <header class="modal-header"><div><h2 id="account-delete-title">Eliminar definitivamente a conta?</h2><p>Esta ação não pode ser anulada. O IndexedDB legado permanece neste browser.</p></div></header>
         <form [formGroup]="accountDeleteForm" (ngSubmit)="deleteAccount()" novalidate>
           <div class="field"><label for="account-delete-password">Palavra-passe atual</label><input id="account-delete-password" type="password" formControlName="password" autocomplete="current-password"></div>
@@ -187,7 +187,7 @@ import { AccountService } from '../../account/services/account.service';
     }
 
     @if (backupPasswordDialogOpen()) {
-      <app-modal-shell panelClass="modal delete-modal" labelledBy="backup-password-title">
+      <app-modal-shell panelClass="modal delete-modal" labelledBy="backup-password-title" (closeRequest)="closeBackupPasswordDialog()">
         <header class="modal-header"><div><h2 id="backup-password-title">{{ backupPasswordPurpose() === 'export' ? 'Cifrar cópia de segurança' : 'Abrir cópia de segurança' }}</h2><p>{{ backupPasswordPurpose() === 'export' ? 'Use uma senha forte com pelo menos 12 caracteres. Sem ela, não poderá recuperar o ficheiro.' : 'A senha é usada apenas para decifrar o ficheiro neste dispositivo.' }}</p></div></header>
         <form [formGroup]="backupPasswordForm" (ngSubmit)="submitBackupPassword()" novalidate>
           <div class="field"><label for="backup-password">Senha da cópia</label><input id="backup-password" type="password" formControlName="password" [attr.autocomplete]="backupPasswordPurpose() === 'export' ? 'new-password' : 'current-password'" maxlength="1024">

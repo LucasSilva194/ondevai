@@ -44,6 +44,11 @@ export const passwordsMatchValidator: ValidatorFn = (control: AbstractControl): 
             @if (showMismatch()) { <p id="register-password-confirm-error" class="field-error">As palavras-passe não coincidem.</p> }
           </div>
 
+          <div class="registration-consents">
+            <label><input id="register-legal-acceptance" type="checkbox" formControlName="legalAcceptance" [attr.aria-invalid]="showError('legalAcceptance')" [attr.aria-describedby]="showError('legalAcceptance') ? 'register-legal-acceptance-error' : null"> <span>Li e aceito os <a routerLink="/termos">Termos de utilização</a> e tomei conhecimento da <a routerLink="/privacidade">Política de privacidade</a>.</span></label>
+            @if (showError('legalAcceptance')) { <p id="register-legal-acceptance-error" class="field-error">É necessário aceitar os termos e confirmar a leitura da política.</p> }
+          </div>
+
           <button class="btn btn-primary" type="submit" [disabled]="auth.loading()">
             {{ auth.loading() ? 'A criar conta...' : 'Criar conta' }}
           </button>
@@ -67,9 +72,10 @@ export class RegisterComponent {
     email: ['', [Validators.required, Validators.email]],
     password: ['', [Validators.required, Validators.minLength(8)]],
     passwordConfirm: ['', Validators.required],
+    legalAcceptance: [false, Validators.requiredTrue],
   }, { validators: passwordsMatchValidator });
 
-  showError(controlName: 'email' | 'password'): boolean {
+  showError(controlName: 'email' | 'password' | 'legalAcceptance'): boolean {
     const control = this.form.controls[controlName];
     return control.invalid && (control.dirty || control.touched);
   }

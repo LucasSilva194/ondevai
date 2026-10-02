@@ -12,7 +12,7 @@ import { parseMoneyToCents } from '../../../shared/utils/money.utils';
   imports: [ReactiveFormsModule, ModalShellComponent],
   template: `
     @if (open) {
-      <app-modal-shell labelledBy="quick-expense-title">
+      <app-modal-shell labelledBy="quick-expense-title" (closeRequest)="close()">
         <header class="modal-header">
           <div><h2 id="quick-expense-title">Nova despesa</h2><p>Os campos assinalados são obrigatórios.</p></div>
           <button class="btn btn-ghost btn-compact" type="button" (click)="close()" aria-label="Fechar formulário">Fechar</button>

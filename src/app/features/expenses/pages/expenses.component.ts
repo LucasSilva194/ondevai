@@ -173,7 +173,7 @@ import { expensesForMonth, MONTH_NAMES, sumExpenses } from '../../../shared/util
     </div>
 
     @if (formOpen()) {
-      <app-modal-shell labelledBy="expense-form-title">
+      <app-modal-shell labelledBy="expense-form-title" (closeRequest)="closeForm()">
           <header class="modal-header">
             <div><h2 id="expense-form-title">{{ editingOccurrence() ? 'Editar ocorrência' : editingExpense() ? 'Editar despesa' : 'Nova despesa' }}</h2><p>{{ editingOccurrence() ? 'Esta alteração aplica-se apenas à data selecionada.' : 'Os campos assinalados são obrigatórios.' }}</p></div>
             <button class="btn btn-ghost btn-compact" type="button" (click)="closeForm()" aria-label="Fechar formulário">Fechar</button>

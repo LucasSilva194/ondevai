@@ -75,7 +75,7 @@ import { calculateBudgetSummary, expensesForMonth, MONTH_NAMES, previousMonth } 
     </div>
 
     @if (formOpen()) {
-      <app-modal-shell labelledBy="budget-form-title">
+      <app-modal-shell labelledBy="budget-form-title" (closeRequest)="closeForm()">
           <header class="modal-header"><div><h2 id="budget-form-title">{{ editingBudget() ? 'Editar orçamento' : 'Novo orçamento' }}</h2><p>O limite é válido apenas para {{ selectedMonthLabel() }}.</p></div><button class="btn btn-ghost btn-compact" type="button" (click)="closeForm()" aria-label="Fechar formulário">Fechar</button></header>
           <form [formGroup]="budgetForm" (ngSubmit)="submit()" novalidate>
             <div class="form-grid">

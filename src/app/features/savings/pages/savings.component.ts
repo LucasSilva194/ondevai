@@ -109,7 +109,7 @@ import { expensesForMonth, incomesForMonth, MONTH_NAMES, netSavingsContributions
     </div>
 
     @if (incomeFormOpen()) {
-      <app-modal-shell labelledBy="income-form-title">
+      <app-modal-shell labelledBy="income-form-title" (closeRequest)="closeIncomeForm()">
         <header class="modal-header"><div><h2 id="income-form-title">{{ editingIncomeOccurrence() ? 'Editar ocorrência' : editingIncome() ? 'Editar rendimento' : 'Novo rendimento' }}</h2><p>{{ editingIncomeOccurrence() ? 'Apenas esta ocorrência será alterada.' : 'Configure uma entrada pontual ou recorrente.' }}</p></div><button class="btn btn-ghost btn-compact" type="button" (click)="closeIncomeForm()" aria-label="Fechar formulário">Fechar</button></header>
         <form [formGroup]="incomeForm" (ngSubmit)="submitIncome()" novalidate><div class="form-grid">
           <div class="field wide"><label for="income-name">Nome *</label><input id="income-name" name="name" autocomplete="off" type="text" formControlName="name" maxlength="80" required></div>
@@ -129,7 +129,7 @@ import { expensesForMonth, incomesForMonth, MONTH_NAMES, netSavingsContributions
     }
 
     @if (goalFormOpen()) {
-      <app-modal-shell labelledBy="goal-form-title">
+      <app-modal-shell labelledBy="goal-form-title" (closeRequest)="closeGoalForm()">
         <header class="modal-header"><div><h2 id="goal-form-title">{{ editingGoal() ? 'Editar objetivo' : 'Novo objetivo' }}</h2><p>Qualquer diferença no saldo cria um movimento explícito.</p></div><button class="btn btn-ghost btn-compact" type="button" (click)="closeGoalForm()">Fechar</button></header>
         <form [formGroup]="goalForm" (ngSubmit)="submitGoal()" novalidate><div class="form-grid">
           <div class="field wide"><label for="goal-name">Nome *</label><input id="goal-name" name="name" autocomplete="off" type="text" formControlName="name" maxlength="80" required></div>
@@ -143,7 +143,7 @@ import { expensesForMonth, incomesForMonth, MONTH_NAMES, netSavingsContributions
     }
 
     @if (transactionGoal(); as goal) {
-      <app-modal-shell labelledBy="transaction-title">
+      <app-modal-shell labelledBy="transaction-title" (closeRequest)="closeTransactionForm()">
         <header class="modal-header"><div><h2 id="transaction-title">{{ editingTransaction() ? 'Editar movimento' : 'Movimentar ' + goal.name }}</h2><p>Saldo atual: {{ formatCurrency(goal.currentAmountCents) }}</p></div><button class="btn btn-ghost btn-compact" type="button" (click)="closeTransactionForm()">Fechar</button></header>
         <form [formGroup]="transactionForm" (ngSubmit)="submitTransaction()" novalidate><div class="form-grid">
           <div class="field"><label for="transaction-type">Tipo</label><select id="transaction-type" formControlName="type">@if (editingTransaction()?.type === 'opening') { <option value="opening">Saldo inicial</option> }<option value="deposit">Reforço</option><option value="withdrawal">Levantamento</option></select></div>
@@ -155,7 +155,7 @@ import { expensesForMonth, incomesForMonth, MONTH_NAMES, netSavingsContributions
     }
 
     @if (historyOpen()) {
-      <app-modal-shell panelClass="modal history-modal" labelledBy="history-title">
+      <app-modal-shell panelClass="modal history-modal" labelledBy="history-title" (closeRequest)="historyOpen.set(false)">
         <header class="modal-header"><div><h2 id="history-title">Histórico de movimentos</h2><p>Consulte, filtre e corrija o ledger local.</p></div><button class="btn btn-ghost btn-compact" type="button" (click)="historyOpen.set(false)">Fechar</button></header>
         <div class="history-filters"><div class="field"><label for="history-goal">Objetivo</label><select id="history-goal" [value]="historyGoalFilter()" (change)="setHistoryGoal($event)"><option value="">Todos</option>@for (goal of store.savingsGoals(); track goal.id) { <option [value]="goal.id">{{ goal.name }}</option> }</select></div><div class="field"><label for="history-type">Tipo</label><select id="history-type" [value]="historyTypeFilter()" (change)="setHistoryType($event)"><option value="">Todos</option><option value="opening">Saldo inicial</option><option value="deposit">Reforços</option><option value="withdrawal">Levantamentos</option></select></div></div>
         @if (filteredTransactions().length === 0) { <p class="empty-inline">Não existem movimentos com estes filtros.</p> } @else {
